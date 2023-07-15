@@ -9,7 +9,7 @@ from functions import *
 
 # Runs a simulation with the provided settings
 
-def run_price_change_simulation(execution_index, yh_exchange, end_date, duration, budget, lot_size=1, portfolio_size=10, reverse=False):
+def run_price_change_simulation(execution_index, yh_exchange, end_date, duration, budget, lot_size=1, portfolio_size=10, sensitivity=0, reverse=False):
     # Set initial budget for future reference
     initial_budget = budget
 
@@ -52,23 +52,35 @@ def run_price_change_simulation(execution_index, yh_exchange, end_date, duration
         # Get entry for current date
         symbol_entry = symbol_df[symbol_df['Date'] == current_date].reset_index(drop=True)
 
-        # Get previous entry
-        symbol_entry_index = symbol_df[symbol_df['Date'] == current_date].index[0]
-        previous_symbol_entry = symbol_df.iloc[symbol_entry_index - 1]
-
         # Execute following if there is an entry for current date
         if not symbol_entry.empty:
-            # Leave necessary columns and format them
-            symbol_entry = symbol_entry.drop(columns = ['% Day Change', '% Previous Change', '$ Volume'])
-            symbol_entry_dv = symbol_entry['50D $ Volume']
-            symbol_entry_prediction = "H" if symbol_entry['Open'].loc[0] >= previous_symbol_entry['Close'] else "L"
-            symbol_entry.drop('50D $ Volume', axis=1, inplace=True)
-            symbol_entry.insert(1, 'Symbol', [symbol])
-            symbol_entry.insert(2, '50D $ Volume', symbol_entry_dv)
-            symbol_entry.insert(3, 'Prediction', symbol_entry_prediction)
+            # Get previous entry
+            symbol_entry_index = symbol_df[symbol_df['Date'] == current_date].index[0]
+            previous_symbol_entry = symbol_df.iloc[symbol_entry_index - 1]
 
-            # Return symbol_entry to add to current_date_final_df and current_date_log_df
-            return symbol_entry
+            # Determine prediction
+            symbol_entry_prediction = None
+            if (symbol_entry['Open'].loc[0] / previous_symbol_entry['Close'] - 1) > sensitivity and not reverse:
+                symbol_entry_prediction = "H"
+            elif (symbol_entry['Open'].loc[0] / previous_symbol_entry['Close'] - 1) > sensitivity and reverse:
+                symbol_entry_prediction = "L"
+            elif (1 - symbol_entry['Open'].loc[0] / previous_symbol_entry['Close']) > sensitivity and not reverse:
+                symbol_entry_prediction = "L"
+            elif (1 - symbol_entry['Open'].loc[0] / previous_symbol_entry['Close']) > sensitivity and reverse:
+                symbol_entry_prediction = "H"
+
+            # Add entry only when there is a prediction
+            if symbol_entry_prediction:
+                # Leave necessary columns and format them
+                symbol_entry = symbol_entry.drop(columns = ['% Day Change', '% Previous Change', '$ Volume'])
+                symbol_entry_dv = symbol_entry['50D $ Volume']
+                symbol_entry.drop('50D $ Volume', axis=1, inplace=True)
+                symbol_entry.insert(1, 'Symbol', [symbol])
+                symbol_entry.insert(2, '50D $ Volume', symbol_entry_dv)
+                symbol_entry.insert(3, 'Prediction', symbol_entry_prediction)
+
+                # Return symbol_entry to add to current_date_final_df and current_date_log_df
+                return symbol_entry
 
     # Create function to process each day
     def process_date(current_date):
@@ -97,17 +109,15 @@ def run_price_change_simulation(execution_index, yh_exchange, end_date, duration
 
         # Sort current_date_working_df according to 50D $ Volume and portfolio_size
         current_date_working_df = current_date_working_df.sort_values(by='50D $ Volume', ascending=False)[:min(portfolio_size, len(current_date_working_df))].reset_index(drop=True)
-        print(current_date_working_df)
+
         # Append data to current_date_log_df
         current_date_log_df.loc[0, f"Date"] = current_date
-        current_date_log_df.loc[0, f"Prediction"] = reference_index_change
         current_date_log_df.loc[0, f"Portfolio Size"] = portfolio_size
         current_date_log_df.loc[0, f"Starting Amount"] = budget
         current_date_log_df.loc[0, f"Bottom Line"] = budget
 
         # Append data to current_date_final_df
         current_date_final_df.loc[0, f"Date"] = current_date
-        current_date_final_df.loc[0, f"Prediction"] = reference_index_change
         current_date_final_df.loc[0, f"Starting Amount"] = budget
         current_date_final_df.loc[0, f"Invested Amount"] = 0
         current_date_final_df.loc[0, f"Remainder"] = 0
@@ -119,12 +129,16 @@ def run_price_change_simulation(execution_index, yh_exchange, end_date, duration
 
         # Loop through current_date_working_df and add entries to current_date_log_df
         for index, entry in current_date_working_df.iterrows():
+            # Assign prediction for entry
+            entry_prediction = entry['Prediction']
+
             # Calculate allocation for the entry
             entry_portfolio_percentage = entry['50D $ Volume'] / current_date_working_df['50D $ Volume'].sum()
             entry_allocation = entry_portfolio_percentage * budget
 
             # Append data to current_date_log_df
             current_date_log_df.loc[0, f"Constituent #{index + 1}"] = entry['Symbol']
+            current_date_log_df.loc[0, f"Prediction #{index + 1}"] = entry_prediction
             current_date_log_df.loc[0, f"Open #{index + 1}"] = entry['Open']
             current_date_log_df.loc[0, f"High #{index + 1}"] = entry['High']
             current_date_log_df.loc[0, f"Low #{index + 1}"] = entry['Low']
@@ -133,9 +147,9 @@ def run_price_change_simulation(execution_index, yh_exchange, end_date, duration
             current_date_log_df.loc[0, f"Change #{index + 1}"] = round((entry['Close'] - entry['Open']) / entry['Open'], 4)
             current_date_log_df.loc[0, f"Quantity #{index + 1}"] = np.floor(entry_allocation / (entry['Open'] * lot_size)) * lot_size
             # Assign asset change to Profit/Loss
-            if reference_index_change == "H":
+            if entry_prediction == "H":
                 current_date_log_df.loc[0, f"Profit/Loss #{index + 1}"] = (entry['Close'] - entry['Open']) * current_date_log_df.loc[0, f"Quantity #{index + 1}"]
-            elif reference_index_change == "L":
+            elif entry_prediction == "L":
                 current_date_log_df.loc[0, f"Profit/Loss #{index + 1}"] = (entry['Open'] - entry['Close']) * current_date_log_df.loc[0, f"Quantity #{index + 1}"]
             # Deduct fees from Profit/Loss
             current_date_log_df.loc[0, f"Profit/Loss #{index + 1}"] -= ibkr_sgx_fees(entry['Open'] * current_date_log_df.loc[0, f"Quantity #{index + 1}"], "fixed")
@@ -147,23 +161,21 @@ def run_price_change_simulation(execution_index, yh_exchange, end_date, duration
             current_date_final_df.loc[0, f"Invested Amount"] += current_date_log_df.loc[0, f"Open #{index + 1}"] * current_date_log_df.loc[0, f"Quantity #{index + 1}"]
             current_date_final_df.loc[0, f"Remainder"] += entry_allocation - current_date_log_df.loc[0, f"Open #{index + 1}"] * current_date_log_df.loc[0, f"Quantity #{index + 1}"]
             # Assign asset change
-            if reference_index_change == "H":
+            if entry_prediction == "H":
                 current_date_final_df.loc[0, f"Asset Change"] += (entry['Close'] - entry['Open']) * current_date_log_df.loc[0, f"Quantity #{index + 1}"]
-            elif reference_index_change == "L":
+            elif entry_prediction == "L":
                 current_date_final_df.loc[0, f"Asset Change"] += (entry['Open'] - entry['Close']) * current_date_log_df.loc[0, f"Quantity #{index + 1}"]
             current_date_final_df.loc[0, f"Fees"] += ibkr_sgx_fees(entry['Open'] * current_date_log_df.loc[0, f"Quantity #{index + 1}"], "fixed") + ibkr_sgx_fees(entry['Close'] * current_date_log_df.loc[0, f"Quantity #{index + 1}"],"fixed")
             current_date_final_df.loc[0, f"Profit/Loss"] += current_date_log_df.loc[0, f"Profit/Loss #{index + 1}"]
             current_date_final_df.loc[0, f"Yield"] += entry_portfolio_percentage * current_date_log_df.loc[0, f"Profit/Loss #{index + 1}"] / entry_allocation
             current_date_final_df.loc[0, f"Bottom Line"] += current_date_log_df.loc[0, f"Profit/Loss #{index + 1}"]
 
-        process_date(datetime.datetime(2023, 7, 6, 0, 0).strftime("%Y-%m-%d"))
-
         # Add the 2 current_date dataframes to the full dataframes
         final_df = pd.concat([final_df, current_date_final_df])
         log_df = pd.concat([log_df, current_date_log_df])
 
         # Set budget to bottom line
-        budget = current_date_final_df.loc[0, f"Bottom Line"]
+        budget = max(current_date_final_df.loc[0, f"Bottom Line"], 0)
 
         # Print status update
         print(f"[{datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')}] {current_date.strftime('%Y-%m-%d')} Daily Yield: {round(current_date_final_df.loc[0, 'Yield'] * 100, 2)}% | Balance: ${round(current_date_final_df.loc[0, 'Bottom Line'], 2)}")
@@ -179,8 +191,8 @@ def run_price_change_simulation(execution_index, yh_exchange, end_date, duration
         # final_df_y.extend(final_df['Bottom Line'])
 
         # Save cumulative dataframes
-        save_data(log_df, f"{execution_index}_exec_{reference_index}_refe_{end_date.strftime('%Y-%m-%d')}_date_{duration}_dura_{initial_budget}_budg_{portfolio_size}_size_{reverse}_reve_log_df", "simulations")
-        save_data(final_df, f"{execution_index}_exec_{reference_index}_refe_{end_date.strftime('%Y-%m-%d')}_date_{duration}_dura_{initial_budget}_budg_{portfolio_size}_size_{reverse}_reve_final_df", "simulations")
+        save_data(log_df, f"price_change_{execution_index}_exec_{end_date.strftime('%Y-%m-%d')}_date_{duration}_dura_{initial_budget}_budg_{portfolio_size}_size_{sensitivity}_sens_{reverse}_reve_log_df", "simulations")
+        save_data(final_df, f"price_change_{execution_index}_exec_{end_date.strftime('%Y-%m-%d')}_date_{duration}_dura_{initial_budget}_budg_{portfolio_size}_size_{sensitivity}_sens_{reverse}_reve_final_df", "simulations")
 
 def main():
 
@@ -188,12 +200,13 @@ def main():
     yh_exchange = "SI"
     end_date = "Jul 12, 2023"
     duration = 20
-    budget = 25000
+    budget = 100000
     lot_size = 100
     portfolio_size = 10
-    reverse = False
+    sensitivity = 0.02
+    reverse = True
 
-    time_function(run_price_change_simulation, execution_index, yh_exchange, end_date, duration, budget, lot_size, portfolio_size, reverse)
+    time_function(run_price_change_simulation, execution_index, yh_exchange, end_date, duration, budget, lot_size, portfolio_size, sensitivity, reverse)
 
 if __name__ == "__main__":
     main()

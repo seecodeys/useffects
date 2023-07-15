@@ -179,7 +179,7 @@ def run_index_reference_simulation(execution_index, reference_index, yh_exchange
         log_df = pd.concat([log_df, current_date_log_df])
 
         # Set budget to bottom line
-        budget = current_date_final_df.loc[0, f"Bottom Line"]
+        budget = max(current_date_final_df.loc[0, f"Bottom Line"], 0)
 
         # Print status update
         print(f"[{datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')}] {current_date.strftime('%Y-%m-%d')} Daily Yield: {round(current_date_final_df.loc[0, 'Yield'] * 100, 2)}% | Balance: ${round(current_date_final_df.loc[0, 'Bottom Line'], 2)}")
@@ -195,8 +195,8 @@ def run_index_reference_simulation(execution_index, reference_index, yh_exchange
         # final_df_y.extend(final_df['Bottom Line'])
 
         # Save cumulative dataframes
-        save_data(log_df, f"{execution_index}_exec_{reference_index}_refe_{end_date.strftime('%Y-%m-%d')}_date_{duration}_dura_{initial_budget}_budg_{portfolio_size}_size_{reverse}_reve_log_df", "simulations")
-        save_data(final_df, f"{execution_index}_exec_{reference_index}_refe_{end_date.strftime('%Y-%m-%d')}_date_{duration}_dura_{initial_budget}_budg_{portfolio_size}_size_{reverse}_reve_final_df", "simulations")
+        save_data(log_df, f"index_reference_{execution_index}_exec_{reference_index}_refe_{end_date.strftime('%Y-%m-%d')}_date_{duration}_dura_{initial_budget}_budg_{portfolio_size}_size_{reverse}_reve_log_df", "simulations")
+        save_data(final_df, f"index_reference_{execution_index}_exec_{reference_index}_refe_{end_date.strftime('%Y-%m-%d')}_date_{duration}_dura_{initial_budget}_budg_{portfolio_size}_size_{reverse}_reve_final_df", "simulations")
 
 def main():
 
@@ -205,9 +205,9 @@ def main():
     yh_exchange = "SI"
     end_date = "Jul 12, 2023"
     duration = 20
-    budget = 25000
+    budget = 1000000
     lot_size = 100
-    portfolio_size = 1
+    portfolio_size = 10
     reverse = False
 
     time_function(run_index_reference_simulation, execution_index, reference_index, yh_exchange, end_date, duration, budget, lot_size, portfolio_size, reverse)
