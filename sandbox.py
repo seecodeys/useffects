@@ -27,3 +27,5 @@ execution_index = "sti"
 reference_index = "spx"
 
 
+yh_fetch_historical_data("SPY", end_date, duration, "NASDAQ", interval="1d", pre_post=False)
+yh_process_historical_data("SPY", "NASDAQ", "USD")
