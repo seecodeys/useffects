@@ -208,7 +208,7 @@ def main():
     budget = 25000
     lot_size = 100
     portfolio_size = 1
-    reverse = True
+    reverse = False
 
     time_function(run_index_reference_simulation, execution_index, reference_index, yh_exchange, end_date, duration, budget, lot_size, portfolio_size, reverse)
 
