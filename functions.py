@@ -1,0 +1,547 @@
+import csv
+import threading
+import json
+import pandas
+import requests
+from bs4 import BeautifulSoup
+import pandas as pd
+import datetime
+from subfunctions import *
+import time
+import concurrent.futures
+import re
+import numpy as np
+from jukes import *
+from dateutil.relativedelta import relativedelta
+
+
+# Fetches historical data from Yahoo Finance
+
+def yh_fetch_historical_data(code, end_date, duration, folder, interval="1d", pre_post=False):
+    # Parse the end_date string to a datetime object
+    end_date = datetime.datetime.strptime(end_date, "%b %d, %Y")
+
+    # Calculate start date based on the duration (capped at Yahoo Finance Currency Historical Data oldest)
+    start_date = max(end_date - datetime.timedelta(days=duration * 365),
+                     datetime.datetime.strptime("Dec 1, 2003", "%b %d, %Y"))
+
+    # Convert start and end dates to epoch time (GMT timezone)
+    start_date_epoch = int(start_date.timestamp())
+    end_date_epoch = int(end_date.timestamp())
+
+    # Convert arguments to URL format
+    if pre_post == True:
+        pre_post = "true"
+    elif pre_post == False:
+        pre_post = "false"
+
+    # Format the URL
+    url = f"https://query1.finance.yahoo.com/v8/finance/chart/{code}?symbol={code}&period1={start_date_epoch}&period2={end_date_epoch}&useYfid=true&interval={interval}&includePrePost={pre_post}&events=div%7Csplit%7Cearn&lang=en-US&region=US&crumb=eREX9CqAe3K&corsDomain=finance.yahoo.com"
+
+    # Generate headers
+    headers = generate_header()
+
+    # Run a GET request
+    response = requests.get(url, headers=headers)
+
+    # Extract the relevant data
+    result = response.json()['chart']['result'][0]
+    timestamps = result['timestamp']
+    opens = result['indicators']['quote'][0]['open']
+    highs = result['indicators']['quote'][0]['high']
+    lows = result['indicators']['quote'][0]['low']
+    closes = result['indicators']['quote'][0]['close']
+    volumes = result['indicators']['quote'][0]['volume']
+    currency = result['meta']['currency']
+    splits_dict = result['events']['splits'] if 'events' in result and 'splits' in result['events'] else []
+
+    # Check if currency is null
+    if currency is None:
+        # Format the URL with the symbol, exchange, and epoch time
+        currency_url = f"https://finance.yahoo.com/quote/{code}/history"
+
+        response = requests.get(currency_url, headers=headers)
+        soup = BeautifulSoup(response.text, "html.parser")
+
+        span = soup.select_one("#quote-header-info > div > div > div > span").text.strip()
+        pattern = r'Currency in (\w+)'
+        match = re.search(pattern, span)
+        currency = match.group(1)
+
+        print(currency)
+
+
+    # Create a DataFrame
+    df = pd.DataFrame({
+        'Date': pd.to_datetime(timestamps, unit='s').strftime('%Y-%m-%d'),
+        'Open': opens,
+        'High': highs,
+        'Low': lows,
+        'Close': closes,
+        'Volume': volumes
+    })
+
+    # Add currency column
+    df["Currency"] = currency
+
+    # Remove duplicates from the DataFrame
+    df.drop_duplicates(inplace=True)
+
+    # Sort final dataframe according to date
+    df.sort_values("Date", inplace=True)
+    df.reset_index(drop=True, inplace=True)
+
+    # Apply unaccounted for splits
+    if len(splits_dict) > 0:
+        for date, dict in splits_dict.items():
+            # Convert the date to datetime object
+            date = pd.to_datetime(float(date), unit='s').strftime('%Y-%m-%d')
+
+            # Calculate the multiplier
+            multiplier = dict['numerator'] / dict['denominator']
+
+            # Find the index of the entry that is greater than or equal to the target date
+            index = df['Date'].searchsorted(date)
+
+            # Retrieve the nearest entries to the target date
+            previous_close = df.iloc[index - 1]['Close']
+            next_close = df.iloc[index]['Close']
+
+            # Finds if the difference is suspicious using a threshold
+            threshold = 0.1
+            percentage_diff = abs(previous_close / next_close)
+
+            if percentage_diff <= 1 - threshold or percentage_diff >= 1 + threshold:
+                # Filter the dataframe based on the date condition
+                mask = df['Date'] < date
+                df.loc[mask, ['Open', 'High', 'Low', 'Close']] *= multiplier
+
+    # Round financial amounts to 2 decimal places
+    df[['Open', 'High', 'Low', 'Close']] = df[['Open', 'High', 'Low', 'Close']].round(2)
+
+    # Drop blank rows
+    df.dropna(subset=['Open', 'High', 'Low', 'Close'], inplace=True)
+
+    # Save dataframe to folder
+    save_data(df, code, folder, True)
+
+
+# Fetches all stocks information from eoddata.com
+
+def eod_fetch_stock_data(eod_exchange, yh_exchange):
+    pages_list = []
+
+    headers = generate_header()
+
+    # Initialize an empty DataFrame
+    df = pd.DataFrame()
+
+    url = f"https://eoddata.com/stocklist/{eod_exchange}.htm"
+
+    # Send an HTTP GET request to the website
+    response = requests.get(url, headers=headers)
+    if response.status_code == 200:
+        # Parse the HTML content using BeautifulSoup
+        soup = BeautifulSoup(response.content, "html.parser")
+
+        # Assuming 'soup' is the BeautifulSoup object containing the HTML content
+        table = soup.select_one('table.lett').find("tr").find_all("td")
+        pages_list = [lett.get_text() for lett in table]
+
+    # Define solo page function
+    def fetch_page_data(page):
+        url = f"https://eoddata.com/stocklist/{eod_exchange}/{page}.htm"
+
+        # Send an HTTP GET request to the website
+        response = requests.get(url, headers=headers)
+        if response.status_code == 200:
+            # Parse the HTML content using BeautifulSoup
+            soup = BeautifulSoup(response.content, "html.parser")
+
+            tables = soup.find_all("table")
+
+            if len(tables) >= 6:
+                table = tables[5]
+                data_rows = table.find_all("tr")
+
+                # Create an empty list to store the extracted data
+                data = []
+
+                # Extract the data from each row and store it in the list
+                for row in data_rows:
+                    row_data = [cell.text.strip() for cell in row.find_all("td")]
+                    data.append(row_data)
+
+                # Create a DataFrame from the extracted data
+                column_names = ["Symbol", "Name", "High", "Low", "Close", "Volume", "Change ($)", "", "Change (%)", ""]
+                new_df = pd.DataFrame(data, columns=column_names)
+                new_df.drop(['', ''], axis=1, inplace=True)
+                new_df.drop([0], inplace=True)
+
+                # Replace commas in the "Volume" column and convert it to a number
+                new_df["Volume"] = new_df["Volume"].str.replace(",", "").astype(int)
+
+                # Add a "Page" column to mark the page of the data
+                new_df["Page"] = page
+
+                # Append new data to the existing DataFrame
+                nonlocal df
+                df = pd.concat([df, new_df])
+
+    with concurrent.futures.ThreadPoolExecutor() as executor:
+        futures = []
+        for page in pages_list:
+            futures.append(executor.submit(fetch_page_data, page))
+
+        # Wait for all threads to finish
+        concurrent.futures.wait(futures, return_when=concurrent.futures.ALL_COMPLETED)
+
+        # Check if any pages are missing in the final DataFrame
+        missing_pages = pages_list
+
+        while missing_pages:
+            with concurrent.futures.ThreadPoolExecutor() as executor:
+                futures = []
+                for page in missing_pages:
+                    futures.append(executor.submit(fetch_page_data, page))
+
+                # Wait for all threads to finish
+                concurrent.futures.wait(futures, return_when=concurrent.futures.ALL_COMPLETED)
+
+            # Check if any pages are missing in the final DataFrame
+            included_pages = df["Page"].unique()
+            missing_pages = [page for page in pages_list if page not in included_pages]
+
+        df.drop(columns=["Page"], inplace=True)
+        df.sort_values(by="Symbol", ascending=True, inplace=True)
+        df.drop_duplicates(inplace=True)
+
+        save_data(df, f"Symbols.{yh_exchange}", yh_exchange, True)
+
+
+# Tests if the symbol has valid historical data on Yahoo Finance
+
+def yh_process_symbol(symbol, exchange):
+    corrected_symbol_list = []
+    rejected_symbol_list = []
+
+    # Get today's date
+    today = datetime.date.today()
+
+    # Calculate the end date (yesterday)
+    end_date = today - datetime.timedelta(days=1)
+
+    # Calculate the start date (one month before today)
+    start_date = end_date - relativedelta(months=1)
+
+    # Convert dates to epoch format
+    end_date_epoch = int(time.mktime(end_date.timetuple()))
+    start_date_epoch = int(time.mktime(start_date.timetuple()))
+
+    # Format the URL
+    url = f"https://query1.finance.yahoo.com/v8/finance/chart/{symbol}.{exchange}?symbol={symbol}.{exchange}&period1={start_date_epoch}&period2={end_date_epoch}&useYfid=true&interval=1d&includePrePost=false&events=div%7Csplit%7Cearn&lang=en-US&region=US&crumb=eREX9CqAe3K&corsDomain=finance.yahoo.com"
+    headers = generate_header()
+    response = requests.get(url, headers=headers)
+
+    try:
+        timestamps = response.json()['chart']['result'][0]['timestamp']
+        corrected_symbol_list.append(symbol)
+        # print(f"[{datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')}] Status: {symbol} Accepted")
+
+    except Exception as e:
+        rejected_symbol_list.append(symbol)
+        # print(f"[{datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')}] Status: {symbol} Rejected")
+
+    return corrected_symbol_list, rejected_symbol_list
+
+# Runs process_symbol concurrently to speed things up
+
+def test_historical_data(symbol_list, exchange):
+    corrected_symbol_list = []
+    rejected_symbol_list = []
+
+    with concurrent.futures.ThreadPoolExecutor() as executor:
+        # Submit symbol processing tasks to the executor
+        futures = [executor.submit(yh_process_symbol, symbol, exchange) for symbol in symbol_list]
+
+        # Wait for all threads to finish
+        concurrent.futures.wait(futures, return_when=concurrent.futures.ALL_COMPLETED)
+
+        # Retrieve results from completed tasks
+        for future in concurrent.futures.as_completed(futures):
+            result_corrected, result_rejected = future.result()
+            corrected_symbol_list.extend(result_corrected)
+            rejected_symbol_list.extend(result_rejected)
+
+    # Remove duplicates from corrected_symbol_list and rejected_symbol_list
+    corrected_symbol_list = list(set(corrected_symbol_list))
+    rejected_symbol_list = list(set(rejected_symbol_list))
+    print(f"[{datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')}] Final: {len(corrected_symbol_list)}/{len(corrected_symbol_list) + len(rejected_symbol_list)} Valid")
+
+    save_data(pd.DataFrame(corrected_symbol_list, columns=None), f"Correct_Symbols.{exchange}", exchange, False)
+    save_data(pd.DataFrame(rejected_symbol_list, columns=None), f"Rejected_Symbols.{exchange}", exchange, False)
+
+
+# Goes through all saved historical data and removed stocks with empty data
+
+def remove_blank_historical_data(exchange):
+    correct_file_path = f"{exchange}/Correct_Symbols.{exchange}.csv"
+    rejected_file_path = f"{exchange}/Rejected_Symbols.{exchange}.csv"
+    column_index = 0  # Index of the column to extract
+
+    # Read the CSV file
+    with open(correct_file_path, 'r') as file:
+        csv_reader = csv.reader(file)
+
+        # Extract values from the first column into a list
+        symbols_list = list(set([row[column_index] for row in csv_reader]))
+        # Remove blank elements
+        symbols_list = [value for value in symbols_list if value]
+        for symbol in symbols_list:
+            df = pd.read_csv(f"{exchange}/{symbol}.{exchange}.csv")
+            if len(df) == 0:
+                # Remove symbol from Correct_Symbols file
+                df_corrected = pd.read_csv(correct_file_path)
+                df_corrected = df_corrected[df_corrected != symbol]
+                df_corrected.dropna(inplace=True)
+                df_corrected.to_csv(correct_file_path, index=False)
+
+                # Add symbol to Rejected_Symbols file
+                df_rejected = pd.read_csv(correct_file_path)
+                df_rejected = pandas.concat([df_rejected, symbol])
+                print(symbol)  # TEST TO SEE WHETHER SYMBOL GETS ADDED TO REJECTED_SYMBOLS CORRECTLY
+                print(df_rejected)  # TEST TO SEE WHETHER SYMBOL GETS ADDED TO REJECTED_SYMBOLS CORRECTLY
+                breakpoint()  # TEST TO SEE WHETHER SYMBOL GETS ADDED TO REJECTED_SYMBOLS CORRECTLY
+                df_rejected.to_csv(correct_file_path, index=False)
+
+                # Delete the file
+                file_to_delete = f"{exchange}/{symbol}.{exchange}.csv"
+                if os.path.exists(file_to_delete):
+                    os.remove(file_to_delete)
+
+                print(f"[{datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')}] {symbol}.{exchange}: Removed")
+
+
+# Figures out all the foreign currency listings present in the exchange and fetches historical data for them
+
+def search_fx_data(exchange, base_currency):
+    fx_list = []
+    file_path = f"{exchange}/Correct_Symbols.{exchange}.csv"
+    column_index = 0  # Index of the column to extract
+
+    # Read the CSV file
+    with open(file_path, 'r') as file:
+        csv_reader = csv.reader(file)
+
+        # Extract values from the first column into a list
+        symbols_list = list(set([row[column_index] for row in csv_reader]))
+
+        def process_symbol(symbol):
+            df = pd.read_csv(f"{exchange}/{symbol}.{exchange}.csv")
+            currency = df.iloc[0, 6]
+            if currency != base_currency:
+                fx_list.append(currency)
+
+        with concurrent.futures.ThreadPoolExecutor() as executor:
+            # Submit symbol processing tasks to the executor
+            futures = [executor.submit(process_symbol, symbol) for symbol in symbols_list]
+
+            # Wait for all tasks to complete
+            concurrent.futures.wait(futures)
+
+    fx_list = list(set(fx_list))
+
+    def fetch_fx_data(fx):
+        code = base_currency + fx + "%3DX"
+        yh_fetch_historical_data(code, "Jul 07, 2023", 20, "FX")
+
+    with concurrent.futures.ThreadPoolExecutor() as executor:
+        # Submit fetch tasks to the executor
+        futures = [executor.submit(fetch_fx_data, fx) for fx in fx_list]
+
+        # Wait for all tasks to complete
+        concurrent.futures.wait(futures)
+
+
+# Processes each stock's Yahoo Finance historical data by:
+# 1) Changing all the currencies to base currency
+# 2) Adds Change, Previous Change, $ Volume and 50D $ Volume columns
+
+def yh_process_historical_data(code, folder, base_currency):
+    df = pd.read_csv(f"{folder}/{code}.csv")
+    currency = df.iloc[0, 6]
+
+    if currency != base_currency:
+        fx_file_path = f"FX/{base_currency}{currency}%3DX.csv"
+        fx_df = pd.read_csv(fx_file_path)
+
+        for index in range(len(df)):
+            row_date = df.loc[index, 'Date']
+
+            fx_entry = fx_df.loc[fx_df['Date'] == row_date]
+
+            if fx_entry.empty:
+                smaller_dates = fx_df.loc[fx_df['Date'] < row_date, 'Date']
+                if len(smaller_dates) > 0:
+                    nearest_date = np.max(smaller_dates)
+                    fx_entry = fx_df.loc[fx_df['Date'] == nearest_date]
+
+            fx_rate = fx_entry['Close'].values[0]
+
+            df.loc[index, 'Open'] = round(df.loc[index, 'Open'] / fx_rate, 2)
+            df.loc[index, 'High'] = round(df.loc[index, 'High'] / fx_rate, 2)
+            df.loc[index, 'Low'] = round(df.loc[index, 'Low'] / fx_rate, 2)
+            df.loc[index, 'Close'] = round(df.loc[index, 'Close'] / fx_rate, 2)
+            df.loc[index, 'Currency'] = base_currency
+
+    # Drop the Currency column
+    df = df.drop('Currency', axis=1)
+    df['% Day Change'] = round(df['Close'] / df['Open'] - 1, 4)
+    df['% Previous Change'] = round(df['Close'] / df['Close'].shift(1) - 1, 4)
+    df['$ Volume'] = round(df['Close'] * df['Volume'], 2)
+    df['50D $ Volume'] = round(df['$ Volume'].rolling(window=50).mean(), 2)
+
+    save_data(df, f"{code}", folder, True)
+
+
+# Multithread to fetch historical data from MarketWatch
+
+def mw_process_chunk(chunk_start_date, chunk_end_date, symbol, country_code):
+    # Format the start_date and end_date strings
+    chunk_start_date_str = chunk_start_date.strftime("%#m/%#d/%Y")
+    chunk_end_date_str = chunk_end_date.strftime("%#m/%#d/%Y")
+
+    # Format the URL with the symbol and dates
+    url = f"https://www.marketwatch.com/investing/index/{symbol}/downloaddatapartial?partial=true&index=0&countryCode={country_code}&iso=&startDate={chunk_start_date_str}&endDate={chunk_end_date_str}&frequency=null&downloadPartial=false&csvDownload=false&newDates=true"
+
+    # Set the User-Agent header to simulate a request from a device
+    headers = generate_header()
+
+    # Send a GET request to the URL with headers
+    response = requests.get(url, headers=headers)
+
+    # Parse the response content using BeautifulSoup
+    soup = BeautifulSoup(response.content, "html.parser")
+
+    # Find the correct table element containing the historical data
+    table = soup.select_one("#download-data-tabs > div > div.overflow--table > table")
+
+    # Extract data rows from the table body
+    data_rows = table.find_all("tr")[1:]  # Exclude the header row
+
+    # Extract data from each row and store it in the dataframe
+    chunk_data = []
+    for row in data_rows:
+        row_data = [td.text for td in row.find_all("td")]
+        if len(row_data) >= 5:
+            row_dict = {
+                "Date": row_data[0],
+                "Open": row_data[1].replace("$", "").replace(",", ""),
+                "High": row_data[2].replace("$", "").replace(",", ""),
+                "Low": row_data[3].replace("$", "").replace(",", ""),
+                "Close": row_data[4].replace("$", "").replace(",", "")
+            }
+            chunk_data.append(row_dict)
+
+    return chunk_data
+
+
+# Fetches historical data from MarketWatch
+
+def mw_fetch_historical_data(type, symbol, end_date, duration, country_code="", chunk_size=30):
+    # Parse the end_date string to a datetime object
+    end_date = datetime.datetime.strptime(end_date, "%b %d, %Y")
+
+    # Calculate the start date based on the duration
+    start_date = max(end_date - datetime.timedelta(days=duration * 365),
+                     datetime.datetime.strptime("Dec 1, 2003", "%b %d, %Y"))
+
+    # Initialize an empty list to store the historical data chunks
+    chunks = []
+
+    # Create date ranges for fetching data in smaller chunks
+    while end_date >= start_date:
+        # Calculate the start and end dates for the current chunk
+        chunk_end_date = end_date
+        chunk_start_date = end_date - datetime.timedelta(days=chunk_size - 1)
+        if chunk_start_date < start_date:
+            chunk_start_date = start_date
+
+        chunks.append((chunk_start_date, chunk_end_date))
+        end_date = chunk_start_date - datetime.timedelta(days=1)
+
+    # Fetch data in smaller date ranges concurrently
+    with concurrent.futures.ThreadPoolExecutor() as executor:
+        # Submit tasks to the executor
+        futures = []
+        for chunk_start_date, chunk_end_date in chunks:
+            futures.append(executor.submit(mw_process_chunk, chunk_start_date, chunk_end_date, symbol, country_code))
+
+        # Get the results from the completed tasks
+        chunk_data_list = [future.result() for future in concurrent.futures.as_completed(futures)]
+
+    # Combine the chunk data into a single DataFrame
+    df = pd.DataFrame()
+    for chunk_data in chunk_data_list:
+        df = df.append(chunk_data, ignore_index=True)
+
+    # Change the order of columns
+    df = df[['Date', 'Open', 'High', 'Low', 'Close']]
+
+    # Convert numeric columns to appropriate data types
+    df["Open"] = pd.to_numeric(df["Open"])
+    df["High"] = pd.to_numeric(df["High"])
+    df["Low"] = pd.to_numeric(df["Low"])
+    df["Close"] = pd.to_numeric(df["Close"])
+
+    # Format the 'Date' column without leading zeros
+    df['Date'] = df['Date'].str.strip()
+    df['Date'] = df['Date'].str.split('\n').str[0]
+    df['Date'] = pd.to_datetime(df['Date'], format='%m/%d/%Y')
+
+    # Add Previous Change
+    df['% Previous Change'] = round(df['Close'] / df['Close'].shift(1) - 1, 4)
+
+    df = df.sort_values('Date', ascending=True)
+
+    save_data(df, symbol, type, True)
+
+
+# Given an investment value and pricing_mode, it calculates the fees needed for SGX on IBKR
+
+def ibkr_sgx_fees(investment_value, pricing_mode):
+    gst = 0.09
+    total_fees = 0
+
+    if pricing_mode == "fixed":
+        minimum = 2.5
+        fees = 0.0008
+
+        total_fees += max(investment_value * fees, minimum) * (1 + gst)
+    elif pricing_mode == "tiered":
+        exchange_transaction_fee = 0.00034775
+        exchange_access_fee = 0.00008025
+        total_fees = investment_value * (exchange_transaction_fee + exchange_access_fee)
+
+        if investment_value <= 2500000 / 20:
+            minimum = 2.5
+            fees = 0.0008
+
+            total_fees += max(investment_value * fees, minimum) * (1 + gst)
+        elif 2500000 / 20 < investment_value <= 50000000 / 20:
+            minimum = 1.6
+            fees = 0.0005
+
+            total_fees += max(investment_value * fees, minimum) * (1 + gst)
+        elif 50000000 / 20 < investment_value <= 150000000 / 20:
+            minimum = 1.2
+            fees = 0.0003
+
+            total_fees += max(investment_value * fees, minimum) * (1 + gst)
+        elif 150000000 / 20 < investment_value:
+            minimum = 0.9
+            fees = 0.0002
+
+            total_fees += max(investment_value * fees, minimum) * (1 + gst)
+
+    return round(total_fees, 2)
