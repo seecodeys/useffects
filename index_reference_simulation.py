@@ -9,7 +9,7 @@ from functions import *
 
 # Runs a simulation with the provided settings
 
-def run_basic_simulation(execution_index, reference_index, yh_exchange, end_date, duration, budget, lot_size=1, portfolio_size=10, reverse=False):
+def run_index_reference_simulation(execution_index, reference_index, yh_exchange, end_date, duration, budget, lot_size=1, portfolio_size=10, reverse=False):
     # Set initial budget for future reference
     initial_budget = budget
 
@@ -210,7 +210,7 @@ def main():
     portfolio_size = 1
     reverse = True
 
-    time_function(run_basic_simulation, execution_index, reference_index, yh_exchange, end_date, duration, budget, lot_size, portfolio_size, reverse)
+    time_function(run_index_reference_simulation, execution_index, reference_index, yh_exchange, end_date, duration, budget, lot_size, portfolio_size, reverse)
 
 if __name__ == "__main__":
     main()
