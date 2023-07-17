@@ -128,7 +128,7 @@ def yh_fetch_historical_data(code, end_date, duration, folder, interval="1d", pr
 
 # Fetches all stocks information from eoddata.com
 
-def eod_fetch_stock_data(eod_exchange, yh_exchange):
+def eod_fetch_stock_data(eod_exchange, folder):
     pages_list = []
 
     headers = generate_header()
@@ -216,12 +216,12 @@ def eod_fetch_stock_data(eod_exchange, yh_exchange):
         df.sort_values(by="Symbol", ascending=True, inplace=True)
         df.drop_duplicates(inplace=True)
 
-        save_data(df, f"Symbols.{yh_exchange}", yh_exchange, True)
+        save_data(df, f"Symbols.{folder}", folder, True)
 
 
 # Tests if the symbol has valid historical data on Yahoo Finance
 
-def yh_process_symbol(symbol, exchange):
+def yh_process_symbol(code):
     corrected_symbol_list = []
     rejected_symbol_list = []
 
@@ -239,30 +239,30 @@ def yh_process_symbol(symbol, exchange):
     start_date_epoch = int(time.mktime(start_date.timetuple()))
 
     # Format the URL
-    url = f"https://query1.finance.yahoo.com/v8/finance/chart/{symbol}.{exchange}?symbol={symbol}.{exchange}&period1={start_date_epoch}&period2={end_date_epoch}&useYfid=true&interval=1d&includePrePost=false&events=div%7Csplit%7Cearn&lang=en-US&region=US&crumb=eREX9CqAe3K&corsDomain=finance.yahoo.com"
+    url = f"https://query1.finance.yahoo.com/v8/finance/chart/{code}?symbol={code}&period1={start_date_epoch}&period2={end_date_epoch}&useYfid=true&interval=1d&includePrePost=false&events=div%7Csplit%7Cearn&lang=en-US&region=US&crumb=eREX9CqAe3K&corsDomain=finance.yahoo.com"
     headers = generate_header()
     response = requests.get(url, headers=headers)
 
     try:
         timestamps = response.json()['chart']['result'][0]['timestamp']
-        corrected_symbol_list.append(symbol)
-        # print(f"[{datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')}] Status: {symbol} Accepted")
+        corrected_symbol_list.append(code)
+        print(f"[{datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')}] Status: {code} Accepted")
 
     except Exception as e:
-        rejected_symbol_list.append(symbol)
-        # print(f"[{datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')}] Status: {symbol} Rejected")
+        rejected_symbol_list.append(code)
+        print(f"[{datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')}] Status: {code} Rejected")
 
     return corrected_symbol_list, rejected_symbol_list
 
 # Runs process_symbol concurrently to speed things up
 
-def test_historical_data(symbol_list, exchange):
+def test_historical_data(symbol_list, folder):
     corrected_symbol_list = []
     rejected_symbol_list = []
 
     with concurrent.futures.ThreadPoolExecutor() as executor:
         # Submit symbol processing tasks to the executor
-        futures = [executor.submit(yh_process_symbol, symbol, exchange) for symbol in symbol_list]
+        futures = [executor.submit(yh_process_symbol, symbol) for symbol in symbol_list]
 
         # Wait for all threads to finish
         concurrent.futures.wait(futures, return_when=concurrent.futures.ALL_COMPLETED)
@@ -278,8 +278,8 @@ def test_historical_data(symbol_list, exchange):
     rejected_symbol_list = list(set(rejected_symbol_list))
     print(f"[{datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')}] Final: {len(corrected_symbol_list)}/{len(corrected_symbol_list) + len(rejected_symbol_list)} Valid")
 
-    save_data(pd.DataFrame(corrected_symbol_list, columns=None), f"Correct_Symbols.{exchange}", exchange, False)
-    save_data(pd.DataFrame(rejected_symbol_list, columns=None), f"Rejected_Symbols.{exchange}", exchange, False)
+    save_data(pd.DataFrame(corrected_symbol_list, columns=None), f"Correct_Symbols.{folder}", folder, False)
+    save_data(pd.DataFrame(rejected_symbol_list, columns=None), f"Rejected_Symbols.{folder}", folder, False)
 
 
 # Goes through all saved historical data and removed stocks with empty data
@@ -545,3 +545,167 @@ def ibkr_sgx_fees(investment_value, pricing_mode):
             total_fees += max(investment_value * fees, minimum) * (1 + gst)
 
     return round(total_fees, 2)
+
+# Fetches table of security information from page
+
+def mw_fetch_page(security_type, page_letter, page_number):
+    # Generate headers
+    headers = generate_header()
+
+    # Format url
+    url = f"https://www.marketwatch.com/tools/markets/{security_type}/a-z/{page_letter}/{page_number}"
+
+    # Scrape the page
+    response = requests.get(url, headers=headers)
+    if response.status_code != 200:
+        print(url)
+    soup = BeautifulSoup(response.text, "html.parser")
+    table = soup.find("table")
+    data_rows = table.find("tbody").find_all("tr")
+
+    # Organize scrape into list
+    column_names = [th.get_text() for th in table.find_all("th")]
+    data = []
+
+    for row in data_rows:
+        row_data = [td.get_text() for td in row.find_all("td")]
+        data.append(row_data)
+
+    # Organize list into dataframe
+    page_df_columns = ['Name', 'Country', 'Exchange', 'Sector']
+    page_df = pd.DataFrame(data, columns=page_df_columns)
+    page_df['Symbol'] = page_df['Name'].str.extract(r'\(([\S]+)\)$')
+    page_df['Name'] = page_df['Name'].str.extract(r'^([\s\S]+) \([\S]+\)$')
+    page_df = page_df[['Symbol', 'Name', 'Country', 'Exchange', 'Sector']]
+
+    print(f"[{datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')}] {security_type}: {page_letter} Page {page_number} Completed")
+    return page_df
+
+# Fetches the number of pages for a given A-Z page
+
+def mw_fetch_process_pages(security_type, page_letter):
+    # Generate headers
+    headers = generate_header()
+
+    # Format url
+    url = f"https://www.marketwatch.com/tools/markets/{security_type}/a-z/{page_letter}"
+
+    # Get the page numbers
+    response = requests.get(url, headers=headers)
+    soup = BeautifulSoup(response.text, "html.parser")
+    li = None
+    num_list = []
+    if soup.select_one("#marketsindex > ul.pagination") is not None:
+        li = soup.select_one("#marketsindex > ul.pagination").find_all("li")
+        num_list = [num.get_text() for num in li]
+    else:
+        num_list.append(1)
+
+    # Execute only if there are multiple pages
+    if len(num_list) > 1:
+        # Properly formatting page numbers and excluding noise
+        kick_list = []
+        add_list = []
+        for index, num in enumerate(num_list):
+            if num == "«" or num == "»":
+                kick_list.append(num)
+            elif num.find("-") != -1:
+                start_page = int(num.split("-")[0])
+                end_page = int(num.split("-")[1])
+                page_numbers = list(range(start_page, end_page + 1))
+                kick_list.append(num)
+                [add_list.append(page) for page in page_numbers]
+            else:
+                num_list[index] = int(num)
+        for num in kick_list:
+            num_list.remove(num)
+        for num in add_list:
+            num_list.append(num)
+
+    # Fetch data in each page
+    with concurrent.futures.ThreadPoolExecutor() as executor:
+        # Submit tasks to the executor
+        futures = []
+        for num in num_list:
+            futures.append(executor.submit(mw_fetch_page, security_type, page_letter, num))
+
+        # Wait for all tasks to complete
+        concurrent.futures.wait(futures)
+
+        # Get the results from the completed tasks
+        security_data_list = [future.result() for future in futures]
+
+    # Combine the chunk data into a single DataFrame
+    az_page_df = pd.DataFrame()
+    for data in security_data_list:
+        az_page_df = pd.concat([data, az_page_df])
+
+    # Remove duplicates from dataframe
+    az_page_df = az_page_df.drop_duplicates()
+
+    return az_page_df
+
+# Fetches all available securities on MarketWatch given a security type
+
+def mw_fetch_security_list(security_type):
+    # Generate headers
+    headers = generate_header()
+
+    # Column headers for DataFrame
+    df_columns = ['Symbol', 'Name', 'Country', 'Exchange', 'Sector']
+
+    # Initialize an empty DataFrame
+    df = pd.DataFrame(columns=df_columns)
+
+    # Format base url
+    base_url = f"https://www.marketwatch.com/tools/markets/{security_type}/a-z"
+
+    # Get the A-Z page names
+    base_response = requests.get(base_url, headers=headers)
+    base_soup = BeautifulSoup(base_response.text, "html.parser")
+    li = base_soup.select_one("#marketsindex > div > ul").find_all("li")
+    az_list = [a.get_text() for a in li]
+    az_list = [az.replace(" (current)", "") for az in az_list]
+
+    # Fetch data for each letter page
+    with concurrent.futures.ThreadPoolExecutor() as executor:
+        # Submit tasks to the executor
+        futures = []
+        for az in az_list:
+            futures.append(executor.submit(mw_fetch_process_pages, security_type, az))
+
+        # Wait for all tasks to complete
+        concurrent.futures.wait(futures)
+
+        # Get the results from the completed tasks
+        security_data_list = [future.result() for future in futures]
+
+    # Combine the chunk data into a single DataFrame
+    for data in security_data_list:
+        df = pd.concat([data, df])
+
+    # Remove duplicates from dataframe
+    df = df.drop_duplicates()
+
+    # Sort dataframe by ascending symbols
+    df = df.sort_values(by='Symbol', ascending=True).reset_index(drop=True)
+
+    # Save dataframe
+    save_data(df, security_type, "Securities List")
+
+# Formats stock list from MarketWatch Symbols to Yahoo Finance Symbols for US stocks
+
+def mw_format_yh_us_stocks():
+    # Initialize df by opening file from Securities List
+    df = pd.read_csv(f"Securities List/stocks.csv")
+
+    # Filter only entries from NYSE and NASDAQ
+    df = df[(df['Exchange'] == 'XNAS') | (df['Exchange'] == 'XNYS')].reset_index(drop=True)
+
+    # Reformat Symbol
+    df['Symbol'] = df['Symbol'].astype(str).apply(lambda x: re.sub(r'\.', '-', x))
+    df['Symbol'] = df['Symbol'].astype(str).apply(lambda x: re.sub(r'([A-Z]+\-)([A-Z])R([A-Z])?', r'\1\2\3', x))
+    df['Symbol'] = df['Symbol'].astype(str).apply(lambda x: re.sub(r'\-UT', r'-UN', x))
+
+    # Save updated dataframe
+    save_data(df, "Symbols.US", "US")

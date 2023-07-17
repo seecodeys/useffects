@@ -3,19 +3,18 @@ import multiprocessing
 from functions import *
 from subfunctions import *
 
-base_currency = "SGD"
-eod_exchange = "SGX"
-yh_exchange = "SI"
+base_currency = "USD"
+eod_exchange = "NYSE"
+yh_exchange = ""
 end_date = "Jul 12, 2023"
 duration = 20
-file_path = f"{yh_exchange}/Symbols.{yh_exchange}.csv"
+file_path = f"{eod_exchange}/Symbols.{eod_exchange}.csv"
 correct_file_path = f"{yh_exchange}/Correct_Symbols.{yh_exchange}.csv"
 column_index = 0  # Index of the column to extract
-execution_index = "%5ESTI"
-reference_index = "%5EGSPC"
+execution_index = "%5EGSPC"
 
-# Fetch EOD stock data
-time_function(eod_fetch_stock_data, eod_exchange, yh_exchange)
+# # Fetch EOD stock data
+# time_function(eod_fetch_stock_data, eod_exchange, eod_exchange)
 
 # Extract symbols from CSV file made from eod_fetch_stock_data()
 with open(file_path, 'r') as file:
@@ -23,7 +22,7 @@ with open(file_path, 'r') as file:
     symbols_list = list(set(row[column_index] for row in csv_reader))
 
 # Create Corrected_Symbols.{yh_exchange}.csv
-time_function(test_historical_data, symbols_list, yh_exchange)
+time_function(test_historical_data, symbols_list, eod_exchange)
 
 # Extract symbols from corrected CSV file made from test_historical_data()
 with open(correct_file_path, 'r') as file:
@@ -38,11 +37,11 @@ with open(correct_file_path, 'r') as file:
 
 # Fetch historical data
 def fetch_data(symbol):
-    time_function(yh_fetch_historical_data, f"{symbol}.{yh_exchange}", end_date, duration, yh_exchange)
+    time_function(yh_fetch_historical_data, symbol, end_date, duration, eod_exchange)
 
 # Process historical data
 def process_data(symbol):
-    time_function(yh_process_historical_data, f"{symbol}.{yh_exchange}", yh_exchange, base_currency)
+    time_function(yh_process_historical_data, symbol, eod_exchange, base_currency)
 
 if __name__ == '__main__':
     multiprocessing.freeze_support()
@@ -63,10 +62,8 @@ if __name__ == '__main__':
         # Process historical data for all symbols
         pool.map(process_data, symbols_list)
 
-    # Fetches index data
-    time_function(yh_fetch_historical_data, execution_index, end_date, duration, "index")
-    time_function(yh_fetch_historical_data, reference_index, end_date, duration, "index")
-
-    # Processes index data
-    time_function(yh_process_historical_data, execution_index, "index", base_currency)
-    time_function(yh_process_historical_data, reference_index, "index", base_currency)
+    # # Fetches index data
+    # time_function(yh_fetch_historical_data, execution_index, end_date, duration, "index")
+    #
+    # # Processes index data
+    # time_function(yh_process_historical_data, execution_index, "index", base_currency)
