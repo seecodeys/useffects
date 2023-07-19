@@ -221,18 +221,15 @@ def eod_fetch_stock_data(eod_exchange, folder):
 
 # Tests if the symbol has valid historical data on Yahoo Finance
 
-def yh_process_symbol(code):
+def yh_process_symbol(code, end_date, duration):
     corrected_symbol_list = []
     rejected_symbol_list = []
 
-    # Get today's date
-    today = datetime.date.today()
-
     # Calculate the end date (yesterday)
-    end_date = today - datetime.timedelta(days=1)
+    end_date = datetime.datetime.strptime(end_date, "%b %d, %Y")
 
     # Calculate the start date (one month before today)
-    start_date = end_date - relativedelta(months=1)
+    start_date = end_date - relativedelta(years=duration)
 
     # Convert dates to epoch format
     end_date_epoch = int(time.mktime(end_date.timetuple()))
@@ -240,6 +237,7 @@ def yh_process_symbol(code):
 
     # Format the URL
     url = f"https://query1.finance.yahoo.com/v8/finance/chart/{code}?symbol={code}&period1={start_date_epoch}&period2={end_date_epoch}&useYfid=true&interval=1d&includePrePost=false&events=div%7Csplit%7Cearn&lang=en-US&region=US&crumb=eREX9CqAe3K&corsDomain=finance.yahoo.com"
+    print(url)
     headers = generate_header()
     response = requests.get(url, headers=headers)
 
@@ -256,13 +254,13 @@ def yh_process_symbol(code):
 
 # Runs process_symbol concurrently to speed things up
 
-def test_historical_data(symbol_list, folder):
+def test_historical_data(symbol_list, end_date, duration, folder):
     corrected_symbol_list = []
     rejected_symbol_list = []
 
     with concurrent.futures.ThreadPoolExecutor() as executor:
         # Submit symbol processing tasks to the executor
-        futures = [executor.submit(yh_process_symbol, symbol) for symbol in symbol_list]
+        futures = [executor.submit(yh_process_symbol, symbol, end_date, duration) for symbol in symbol_list]
 
         # Wait for all threads to finish
         concurrent.futures.wait(futures, return_when=concurrent.futures.ALL_COMPLETED)
@@ -284,76 +282,61 @@ def test_historical_data(symbol_list, folder):
 
 # Goes through all saved historical data and removed stocks with empty data
 
-def remove_blank_historical_data(exchange):
-    correct_file_path = f"{exchange}/Correct_Symbols.{exchange}.csv"
-    rejected_file_path = f"{exchange}/Rejected_Symbols.{exchange}.csv"
-    column_index = 0  # Index of the column to extract
+def remove_blank_historical_data(folder):
+    correct_file_path = f"{folder}/Correct_Symbols.{folder}.csv"
+    rejected_file_path = f"{folder}/Rejected_Symbols.{folder}.csv"
 
-    # Read the CSV file
-    with open(correct_file_path, 'r') as file:
-        csv_reader = csv.reader(file)
-
-        # Extract values from the first column into a list
-        symbols_list = list(set([row[column_index] for row in csv_reader]))
-        # Remove blank elements
-        symbols_list = [value for value in symbols_list if value]
-        for symbol in symbols_list:
-            df = pd.read_csv(f"{exchange}/{symbol}.{exchange}.csv")
+    for file_name in os.listdir(folder):
+        if file_name not in [f"Symbols.{folder}", f"Correct_Symbols.{folder}", f"Rejected_Symbols.{folder}"]:
+            df = pd.read_csv(f"{folder}/{file_name}")
             if len(df) == 0:
                 # Remove symbol from Correct_Symbols file
                 df_corrected = pd.read_csv(correct_file_path)
-                df_corrected = df_corrected[df_corrected != symbol]
+                df_corrected = df_corrected[df_corrected != file_name.split(".")[0]]
                 df_corrected.dropna(inplace=True)
                 df_corrected.to_csv(correct_file_path, index=False)
 
                 # Add symbol to Rejected_Symbols file
-                df_rejected = pd.read_csv(correct_file_path)
-                df_rejected = pandas.concat([df_rejected, symbol])
-                print(symbol)  # TEST TO SEE WHETHER SYMBOL GETS ADDED TO REJECTED_SYMBOLS CORRECTLY
-                print(df_rejected)  # TEST TO SEE WHETHER SYMBOL GETS ADDED TO REJECTED_SYMBOLS CORRECTLY
-                breakpoint()  # TEST TO SEE WHETHER SYMBOL GETS ADDED TO REJECTED_SYMBOLS CORRECTLY
-                df_rejected.to_csv(correct_file_path, index=False)
+                df_rejected = pd.read_csv(rejected_file_path)
+                df_rejected = pandas.concat([df_rejected, file_name.split(".")[0]])
+                df_rejected.to_csv(rejected_file_path, index=False)
 
                 # Delete the file
-                file_to_delete = f"{exchange}/{symbol}.{exchange}.csv"
+                file_to_delete = f"{folder}/{file_name}"
                 if os.path.exists(file_to_delete):
                     os.remove(file_to_delete)
 
-                print(f"[{datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')}] {symbol}.{exchange}: Removed")
+                print(f"[{datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')}] {file_name}: Removed")
 
 
 # Figures out all the foreign currency listings present in the exchange and fetches historical data for them
 
-def search_fx_data(exchange, base_currency):
+def search_fx_data(end_date, duration, folder, base_currency):
     fx_list = []
-    file_path = f"{exchange}/Correct_Symbols.{exchange}.csv"
-    column_index = 0  # Index of the column to extract
+    symbols_list = []
 
-    # Read the CSV file
-    with open(file_path, 'r') as file:
-        csv_reader = csv.reader(file)
+    # Loop through all files, make list
+    for file_name in os.listdir(folder):
+        if file_name not in [f"Symbols.{folder}", f"Correct_Symbols.{folder}", f"Rejected_Symbols.{folder}"]:
+            symbols_list.append(file_name.split(".")[0])
+    def process_symbol(symbol):
+        df = pd.read_csv(f"{folder}/{symbol}.csv")
+        currency = df.iloc[0, 6]
+        if currency != base_currency:
+            fx_list.append(currency)
 
-        # Extract values from the first column into a list
-        symbols_list = list(set([row[column_index] for row in csv_reader]))
+    with concurrent.futures.ThreadPoolExecutor() as executor:
+        # Submit symbol processing tasks to the executor
+        futures = [executor.submit(process_symbol, symbol) for symbol in symbols_list]
 
-        def process_symbol(symbol):
-            df = pd.read_csv(f"{exchange}/{symbol}.{exchange}.csv")
-            currency = df.iloc[0, 6]
-            if currency != base_currency:
-                fx_list.append(currency)
-
-        with concurrent.futures.ThreadPoolExecutor() as executor:
-            # Submit symbol processing tasks to the executor
-            futures = [executor.submit(process_symbol, symbol) for symbol in symbols_list]
-
-            # Wait for all tasks to complete
-            concurrent.futures.wait(futures)
+        # Wait for all tasks to complete
+        concurrent.futures.wait(futures)
 
     fx_list = list(set(fx_list))
 
     def fetch_fx_data(fx):
         code = base_currency + fx + "%3DX"
-        yh_fetch_historical_data(code, "Jul 07, 2023", 20, "FX")
+        yh_fetch_historical_data(code, end_date, duration, "FX")
 
     with concurrent.futures.ThreadPoolExecutor() as executor:
         # Submit fetch tasks to the executor
@@ -365,7 +348,7 @@ def search_fx_data(exchange, base_currency):
 
 # Processes each stock's Yahoo Finance historical data by:
 # 1) Changing all the currencies to base currency
-# 2) Adds Change, Previous Change, $ Volume and 50D $ Volume columns
+# 2) Adds Change, Previous Change, $ Volume and 10D $ Volume columns
 
 def yh_process_historical_data(code, folder, base_currency):
     df = pd.read_csv(f"{folder}/{code}.csv")
@@ -399,7 +382,10 @@ def yh_process_historical_data(code, folder, base_currency):
     df['% Day Change'] = round(df['Close'] / df['Open'] - 1, 4)
     df['% Previous Change'] = round(df['Close'] / df['Close'].shift(1) - 1, 4)
     df['$ Volume'] = round(df['Close'] * df['Volume'], 2)
-    df['50D $ Volume'] = round(df['$ Volume'].rolling(window=50).mean(), 2)
+    df['10D $ Volume'] = round(df['$ Volume'].rolling(window=10).mean(), 2)
+    df['Previous 10D $ Volume'] = df['10D $ Volume'].shift(1)
+    df = df.drop('10D $ Volume', axis=1)
+    df = df.iloc[:-1]
 
     save_data(df, f"{code}", folder, True)
 
@@ -509,7 +495,7 @@ def mw_fetch_historical_data(type, symbol, end_date, duration, country_code="", 
 
 # Given an investment value and pricing_mode, it calculates the fees needed for SGX on IBKR
 
-def ibkr_sgx_fees(investment_value, pricing_mode):
+def ibkr_sg_fees(investment_value, pricing_mode, monthly_trade_value=0):
     gst = 0.09
     total_fees = 0
 
@@ -523,26 +509,97 @@ def ibkr_sgx_fees(investment_value, pricing_mode):
         exchange_access_fee = 0.00008025
         total_fees = investment_value * (exchange_transaction_fee + exchange_access_fee)
 
-        if investment_value <= 2500000 / 20:
+        if monthly_trade_value <= 2500000:
             minimum = 2.5
             fees = 0.0008
 
             total_fees += max(investment_value * fees, minimum) * (1 + gst)
-        elif 2500000 / 20 < investment_value <= 50000000 / 20:
+        elif 2500000 < monthly_trade_value <= 50000000:
             minimum = 1.6
             fees = 0.0005
 
             total_fees += max(investment_value * fees, minimum) * (1 + gst)
-        elif 50000000 / 20 < investment_value <= 150000000 / 20:
+        elif 50000000 < monthly_trade_value <= 150000000:
             minimum = 1.2
             fees = 0.0003
 
             total_fees += max(investment_value * fees, minimum) * (1 + gst)
-        elif 150000000 / 20 < investment_value:
+        elif 150000000 < monthly_trade_value:
             minimum = 0.9
             fees = 0.0002
 
             total_fees += max(investment_value * fees, minimum) * (1 + gst)
+
+    return round(total_fees, 2)
+
+# Given a share_price, quantity and pricing_mode, it calculates the fees needed for US stocks on IBKR
+
+def ibkr_us_fees(share_price, quantity, pricing_mode, monthly_trade_volume=0):
+    investment_value = share_price * quantity
+    total_fees = 0
+
+    # Calculate fixed pricing mode fees
+    if pricing_mode == "fixed":
+        # Regulatory Fees
+        sec_transaction_fee = 0.000008 * investment_value
+        finra_tradiing_activity_fee = 0.000145 * quantity
+        regulatory_fees = sec_transaction_fee + finra_tradiing_activity_fee
+
+        # IBKR Fees
+        per_share = 0.005  # $
+        minimum = 1  # $ per order
+        maximum = 0.01  # % per order
+        ibkr_fees = min(max(per_share * quantity, minimum), maximum * investment_value)
+
+        # Calculate fees
+        total_fees += ibkr_fees + regulatory_fees
+
+    # Calculate tiered pricing mode fees
+    elif pricing_mode == "tiered":
+        # Regulatory Fees
+        sec_transaction_fee = 0.000008 * investment_value
+        finra_tradiing_activity_fee = 0.000145 * quantity
+        regulatory_fees = sec_transaction_fee + finra_tradiing_activity_fee
+
+        # Exchange Fees (assuming remove liquidity and normal execution not MOO or MOC)
+        exchange_fees = 0
+        if share_price < 1:
+            exchange_fees += 0.003 * investment_value
+        else:
+            exchange_fees += 0.003 * quantity
+
+        # Clearing fees
+        nscc_dtc_fees = 0.0002 * quantity
+        clearing_fees = nscc_dtc_fees
+
+        # IBKR Fees
+        ibkr_fees = 0
+        minimum = 0.35  # $ per order
+        maximum = 0.01  # % per order
+        if monthly_trade_volume <= 300000:
+            fees = 0.0035 # $ per share
+            ibkr_fees += fees * quantity
+        elif 300000 < monthly_trade_volume <= 3000000:
+            fees = 0.002 # $ per share
+            ibkr_fees += fees * quantity
+        elif 3000000 < monthly_trade_volume <= 20000000:
+            fees = 0.0015 # $ per share
+            ibkr_fees += fees * quantity
+        elif 20000000 < monthly_trade_volume <= 100000000:
+            fees = 0.001 # $ per share
+            ibkr_fees += fees * quantity
+        elif 100000000 < monthly_trade_volume:
+            fees = 0.0005  # $ per share
+            ibkr_fees += fees * quantity
+        ibkr_fees = min(max(ibkr_fees, minimum), maximum * investment_value)
+
+        # Pass through fees
+        nyse_pass_through_fees = 0.000175 * ibkr_fees
+        finra_pass_through_fees = 0.00056 * ibkr_fees
+        pass_through_fees = nyse_pass_through_fees + finra_pass_through_fees
+
+        # Calculate Fees
+        total_fees += regulatory_fees + exchange_fees + clearing_fees + ibkr_fees + pass_through_fees
 
     return round(total_fees, 2)
 
