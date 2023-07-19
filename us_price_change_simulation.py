@@ -10,8 +10,7 @@ from functions import *
 
 # Runs a simulation with the provided settings
 
-def run_price_change_simulation(execution_index, folder, end_date, duration, budget, lot_size=1,
-                                sensitivity=0, liquidity=0.001, max_fee=0.002, ibkr_pricing_mode="tiered", monthly_trade_volume=0, reverse=False):
+def run_price_change_simulation(execution_index, folder, end_date, duration, budget, lot_size=1, sensitivity=0, liquidity=0.001, max_fee=0.002, ibkr_pricing_mode="tiered", monthly_trade_volume=0, reverse=False):
     # Set initial budget for future reference
     initial_budget = budget
 
@@ -132,6 +131,7 @@ def run_price_change_simulation(execution_index, folder, end_date, duration, bud
         # Reoptimize portfolio to eliminate those where quantity = 0
         current_date_temp_working_df['Allocation'] = current_date_temp_working_df['Previous 10D $ Volume'] / current_date_temp_working_df['Previous 10D $ Volume'].sum() * budget
         current_date_temp_working_df['Quantity'] = np.floor(current_date_temp_working_df['Allocation'] / current_date_temp_working_df['Open'])
+        print(current_date_temp_working_df[current_date_temp_working_df['Quantity'] == 0])
         current_date_temp_working_df = current_date_temp_working_df.loc[:current_date_temp_working_df[current_date_temp_working_df['Quantity'] == 0].index[0]]
         current_date_temp_working_df['Allocation'] = current_date_temp_working_df['Previous 10D $ Volume'] / current_date_temp_working_df['Previous 10D $ Volume'].sum() * budget
         current_date_temp_working_df['Quantity'] = np.floor(current_date_temp_working_df['Allocation'] / current_date_temp_working_df['Open'])
@@ -218,9 +218,14 @@ def run_price_change_simulation(execution_index, folder, end_date, duration, bud
         # Print status update
         print(f"[{datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')}] {current_date.strftime('%Y-%m-%d')} Daily Yield: {round(current_date_final_df.loc[0, 'Yield'] * 100, 2)}% | Balance: ${round(current_date_final_df.loc[0, 'Bottom Line'], 2)}")
 
-    # for date in execution_index_df['Date']:
-    #     # Run process_date for current date
-    #     process_date(date)
+    for date in execution_index_df['Date']:
+        print(date)
+        if date == pd.to_datetime("2003/12/17", format="%Y/%m/%d"):
+            print(date)
+            # Run process_date for current date
+            process_date(date)
+        # # Run process_date for current date
+        # process_date(date)
     #
     #     # # Graph cumulative final_df performance
     #     # final_df_x = [final_df.iloc[0, 0]]
