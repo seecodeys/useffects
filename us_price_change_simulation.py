@@ -10,7 +10,7 @@ from functions import *
 
 # Runs a simulation with the provided settings
 
-def run_price_change_simulation(execution_index, folder, end_date, duration, budget, lot_size=1, sensitivity=0, liquidity=0.001, max_fee=0.002, ibkr_pricing_mode="tiered", monthly_trade_volume=0, reverse=False):
+def run_price_change_simulation(execution_index, folder, end_date, duration, budget, lot_size=1, sensitivity=0, liquidity=0.001, stop_loss=float('inf'), max_fee=0.002, ibkr_pricing_mode="tiered", monthly_trade_volume=0, reverse=False):
     # Set initial budget for future reference
     initial_budget = budget
 
@@ -36,7 +36,7 @@ def run_price_change_simulation(execution_index, folder, end_date, duration, bud
     # Create simulation's log dataframe according to number of stocks
     log_df_columns = ['Date', 'Portfolio Size', 'Starting Amount', 'Bottom Line']
     log_df_additional_columns = [f'Constituent #{i + 1}' for i in range(len(execution_symbol_list))]
-    log_df_additional_columns += [f'{col} #{i + 1}' for col in ['Prediction', 'Open', 'High', 'Low', 'Close', 'Volume', 'Change', 'Quantity', 'Profit/Loss'] for i in range(len(execution_symbol_list))]
+    log_df_additional_columns += [f'{col} #{i + 1}' for col in ['Prediction', 'Open', 'High', 'Low', 'Close', 'Volume', 'Change', 'Quantity', 'Stop Loss Triggered', 'Profit/Loss'] for i in range(len(execution_symbol_list))]
     log_df_columns += log_df_additional_columns
     log_df = pd.DataFrame(columns=log_df_columns)
 
@@ -82,8 +82,7 @@ def run_price_change_simulation(execution_index, folder, end_date, duration, bud
                     # Execute following only when there is a prediction
                     if symbol_entry_prediction:
                         # Get maximum quantity based on liquidity
-                        symbol_entry_max_qty = np.floor(
-                            (previous_symbol_entries['$ Volume'].min() * liquidity) / lot_size) * lot_size
+                        symbol_entry_max_qty = np.floor((previous_symbol_entries['$ Volume'].min() * liquidity) / lot_size) * lot_size
                         # Add entry only when symbol_entry_max_qty > lot_size
                         if symbol_entry_max_qty != 0:
                             # Leave necessary columns and format them
@@ -124,21 +123,18 @@ def run_price_change_simulation(execution_index, folder, end_date, duration, bud
 
         # Sort current_date_temp_working_df according to Previous 10D $ Volume
         current_date_temp_working_df = current_date_temp_working_df.sort_values(by='Previous 10D $ Volume', ascending=False).reset_index(drop=True)
-        print(current_date_temp_working_df)
-
-        # ADD SOMETHING TO SAY IF THERE ARE NO ELIGIBLE STOCKS, NO TRADE FOR THAT DAY
 
         # Reoptimize portfolio to eliminate those where quantity = 0
         current_date_temp_working_df['Allocation'] = current_date_temp_working_df['Previous 10D $ Volume'] / current_date_temp_working_df['Previous 10D $ Volume'].sum() * budget
         current_date_temp_working_df['Quantity'] = np.floor(current_date_temp_working_df['Allocation'] / current_date_temp_working_df['Open'])
-        print(current_date_temp_working_df[current_date_temp_working_df['Quantity'] == 0])
-        current_date_temp_working_df = current_date_temp_working_df.loc[:current_date_temp_working_df[current_date_temp_working_df['Quantity'] == 0].index[0]]
-        current_date_temp_working_df['Allocation'] = current_date_temp_working_df['Previous 10D $ Volume'] / current_date_temp_working_df['Previous 10D $ Volume'].sum() * budget
-        current_date_temp_working_df['Quantity'] = np.floor(current_date_temp_working_df['Allocation'] / current_date_temp_working_df['Open'])
-        if current_date_temp_working_df['Quantity'].iloc[-1] == 0:
-            current_date_temp_working_df = current_date_temp_working_df.iloc[:-1]
+        if (current_date_temp_working_df['Quantity'] == 0).any():
+            current_date_temp_working_df = current_date_temp_working_df.loc[:current_date_temp_working_df[current_date_temp_working_df['Quantity'] == 0].index[0]]
             current_date_temp_working_df['Allocation'] = current_date_temp_working_df['Previous 10D $ Volume'] / current_date_temp_working_df['Previous 10D $ Volume'].sum() * budget
             current_date_temp_working_df['Quantity'] = np.floor(current_date_temp_working_df['Allocation'] / current_date_temp_working_df['Open'])
+            if current_date_temp_working_df['Quantity'].iloc[-1] == 0:
+                current_date_temp_working_df = current_date_temp_working_df.iloc[:-1]
+                current_date_temp_working_df['Allocation'] = current_date_temp_working_df['Previous 10D $ Volume'] / current_date_temp_working_df['Previous 10D $ Volume'].sum() * budget
+                current_date_temp_working_df['Quantity'] = np.floor(current_date_temp_working_df['Allocation'] / current_date_temp_working_df['Open'])
 
         # Reoptimize portfolio to eliminate those where fees > max_fees
         while True:
@@ -169,6 +165,9 @@ def run_price_change_simulation(execution_index, folder, end_date, duration, bud
         current_date_final_df.loc[0, f"Yield"] = 0
         current_date_final_df.loc[0, f"Bottom Line"] = budget
 
+        # Initiate stop loss counter for observation
+        stop_loss_count = 0
+
         # Loop through current_date_temp_working_df and add entries to current_date_log_df
         for index, entry in current_date_temp_working_df.iterrows():
             # Assign prediction for entry
@@ -186,12 +185,33 @@ def run_price_change_simulation(execution_index, folder, end_date, duration, bud
             current_date_log_df.loc[0, f"Quantity #{index + 1}"] = entry['Quantity']
             # Assign asset change to Profit/Loss
             if entry_prediction == "H":
-                current_date_log_df.loc[0, f"Profit/Loss #{index + 1}"] = (entry['Close'] - entry['Open']) * current_date_log_df.loc[0, f"Quantity #{index + 1}"]
+                # Implement stop losses
+                if 1 - entry['Low'] / entry['Open'] > stop_loss:
+                    current_date_log_df.loc[0, f"Profit/Loss #{index + 1}"] = (entry['Open'] * stop_loss) * entry['Quantity'] * -1
+                    current_date_log_df.loc[0, f"Stop Loss Triggered #{index + 1}"] = True
+                    stop_loss_count += 1
+                else:
+                    current_date_log_df.loc[0, f"Profit/Loss #{index + 1}"] = (entry['Close'] - entry['Open']) * entry['Quantity']
+                    current_date_log_df.loc[0, f"Stop Loss Triggered #{index + 1}"] = False
             elif entry_prediction == "L":
-                current_date_log_df.loc[0, f"Profit/Loss #{index + 1}"] = (entry['Open'] - entry['Close']) * current_date_log_df.loc[0, f"Quantity #{index + 1}"]
+                # Implement stop losses
+                if entry['High'] / entry['Open'] - 1 > stop_loss:
+                    current_date_log_df.loc[0, f"Profit/Loss #{index + 1}"] = (entry['Open'] * stop_loss) * entry['Quantity'] * -1
+                    current_date_log_df.loc[0, f"Stop Loss Triggered #{index + 1}"] = True
+                    stop_loss_count += 1
+                else:
+                    current_date_log_df.loc[0, f"Profit/Loss #{index + 1}"] = (entry['Open'] - entry['Close']) * entry['Quantity']
+                    current_date_log_df.loc[0, f"Stop Loss Triggered #{index + 1}"] = False
             # Deduct fees from Profit/Loss
             current_date_log_df.loc[0, f"Profit/Loss #{index + 1}"] -= ibkr_us_fees(entry['Open'], entry['Quantity'], ibkr_pricing_mode, monthly_trade_volume)
-            current_date_log_df.loc[0, f"Profit/Loss #{index + 1}"] -= ibkr_us_fees(entry['Close'], entry['Quantity'], ibkr_pricing_mode, monthly_trade_volume)
+            # Implement stop losses
+            if entry_prediction == "H" and 1 - entry['Low'] / entry['Open'] >= stop_loss:
+                current_date_log_df.loc[0, f"Profit/Loss #{index + 1}"] -= ibkr_us_fees(entry['Open'] * (1 - stop_loss), entry['Quantity'], ibkr_pricing_mode, monthly_trade_volume)
+            # Implement stop losses
+            elif entry_prediction == "L" and entry['High'] / entry['Open'] >= stop_loss:
+                current_date_log_df.loc[0, f"Profit/Loss #{index + 1}"] -= ibkr_us_fees(entry['Open'] * (1 + stop_loss), entry['Quantity'], ibkr_pricing_mode, monthly_trade_volume)
+            else:
+                current_date_log_df.loc[0, f"Profit/Loss #{index + 1}"] -= ibkr_us_fees(entry['Close'], entry['Quantity'], ibkr_pricing_mode, monthly_trade_volume)
             # Calculate and append Bottom Line
             current_date_log_df.loc[0, f"Bottom Line"] += current_date_log_df.loc[0, f"Profit/Loss #{index + 1}"]
 
@@ -216,16 +236,16 @@ def run_price_change_simulation(execution_index, folder, end_date, duration, bud
         budget = max(current_date_final_df.loc[0, f"Bottom Line"], 0)
 
         # Print status update
-        print(f"[{datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')}] {current_date.strftime('%Y-%m-%d')} Daily Yield: {round(current_date_final_df.loc[0, 'Yield'] * 100, 2)}% | Balance: ${round(current_date_final_df.loc[0, 'Bottom Line'], 2)}")
+        print(f"[{datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')}] {current_date.strftime('%Y-%m-%d')} Daily Yield: {round(current_date_final_df.loc[0, 'Yield'] * 100, 2)}% | Balance: ${round(current_date_final_df.loc[0, 'Bottom Line'], 2)} | {stop_loss_count}/{len(current_date_temp_working_df)} Stopped Out")
 
     for date in execution_index_df['Date']:
-        print(date)
-        if date == pd.to_datetime("2003/12/17", format="%Y/%m/%d"):
-            print(date)
-            # Run process_date for current date
-            process_date(date)
-        # # Run process_date for current date
-        # process_date(date)
+        # Run process_date for current date
+        process_date(date)
+
+        # if date == pd.to_datetime("2003/12/17", format="%Y/%m/%d"):
+        #     print(date)
+        #     # Run process_date for current date
+        #     process_date(date)
     #
     #     # # Graph cumulative final_df performance
     #     # final_df_x = [final_df.iloc[0, 0]]
@@ -233,9 +253,9 @@ def run_price_change_simulation(execution_index, folder, end_date, duration, bud
     #     # final_df_x.extend(final_df['Date'])
     #     # final_df_y.extend(final_df['Bottom Line'])
     #
-    #     # Save cumulative dataframes
-    #     save_data(log_df, f"price_change_{execution_index}_exec_{end_date.strftime('%Y-%m-%d')}_date_{duration}_dura_{initial_budget}_budg_{sensitivity}_sens_{liquidity}_liqu_{max_fee}_maxf_{ibkr_pricing_mode}_pmod_{monthly_trade_volume}_motv_{reverse}_reve_log_df", "simulations")
-    #     save_data(final_df, f"price_change_{execution_index}_exec_{end_date.strftime('%Y-%m-%d')}_date_{duration}_dura_{initial_budget}_budg_{sensitivity}_sens_{liquidity}_liqu_{max_fee}_maxf_{ibkr_pricing_mode}_pmod_{monthly_trade_volume}_motv_{reverse}_reve_final_df", "simulations")
+        # Save cumulative dataframes
+        save_data(log_df, f"price_change_{execution_index}_exec_{end_date.strftime('%Y-%m-%d')}_date_{duration}_dura_{initial_budget}_budg_{sensitivity}_sens_{liquidity}_liqu_{stop_loss}_stop_{max_fee}_maxf_{ibkr_pricing_mode}_pmod_{monthly_trade_volume}_motv_{reverse}_reve_log_df", "simulations")
+        save_data(final_df, f"price_change_{execution_index}_exec_{end_date.strftime('%Y-%m-%d')}_date_{duration}_dura_{initial_budget}_budg_{sensitivity}_sens_{liquidity}_liqu_{stop_loss}_stop_{max_fee}_maxf_{ibkr_pricing_mode}_pmod_{monthly_trade_volume}_motv_{reverse}_reve_final_df", "simulations")
 
 
 def main():
@@ -247,12 +267,13 @@ def main():
     lot_size = 1
     sensitivity = 0.02
     liquidity = 0.000001
+    stop_loss = 0.02
     max_fee = 0.002
     ibkr_pricing_mode = "tiered"
     monthly_trade_volume = 0
     reverse = True
 
-    time_function(run_price_change_simulation, execution_index, folder, end_date, duration, budget, lot_size, sensitivity, liquidity, max_fee, ibkr_pricing_mode, monthly_trade_volume, reverse)
+    time_function(run_price_change_simulation, execution_index, folder, end_date, duration, budget, lot_size, sensitivity, liquidity, stop_loss, max_fee, ibkr_pricing_mode, monthly_trade_volume, reverse)
 
 
 if __name__ == "__main__":
