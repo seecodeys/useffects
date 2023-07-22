@@ -254,7 +254,7 @@ def yh_process_symbol(code, end_date, duration):
 
 # Runs process_symbol concurrently to speed things up
 
-def test_historical_data(symbol_list, end_date, duration, folder):
+def test_historical_data(symbol_list, end_date, duration, folder, data_save=True):
     corrected_symbol_list = []
     rejected_symbol_list = []
 
@@ -276,8 +276,13 @@ def test_historical_data(symbol_list, end_date, duration, folder):
     rejected_symbol_list = list(set(rejected_symbol_list))
     print(f"[{datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')}] Final: {len(corrected_symbol_list)}/{len(corrected_symbol_list) + len(rejected_symbol_list)} Valid")
 
-    save_data(pd.DataFrame(corrected_symbol_list, columns=None), f"Correct_Symbols.{folder}", folder, False)
-    save_data(pd.DataFrame(rejected_symbol_list, columns=None), f"Rejected_Symbols.{folder}", folder, False)
+    # Save lists if data_save = True
+    if data_save:
+        save_data(pd.DataFrame(corrected_symbol_list, columns=None), f"Correct_Symbols.{folder}", folder, False)
+        save_data(pd.DataFrame(rejected_symbol_list, columns=None), f"Rejected_Symbols.{folder}", folder, False)
+
+    # Return Correct Symbols
+    return corrected_symbol_list
 
 
 # Goes through all saved historical data and removed stocks with empty data
@@ -704,7 +709,7 @@ def mw_fetch_process_pages(security_type, page_letter):
 
 # Fetches all available securities on MarketWatch given a security type
 
-def mw_fetch_security_list(security_type):
+def mw_fetch_security_list(security_type, data_save=True):
     # Generate headers
     headers = generate_header()
 
@@ -747,14 +752,19 @@ def mw_fetch_security_list(security_type):
     # Sort dataframe by ascending symbols
     df = df.sort_values(by='Symbol', ascending=True).reset_index(drop=True)
 
-    # Save dataframe
-    save_data(df, security_type, "Securities List")
+    # Save dataframe if data_save is True
+    if data_save:
+        save_data(df, security_type, "Securities List")
+
+    # Return dataframe
+    return df
 
 # Formats stock list from MarketWatch Symbols to Yahoo Finance Symbols for US stocks
 
-def mw_format_yh_us_stocks():
-    # Initialize df by opening file from Securities List
-    df = pd.read_csv(f"Securities List/stocks.csv")
+def mw_format_yh_us_stocks(df=None, data_save=True):
+    # Assign default dataframe from file if not provided
+    if df is None:
+        df = pd.read_csv(f"Securities List/stocks.csv")
 
     # Filter only entries from NYSE and NASDAQ
     df = df[(df['Exchange'] == 'XNAS') | (df['Exchange'] == 'XNYS')].reset_index(drop=True)
@@ -764,5 +774,24 @@ def mw_format_yh_us_stocks():
     df['Symbol'] = df['Symbol'].astype(str).apply(lambda x: re.sub(r'([A-Z]+\-)([A-Z])R([A-Z])?', r'\1\2\3', x))
     df['Symbol'] = df['Symbol'].astype(str).apply(lambda x: re.sub(r'\-UT', r'-UN', x))
 
-    # Save updated dataframe
-    save_data(df, "Symbols.US", "US")
+    # Save updated dataframe if data_save = True
+    if data_save:
+        save_data(df, "Symbols.US", "US")
+
+    # Return dataframe
+    return df
+
+# Deletes unnecessary columns from existing log_df files
+
+def log_empty_column_remover(file_name, folder):
+    # Initialize dataframe
+    df = pd.read_csv(f"{folder}/{file_name}.csv", low_memory=False)
+    print(df)
+    # Remove empty columns in log_df
+    df = df.applymap(lambda x: None if pd.isna(x) else x)
+    print(df)
+    df.dropna(axis=1, how='all', inplace=True)
+    print(df)
+
+    # Save cumulative dataframes
+    save_data(df, file_name, folder)

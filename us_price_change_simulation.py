@@ -21,6 +21,9 @@ def run_us_price_change_simulation(execution_index, folder, end_date, duration, 
     start_date = max(end_date - datetime.timedelta(days=duration * 365),
                      datetime.datetime.strptime("Dec 1, 2003", "%b %d, %Y"))
 
+    # Initiate base file name
+    base_file_name = f"price_change_{execution_index}_exec_{end_date.strftime('%Y-%m-%d')}_date_{duration}_dura_{initial_budget}_budg_{sensitivity}_sens_{liquidity}_liqu_{stop_loss}_stop_{max_fee}_maxf_{ibkr_pricing_mode}_pmod_{monthly_trade_volume}_motv_{reverse}_reve"
+
     # Create list of execution symbols
     execution_symbol_list = []
     for file_name in os.listdir(folder):
@@ -28,25 +31,53 @@ def run_us_price_change_simulation(execution_index, folder, end_date, duration, 
         if modified_name not in ["Symbols", "Correct_Symbols", "Rejected_Symbols"]:
             execution_symbol_list.append(modified_name)
 
-    # Create simulation's final dataframe
-    final_df_columns = ['Date', 'Starting Amount', 'Invested Amount', 'Remainder', 'Asset Change', 'Fees',
-                        'Profit/Loss', 'Yield', 'Bottom Line']
-    final_df = pd.DataFrame(columns=final_df_columns)
+    # Initiate simulation dataframes and headers
+    final_df = pd.DataFrame()
+    final_df_columns = []
+    log_df = pd.DataFrame()
+    log_df_columns = []
 
-    # Create simulation's log dataframe according to number of stocks
-    log_df_columns = ['Date', 'Portfolio Size', 'Starting Amount', 'Bottom Line']
-    log_df_additional_columns = [f'Constituent #{i + 1}' for i in range(len(execution_symbol_list))]
-    log_df_additional_columns += [f'{col} #{i + 1}' for col in ['Prediction', 'Open', 'High', 'Low', 'Close', 'Volume', 'Change', 'Quantity', 'Stop Loss Triggered', 'Profit/Loss'] for i in range(len(execution_symbol_list))]
-    log_df_columns += log_df_additional_columns
-    log_df = pd.DataFrame(columns=log_df_columns)
+    # Open / Create simulation final dataframe
+    if os.path.exists(f"simulations/{base_file_name}_final_df.csv"):
+        # Open simulation's final dataframe if it already exists
+        final_df = pd.read_csv(f"simulations/{base_file_name}_final_df.csv")
+        final_df['Date'] = pd.to_datetime(final_df['Date'], format="%Y-%m-%d %H:%M:%S")
+        final_df_columns = final_df.columns.tolist()
+        start_date = final_df['Date'].iloc[-1] + pd.DateOffset(days=1)
+        budget = final_df['Bottom Line'].iloc[-1]
+    else:
+        # Create simulation's final dataframe
+        final_df_columns = ['Date', 'Starting Amount', 'Invested Amount', 'Remainder', 'Asset Change', 'Fees', 'Profit/Loss', 'Yield', 'Bottom Line']
+        final_df = pd.DataFrame(columns=final_df_columns)
+
+    # Open / Create simulation log dataframe
+    if os.path.exists(f"simulations/{base_file_name}_log_df.csv"):
+        # Open simulation's log dataframe if it already exists
+        log_df = pd.read_csv(f"simulations/{base_file_name}_log_df.csv")
+        log_df['Date'] = pd.to_datetime(final_df['Date'], format="%Y-%m-%d %H:%M:%S")
+        log_df_columns = log_df.columns.tolist()
+    else:
+        # Create simulation's log dataframe according to number of stocks
+        log_df_columns = ['Date', 'Portfolio Size', 'Starting Amount', 'Bottom Line']
+        log_df_additional_columns = [f'Constituent #{i + 1}' for i in range(len(execution_symbol_list))]
+        log_df_additional_columns += [f'{col} #{i + 1}' for col in ['Prediction', 'Open', 'High', 'Low', 'Close', 'Volume', 'Change', 'Quantity', 'Stop Loss Triggered', 'Profit/Loss'] for i in range(len(execution_symbol_list))]
+        log_df_columns += log_df_additional_columns
+        log_df = pd.DataFrame(columns=log_df_columns)
 
     # Create execution_index dataframe, filter by start_date and remove first 10 days (Previous 10D $ Volume)
     execution_index_df = pd.read_csv(f"INDEX/{execution_index}.csv")
+    execution_index_initial_date = 0
+    execution_index_initial_budget = 0
     execution_index_df['Date'] = pd.to_datetime(execution_index_df["Date"], format="%Y-%m-%d")
-    execution_index_df = execution_index_df[execution_index_df["Date"] >= start_date].reset_index(drop=True)
-    execution_index_df = execution_index_df.loc[10:].reset_index(drop=True)
-    execution_index_initial_date = execution_index_df.loc[0, 'Date']
-    execution_index_initial_budget = execution_index_df.loc[0, 'Open']
+    if os.path.exists(f"simulations/{base_file_name}_final_df.csv"):
+        execution_index_initial_date = final_df['Date'].iloc[0]
+        execution_index_initial_budget = execution_index_df[execution_index_df['Date'] == execution_index_initial_date]['Open'].values[0]
+        execution_index_df = execution_index_df[execution_index_df["Date"] >= start_date].reset_index(drop=True)
+    else:
+        execution_index_df = execution_index_df[execution_index_df["Date"] >= start_date].reset_index(drop=True)
+        execution_index_df = execution_index_df.loc[10:].reset_index(drop=True)
+        execution_index_initial_date = execution_index_df.loc[0, 'Date']
+        execution_index_initial_budget = execution_index_df.loc[0, 'Open']
 
     # Create function to process each symbol
     def process_symbol(symbol, current_date):
@@ -246,11 +277,11 @@ def run_us_price_change_simulation(execution_index, folder, end_date, duration, 
             execution_index_average_return = ((execution_index_close / execution_index_initial_budget) ** (1 / years)) - 1
 
         # Format status update variables
-        daily_yield = f"{round(daily_yield, 4) * 100}%"
-        balance = f"${round(balance, 2)}"
+        daily_yield = f"{'%.2f' % (round(daily_yield, 4) * 100)}%"
+        balance = f"${'%.2f' % (round(balance, 2))}"
         stopped_out = f"{stop_loss_count}/{len(current_date_temp_working_df)}"
-        average_return = f"{round(average_return, 4) * 100}%"
-        execution_index_average_return = f"{round(execution_index_average_return, 4) * 100}%"
+        average_return = f"{'%.2f' % (round(average_return, 4) * 100)}%"
+        execution_index_average_return = f"{'%.2f' % (round(execution_index_average_return, 4) * 100)}%"
 
         # Print status update
         print(f"[{datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')}] {current_date.strftime('%Y-%m-%d')} Daily Yield: {daily_yield} | Balance: {balance } | {stopped_out} Stopped Out | Average Return: {average_return} | Execution Index Average Return: {execution_index_average_return}")
@@ -272,16 +303,16 @@ def run_us_price_change_simulation(execution_index, folder, end_date, duration, 
     #
 
         # Save cumulative dataframes
-        save_data(log_df, f"price_change_{execution_index}_exec_{end_date.strftime('%Y-%m-%d')}_date_{duration}_dura_{initial_budget}_budg_{sensitivity}_sens_{liquidity}_liqu_{stop_loss}_stop_{max_fee}_maxf_{ibkr_pricing_mode}_pmod_{monthly_trade_volume}_motv_{reverse}_reve_log_df", "simulations")
-        save_data(final_df, f"price_change_{execution_index}_exec_{end_date.strftime('%Y-%m-%d')}_date_{duration}_dura_{initial_budget}_budg_{sensitivity}_sens_{liquidity}_liqu_{stop_loss}_stop_{max_fee}_maxf_{ibkr_pricing_mode}_pmod_{monthly_trade_volume}_motv_{reverse}_reve_final_df", "simulations")
+        save_data(log_df, f"{base_file_name}_log_df", "simulations")
+        save_data(final_df, f"{base_file_name}_final_df", "simulations")
 
     # Remove empty columns in log_df
     log_df.replace("", None, inplace=True)
     log_df.dropna(axis=1, how='all', inplace=True)
 
     # Save cumulative dataframes
-    save_data(log_df, f"price_change_{execution_index}_exec_{end_date.strftime('%Y-%m-%d')}_date_{duration}_dura_{initial_budget}_budg_{sensitivity}_sens_{liquidity}_liqu_{stop_loss}_stop_{max_fee}_maxf_{ibkr_pricing_mode}_pmod_{monthly_trade_volume}_motv_{reverse}_reve_log_df", "simulations")
-    save_data(final_df, f"price_change_{execution_index}_exec_{end_date.strftime('%Y-%m-%d')}_date_{duration}_dura_{initial_budget}_budg_{sensitivity}_sens_{liquidity}_liqu_{stop_loss}_stop_{max_fee}_maxf_{ibkr_pricing_mode}_pmod_{monthly_trade_volume}_motv_{reverse}_reve_final_df", "simulations")
+    save_data(log_df, f"{base_file_name}_log_df", "simulations")
+    save_data(final_df, f"{base_file_name}_final_df", "simulations")
 
 
 def main():
@@ -289,7 +320,7 @@ def main():
     folder = "US"
     end_date = "Jul 15, 2023"
     duration = 20
-    budget = 100000
+    budget = 25000
     lot_size = 1
     sensitivity = 0.02
     liquidity = 0.000001
@@ -299,8 +330,8 @@ def main():
     monthly_trade_volume = 0
     reverse = True
 
-    duration = float(input("Enter duration in years: "))
-    budget = float(input("Enter budget in USD: "))
+    # duration = float(input("Enter duration in years: "))
+    # budget = float(input("Enter budget in USD: "))
 
     time_function(run_us_price_change_simulation, execution_index, folder, end_date, duration, budget, lot_size, sensitivity, liquidity, stop_loss, max_fee, ibkr_pricing_mode, monthly_trade_volume, reverse)
 
