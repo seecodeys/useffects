@@ -794,4 +794,4 @@ def log_empty_column_remover(file_name, folder):
     print(df)
 
     # Save cumulative dataframes
-    save_data(df, file_name, folder)
+    save_data(df, f"{file_name}_empty_removed", folder)

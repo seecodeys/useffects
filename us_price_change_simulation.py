@@ -325,13 +325,13 @@ def main():
     sensitivity = 0.02
     liquidity = 0.000001
     stop_loss = sensitivity
-    max_fee = 0.002
+    max_fee = stop_loss / 10
     ibkr_pricing_mode = "tiered"
     monthly_trade_volume = 0
     reverse = True
 
-    # duration = float(input("Enter duration in years: "))
-    # budget = float(input("Enter budget in USD: "))
+    duration = float(input("Enter duration in years: "))
+    budget = float(input("Enter budget in USD: "))
 
     time_function(run_us_price_change_simulation, execution_index, folder, end_date, duration, budget, lot_size, sensitivity, liquidity, stop_loss, max_fee, ibkr_pricing_mode, monthly_trade_volume, reverse)
 
