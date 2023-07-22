@@ -325,7 +325,7 @@ def main():
     sensitivity = 0.02
     liquidity = 0.000001
     stop_loss = sensitivity
-    max_fee = stop_loss / 10
+    max_fee = 0.002
     ibkr_pricing_mode = "tiered"
     monthly_trade_volume = 0
     reverse = True
