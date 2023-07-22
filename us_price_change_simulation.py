@@ -123,7 +123,7 @@ def run_price_change_simulation(execution_index, folder, end_date, duration, bud
 
         # Sort current_date_temp_working_df according to Previous 10D $ Volume
         current_date_temp_working_df = current_date_temp_working_df.sort_values(by='Previous 10D $ Volume', ascending=False).reset_index(drop=True)
-
+        save_data(current_date_temp_working_df, "example", "simulations")
         # Reoptimize portfolio to eliminate those where quantity = 0
         current_date_temp_working_df['Allocation'] = current_date_temp_working_df['Previous 10D $ Volume'] / current_date_temp_working_df['Previous 10D $ Volume'].sum() * budget
         current_date_temp_working_df['Quantity'] = np.floor(current_date_temp_working_df['Allocation'] / current_date_temp_working_df['Open'])
@@ -253,9 +253,18 @@ def run_price_change_simulation(execution_index, folder, end_date, duration, bud
     #     # final_df_x.extend(final_df['Date'])
     #     # final_df_y.extend(final_df['Bottom Line'])
     #
+
         # Save cumulative dataframes
         save_data(log_df, f"price_change_{execution_index}_exec_{end_date.strftime('%Y-%m-%d')}_date_{duration}_dura_{initial_budget}_budg_{sensitivity}_sens_{liquidity}_liqu_{stop_loss}_stop_{max_fee}_maxf_{ibkr_pricing_mode}_pmod_{monthly_trade_volume}_motv_{reverse}_reve_log_df", "simulations")
         save_data(final_df, f"price_change_{execution_index}_exec_{end_date.strftime('%Y-%m-%d')}_date_{duration}_dura_{initial_budget}_budg_{sensitivity}_sens_{liquidity}_liqu_{stop_loss}_stop_{max_fee}_maxf_{ibkr_pricing_mode}_pmod_{monthly_trade_volume}_motv_{reverse}_reve_final_df", "simulations")
+
+    # Remove empty columns in log_df
+    log_df.replace("", None, inplace=True)
+    log_df.dropna(axis=1, how='all', inplace=True)
+
+    # Save cumulative dataframes
+    save_data(log_df, f"price_change_{execution_index}_exec_{end_date.strftime('%Y-%m-%d')}_date_{duration}_dura_{initial_budget}_budg_{sensitivity}_sens_{liquidity}_liqu_{stop_loss}_stop_{max_fee}_maxf_{ibkr_pricing_mode}_pmod_{monthly_trade_volume}_motv_{reverse}_reve_log_df", "simulations")
+    save_data(final_df, f"price_change_{execution_index}_exec_{end_date.strftime('%Y-%m-%d')}_date_{duration}_dura_{initial_budget}_budg_{sensitivity}_sens_{liquidity}_liqu_{stop_loss}_stop_{max_fee}_maxf_{ibkr_pricing_mode}_pmod_{monthly_trade_volume}_motv_{reverse}_reve_final_df", "simulations")
 
 
 def main():
@@ -273,8 +282,8 @@ def main():
     monthly_trade_volume = 0
     reverse = True
 
-    duration = int(input("Enter duration in years: "))
-    budget = int(input("Enter budget in USD: "))
+    duration = float(input("Enter duration in years: "))
+    budget = float(input("Enter budget in USD: "))
     stop_loss = float(input("Enter stop loss in decimals: "))
 
     time_function(run_price_change_simulation, execution_index, folder, end_date, duration, budget, lot_size, sensitivity, liquidity, stop_loss, max_fee, ibkr_pricing_mode, monthly_trade_volume, reverse)
