@@ -52,8 +52,21 @@ def run_us_price_change_simulation(execution_index, folder, end_date, duration, 
 
     # Open / Create simulation log dataframe
     if os.path.exists(f"simulations/{base_file_name}_log_df.csv"):
-        # Open simulation's log dataframe if it already exists
-        log_df = pd.read_csv(f"simulations/{base_file_name}_log_df.csv")
+        # Open simulation's log dataframe with corresponding data types
+        log_df = pd.read_csv(f"simulations/{base_file_name}_log_df.csv", low_memory=False)
+
+        # Initialize dictionary to set column data type
+        log_df_dtype_dict = {}
+
+        # Loop through columns and add corresponding data type to dtype dict
+        for column in log_df.columns:
+            if "Date" in column or "Constituent" in column or "Prediction" in column:
+                log_df_dtype_dict[column] = str
+            else:
+                log_df_dtype_dict[column] = float
+
+        # Open simulation's log dataframe with corresponding data types
+        log_df = pd.read_csv(f"simulations/{base_file_name}_log_df.csv", dtype=log_df_dtype_dict)
         log_df['Date'] = pd.to_datetime(final_df['Date'], format="%Y-%m-%d %H:%M:%S")
         log_df_columns = log_df.columns.tolist()
     else:
@@ -319,13 +332,13 @@ def main():
     execution_index = "%5EGSPC"
     folder = "US"
     end_date = "Jul 15, 2023"
-    duration = 20
-    budget = 25000
+    duration = float(5)
+    budget = float(100000)
     lot_size = 1
-    sensitivity = 0.02
+    sensitivity = float(0.02)
     liquidity = 0.000001
     stop_loss = sensitivity
-    max_fee = 0.002
+    max_fee = stop_loss / 10
     ibkr_pricing_mode = "tiered"
     monthly_trade_volume = 0
     reverse = True
