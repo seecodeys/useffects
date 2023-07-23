@@ -349,7 +349,7 @@ def main():
     stop_loss = float(input("Enter stop loss in decimals: "))
 
     time_function(run_us_price_change_simulation, execution_index, folder, end_date, duration, budget, lot_size, sensitivity, liquidity, stop_loss, max_fee, ibkr_pricing_mode, monthly_trade_volume, reverse)
-
+    print("hewwo")
 
 if __name__ == "__main__":
     main()
