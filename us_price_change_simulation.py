@@ -62,6 +62,8 @@ def run_us_price_change_simulation(execution_index, folder, end_date, duration, 
         for column in log_df.columns:
             if "Date" in column or "Constituent" in column or "Prediction" in column:
                 log_df_dtype_dict[column] = str
+            elif "Stop Loss Triggered" in column:
+                log_df_dtype_dict[column] = bool
             else:
                 log_df_dtype_dict[column] = float
 
