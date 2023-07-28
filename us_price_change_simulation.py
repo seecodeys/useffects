@@ -63,7 +63,7 @@ def run_us_price_change_simulation(execution_index, folder, end_date, duration, 
             if "Date" in column or "Constituent" in column or "Prediction" in column:
                 log_df_dtype_dict[column] = str
             elif "Stop Loss Triggered" in column:
-                log_df_dtype_dict[column] = bool
+                log_df_dtype_dict[column] = object
             else:
                 log_df_dtype_dict[column] = float
 
@@ -335,12 +335,12 @@ def main():
     folder = "US"
     end_date = "Jul 15, 2023"
     duration = float(5)
-    budget = float(100000)
+    budget = float(25000)
     lot_size = 1
     sensitivity = float(0.02)
     liquidity = 0.000001
-    stop_loss = sensitivity
-    max_fee = stop_loss / 10
+    stop_loss = sensitivity / 10
+    max_fee = stop_loss
     ibkr_pricing_mode = "tiered"
     monthly_trade_volume = 0
     reverse = True
@@ -351,7 +351,6 @@ def main():
     stop_loss = float(input("Enter stop loss in decimals: "))
 
     time_function(run_us_price_change_simulation, execution_index, folder, end_date, duration, budget, lot_size, sensitivity, liquidity, stop_loss, max_fee, ibkr_pricing_mode, monthly_trade_volume, reverse)
-    print("hewwo")
 
 if __name__ == "__main__":
     main()
