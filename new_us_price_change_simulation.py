@@ -10,7 +10,7 @@ from functions import *
 
 # Runs a simulation with the provided settings
 
-def run_us_price_change_simulation(execution_index, folder, end_date, duration, budget, lot_size=1, liquidity=0.001, ibkr_pricing_mode="tiered", monthly_trade_volume=0, reverse=False):
+def run_us_price_change_simulation(execution_index, folder, end_date, duration, budget, lot_size=1, liquidity=0.000001, ibkr_pricing_mode="tiered", monthly_trade_volume=0, reverse=False):
     # Set initial budget for future reference
     initial_budget = budget
 
@@ -41,9 +41,7 @@ def run_us_price_change_simulation(execution_index, folder, end_date, duration, 
     if not os.path.exists(f"simulations/{base_file_name}_final_df.csv"):
         # Create simulation's final dataframe
         final_df_columns = ['Date', 'Starting Amount', 'Invested Amount', 'Remainder', 'Asset Change', 'Fees', 'Profit/Loss', 'Yield', 'Bottom Line']
-        final_df = pd.DataFrame(columns=final_df_columns)
         instance_start_date = start_date
-        save_data(final_df, f"{base_file_name}_final_df", "simulations")
     else:
         # Open existing dataframe
         final_df = pd.read_csv(f"simulations/{base_file_name}_final_df.csv")
@@ -58,8 +56,6 @@ def run_us_price_change_simulation(execution_index, folder, end_date, duration, 
         log_df_additional_columns = [f'Constituent #{i + 1}' for i in range(len(execution_symbol_list))]
         log_df_additional_columns += [f'{col} #{i + 1}' for col in ['Prediction', 'Open', 'High', 'Low', 'Close', 'Volume', 'Change', 'Quantity', 'Stop Loss', 'Stop Loss Triggered', 'Profit/Loss'] for i in range(len(execution_symbol_list))]
         log_df_columns += log_df_additional_columns
-        log_df = pd.DataFrame(columns=log_df_columns)
-        save_data(log_df, f"{base_file_name}_log_df", "simulations")
     else:
         # Set log_df headers based on existing dataframe csv file
         log_df_columns = next(csv.reader(open(f"simulations/{base_file_name}_log_df.csv")))
@@ -75,8 +71,7 @@ def run_us_price_change_simulation(execution_index, folder, end_date, duration, 
         execution_index_df = execution_index_df.loc[10:].reset_index(drop=True)
         execution_index_initial_budget = execution_index_df.loc[0, 'Open']
         instance_start_date = execution_index_df.loc[0, "Date"]
-    os.remove(f"simulations/{base_file_name}_final_df.csv")
-    os.remove(f"simulations/{base_file_name}_log_df.csv")
+
     # Create function to process each symbol
     def process_symbol(symbol, current_date):
         # Open symbol dataframe
@@ -139,7 +134,7 @@ def run_us_price_change_simulation(execution_index, folder, end_date, duration, 
                             }
                         )
                         # Assign stop loss
-                        symbol_entry_stop_loss = previous_symbol_entries['Max Opposite Change'].median()
+                        symbol_entry_stop_loss = previous_symbol_entries['Max Opposite Change'].mean()
 
                         # Get maximum quantity based on liquidity
                         symbol_entry_max_qty = np.floor((previous_symbol_entries['$ Volume'].min() * liquidity) / lot_size) * lot_size
@@ -189,7 +184,9 @@ def run_us_price_change_simulation(execution_index, folder, end_date, duration, 
             current_date_temp_working_df['Quantity'] = np.floor(current_date_temp_working_df['Allocation'] / current_date_temp_working_df['Open'])
             if (current_date_temp_working_df['Quantity'] == 0).any():
                 current_date_temp_working_df = current_date_temp_working_df.iloc[:-1]
+                print(current_date_temp_working_df)
             else:
+                print(current_date_temp_working_df)
                 break
 
         # Reoptimize portfolio to eliminate those where fees > max_fees (where max_fees = stop_loss / 10)
@@ -201,7 +198,9 @@ def run_us_price_change_simulation(execution_index, folder, end_date, duration, 
                 current_date_temp_working_df = current_date_temp_working_df.iloc[:-1]
                 current_date_temp_working_df['Allocation'] = current_date_temp_working_df['Previous 10D $ Volume'] / current_date_temp_working_df['Previous 10D $ Volume'].sum() * budget
                 current_date_temp_working_df['Quantity'] = np.floor(current_date_temp_working_df['Allocation'] / current_date_temp_working_df['Open'])
+                print(current_date_temp_working_df)
             else:
+                print(current_date_temp_working_df)
                 break
 
         # Append data to current_date_log_df
@@ -286,8 +285,16 @@ def run_us_price_change_simulation(execution_index, folder, end_date, duration, 
             current_date_final_df.loc[0, f"Bottom Line"] += current_date_log_df.loc[0, f"Profit/Loss #{index + 1}"]
 
         # Add the 2 current_date dataframes to the full dataframe csv files in append mode
-        current_date_final_df.to_csv(f"simulations/{base_file_name}_final_df.csv", mode='a', header=False, index=False)
-        current_date_log_df.to_csv(f"simulations/{base_file_name}_log_df.csv", mode='a', header=False, index=False)
+        output_file_final_df = f"simulations/{base_file_name}_final_df.csv"
+        output_file_log_df = f"simulations/{base_file_name}_log_df.csv"
+
+        # Check if the output files already exist
+        file_exists_final_df = os.path.exists(output_file_final_df)
+        file_exists_log_df = os.path.exists(output_file_log_df)
+
+        # Write data to CSV files without headers if they don't exist
+        current_date_final_df.to_csv(output_file_final_df, mode='a', header=not file_exists_final_df, index=False)
+        current_date_log_df.to_csv(output_file_log_df, mode='a', header=not file_exists_log_df, index=False)
 
         # Set budget to bottom line
         budget = max(current_date_final_df.loc[0, f"Bottom Line"], 0)
