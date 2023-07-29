@@ -96,7 +96,7 @@ def run_us_price_change_simulation(execution_index, folder, end_date, duration, 
             # Execute following only if no 0 is found in the price columns
             if na_check and empty_check and zero_check and ohlc_check:
                 # Assign sensitivity
-                symbol_entry_sensitivity = previous_symbol_entries['% Previous Change'].loc[previous_symbol_entries['% Previous Change'].notna()].apply(pd.to_numeric).abs().quantile(q=0.8185)
+                symbol_entry_sensitivity = previous_symbol_entries['% Previous Change'].loc[previous_symbol_entries['% Previous Change'].notna()].apply(pd.to_numeric).abs().quantile(q=0.8399)
 
                 # Get previous entry
                 previous_symbol_entry = symbol_df.iloc[symbol_entry_index - 1]
@@ -134,7 +134,7 @@ def run_us_price_change_simulation(execution_index, folder, end_date, duration, 
                             }
                         )
                         # Assign stop loss
-                        symbol_entry_stop_loss = previous_symbol_entries['Max Opposite Change'].mean()
+                        symbol_entry_stop_loss = previous_symbol_entries['Max Opposite Change'].quantile(q=0.1573)
 
                         # Get maximum quantity based on liquidity
                         symbol_entry_max_qty = np.floor((previous_symbol_entries['$ Volume'].min() * liquidity) / lot_size) * lot_size
