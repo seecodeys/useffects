@@ -24,7 +24,7 @@ def run_us_price_change_simulation(execution_index, folder, end_date, duration, 
     instance_start_date = None
 
     # Initiate base file name
-    base_file_name = f"price_change_{execution_index}_exec_{end_date.strftime('%Y-%m-%d')}_date_{duration}_dura_{initial_budget}_budg_{liquidity}_liqu_{ibkr_pricing_mode}_pmod_{monthly_trade_volume}_motv_{reverse}_reve"
+    base_file_name = f"dynamic_price_change_{execution_index}_exec_{end_date.strftime('%Y-%m-%d')}_date_{duration}_dura_{initial_budget}_budg_{liquidity}_liqu_{ibkr_pricing_mode}_pmod_{monthly_trade_volume}_motv_{reverse}_reve"
 
     # Create list of execution symbols
     execution_symbol_list = []
