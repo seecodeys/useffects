@@ -18,8 +18,10 @@ def run_us_price_change_simulation(execution_index, folder, end_date, duration, 
     end_date = datetime.datetime.strptime(end_date, "%b %d, %Y")
 
     # Calculate start date based on the duration (capped at Yahoo Finance Currency Historical Data oldest)
-    start_date = max(end_date - datetime.timedelta(days=duration * 365),
-                     datetime.datetime.strptime("Dec 1, 2003", "%b %d, %Y"))
+    start_date = max(end_date - pd.Timedelta(days=duration * 365), pd.to_datetime("Dec 1, 2003"))
+
+    # Initiate start date for this instance
+    instance_start_date = None
 
     # Initiate base file name
     base_file_name = f"price_change_{execution_index}_exec_{end_date.strftime('%Y-%m-%d')}_date_{duration}_dura_{initial_budget}_budg_{sensitivity}_sens_{liquidity}_liqu_{stop_loss}_stop_{max_fee}_maxf_{ibkr_pricing_mode}_pmod_{monthly_trade_volume}_motv_{reverse}_reve"
@@ -31,68 +33,48 @@ def run_us_price_change_simulation(execution_index, folder, end_date, duration, 
         if modified_name not in ["Symbols", "Correct_Symbols", "Rejected_Symbols"]:
             execution_symbol_list.append(modified_name)
 
-    # Initiate simulation dataframes and headers
-    final_df = pd.DataFrame()
+    # Initiate simulation headers
     final_df_columns = []
-    log_df = pd.DataFrame()
     log_df_columns = []
 
     # Open / Create simulation final dataframe
-    if os.path.exists(f"simulations/{base_file_name}_final_df.csv"):
-        # Open simulation's final dataframe if it already exists
-        final_df = pd.read_csv(f"simulations/{base_file_name}_final_df.csv")
-        final_df['Date'] = pd.to_datetime(final_df['Date'], format="%Y-%m-%d %H:%M:%S")
-        final_df_columns = final_df.columns.tolist()
-        start_date = final_df['Date'].iloc[-1] + pd.DateOffset(days=1)
-        budget = final_df['Bottom Line'].iloc[-1]
-    else:
+    if not os.path.exists(f"simulations/{base_file_name}_final_df.csv"):
         # Create simulation's final dataframe
         final_df_columns = ['Date', 'Starting Amount', 'Invested Amount', 'Remainder', 'Asset Change', 'Fees', 'Profit/Loss', 'Yield', 'Bottom Line']
         final_df = pd.DataFrame(columns=final_df_columns)
+        instance_start_date = start_date
+        save_data(final_df, f"{base_file_name}_final_df", "simulations")
+    else:
+        # Open existing dataframe
+        final_df = pd.read_csv(f"simulations/{base_file_name}_final_df.csv")
+        instance_start_date = pd.to_datetime(final_df['Date'].iloc[-1]) + pd.DateOffset(days=1)
+        budget = final_df['Bottom Line'].iloc[-1]
+        del final_df
 
     # Open / Create simulation log dataframe
-    if os.path.exists(f"simulations/{base_file_name}_log_df.csv"):
-        # Open simulation's log dataframe with corresponding data types
-        log_df = pd.read_csv(f"simulations/{base_file_name}_log_df.csv", low_memory=False)
-
-        # Initialize dictionary to set column data type
-        log_df_dtype_dict = {}
-
-        # Loop through columns and add corresponding data type to dtype dict
-        for column in log_df.columns:
-            if "Date" in column or "Constituent" in column or "Prediction" in column:
-                log_df_dtype_dict[column] = str
-            elif "Stop Loss Triggered" in column:
-                log_df_dtype_dict[column] = object
-            else:
-                log_df_dtype_dict[column] = float
-
-        # Open simulation's log dataframe with corresponding data types
-        log_df = pd.read_csv(f"simulations/{base_file_name}_log_df.csv", dtype=log_df_dtype_dict)
-        log_df['Date'] = pd.to_datetime(final_df['Date'], format="%Y-%m-%d %H:%M:%S")
-        log_df_columns = log_df.columns.tolist()
-    else:
+    if not os.path.exists(f"simulations/{base_file_name}_log_df.csv"):
         # Create simulation's log dataframe according to number of stocks
         log_df_columns = ['Date', 'Portfolio Size', 'Starting Amount', 'Bottom Line']
         log_df_additional_columns = [f'Constituent #{i + 1}' for i in range(len(execution_symbol_list))]
         log_df_additional_columns += [f'{col} #{i + 1}' for col in ['Prediction', 'Open', 'High', 'Low', 'Close', 'Volume', 'Change', 'Quantity', 'Stop Loss Triggered', 'Profit/Loss'] for i in range(len(execution_symbol_list))]
         log_df_columns += log_df_additional_columns
         log_df = pd.DataFrame(columns=log_df_columns)
-
-    # Create execution_index dataframe, filter by start_date and remove first 10 days (Previous 10D $ Volume)
-    execution_index_df = pd.read_csv(f"INDEX/{execution_index}.csv")
-    execution_index_initial_date = 0
-    execution_index_initial_budget = 0
-    execution_index_df['Date'] = pd.to_datetime(execution_index_df["Date"], format="%Y-%m-%d")
-    if os.path.exists(f"simulations/{base_file_name}_final_df.csv"):
-        execution_index_initial_date = final_df['Date'].iloc[0]
-        execution_index_initial_budget = execution_index_df[execution_index_df['Date'] == execution_index_initial_date]['Open'].values[0]
-        execution_index_df = execution_index_df[execution_index_df["Date"] >= start_date].reset_index(drop=True)
+        save_data(log_df, f"{base_file_name}_log_df", "simulations")
     else:
-        execution_index_df = execution_index_df[execution_index_df["Date"] >= start_date].reset_index(drop=True)
+        # Set log_df headers based on existing dataframe csv file
+        log_df_columns = next(csv.reader(open(f"simulations/{base_file_name}_log_df.csv")))
+
+    # Create execution_index dataframe, filter by start_date or instance_start_date and remove first 10 days (Previous 10D $ Volume)
+    execution_index_df = pd.read_csv(f"INDEX/{execution_index}.csv")
+    execution_index_initial_budget = None
+    execution_index_df['Date'] = pd.to_datetime(execution_index_df["Date"])
+    execution_index_df = execution_index_df[execution_index_df["Date"] >= instance_start_date].reset_index(drop=True)
+    execution_index_initial_budget = execution_index_df.loc[0, "Open"]
+    instance_start_date = execution_index_df.loc[0, "Date"]
+    if instance_start_date == pd.to_datetime("Dec 1, 2003"):
         execution_index_df = execution_index_df.loc[10:].reset_index(drop=True)
-        execution_index_initial_date = execution_index_df.loc[0, 'Date']
         execution_index_initial_budget = execution_index_df.loc[0, 'Open']
+        instance_start_date = execution_index_df.loc[0, "Date"]
 
     # Create function to process each symbol
     def process_symbol(symbol, current_date):
@@ -147,8 +129,6 @@ def run_us_price_change_simulation(execution_index, folder, end_date, duration, 
     # Create function to process each day
     def process_date(current_date):
         # Import nonlocal variables
-        nonlocal final_df
-        nonlocal log_df
         nonlocal budget
 
         # Create current_date_temp_working_df, current_date_log_df and current_date_final_df
@@ -273,9 +253,9 @@ def run_us_price_change_simulation(execution_index, folder, end_date, duration, 
             current_date_final_df.loc[0, f"Yield"] += current_date_log_df.loc[0, f"Profit/Loss #{index + 1}"] / budget
             current_date_final_df.loc[0, f"Bottom Line"] += current_date_log_df.loc[0, f"Profit/Loss #{index + 1}"]
 
-        # Add the 2 current_date dataframes to the full dataframes
-        final_df = pd.concat([final_df, current_date_final_df])
-        log_df = pd.concat([log_df, current_date_log_df])
+        # Add the 2 current_date dataframes to the full dataframe csv files in append mode
+        current_date_final_df.to_csv(f"simulations/{base_file_name}_final_df.csv", mode='a', header=False, index=False)
+        current_date_log_df.to_csv(f"simulations/{base_file_name}_log_df.csv", mode='a', header=False, index=False)
 
         # Set budget to bottom line
         budget = max(current_date_final_df.loc[0, f"Bottom Line"], 0)
@@ -285,9 +265,9 @@ def run_us_price_change_simulation(execution_index, folder, end_date, duration, 
         balance = current_date_final_df.loc[0, 'Bottom Line']
         average_return = 0
         execution_index_average_return = 0
-        years = ((current_date - execution_index_initial_date).days / 365)
+        years = ((current_date - start_date).days / 365)
         execution_index_close = execution_index_df.loc[execution_index_df['Date'] == current_date, 'Close'].values[0]
-        if current_date > execution_index_initial_date:
+        if current_date > start_date:
             average_return = ((balance / initial_budget) ** (1 / years)) - 1
             execution_index_average_return = ((execution_index_close / execution_index_initial_budget) ** (1 / years)) - 1
 
@@ -315,26 +295,13 @@ def run_us_price_change_simulation(execution_index, folder, end_date, duration, 
     #     # final_df_y = [initial_budget]
     #     # final_df_x.extend(final_df['Date'])
     #     # final_df_y.extend(final_df['Bottom Line'])
-    #
-
-        # Save cumulative dataframes
-        save_data(log_df, f"{base_file_name}_log_df", "simulations")
-        save_data(final_df, f"{base_file_name}_final_df", "simulations")
-
-    # Remove empty columns in log_df
-    log_df.replace("", None, inplace=True)
-    log_df.dropna(axis=1, how='all', inplace=True)
-
-    # Save cumulative dataframes
-    save_data(log_df, f"{base_file_name}_log_df", "simulations")
-    save_data(final_df, f"{base_file_name}_final_df", "simulations")
 
 
 def main():
     execution_index = "%5EGSPC"
     folder = "US"
     end_date = "Jul 15, 2023"
-    duration = float(5)
+    duration = float(20)
     budget = float(25000)
     lot_size = 1
     sensitivity = float(0.02)
