@@ -795,3 +795,5 @@ def log_empty_column_remover(file_name, folder):
 
     # Save cumulative dataframes
     save_data(df, f"{file_name}_empty_removed", folder)
+
+# log_empty_column_remover('dynamic_price_change_%5EGSPC_exec_2023-07-15_date_5.0_dura_25000.0_budg_1e-06_liqu_tiered_pmod_0_motv_True_reve_log_df', 'simulations')

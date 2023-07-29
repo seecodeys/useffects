@@ -184,9 +184,7 @@ def run_us_price_change_simulation(execution_index, folder, end_date, duration, 
             current_date_temp_working_df['Quantity'] = np.floor(current_date_temp_working_df['Allocation'] / current_date_temp_working_df['Open'])
             if (current_date_temp_working_df['Quantity'] == 0).any():
                 current_date_temp_working_df = current_date_temp_working_df.iloc[:-1]
-                print(current_date_temp_working_df)
             else:
-                print(current_date_temp_working_df)
                 break
 
         # Reoptimize portfolio to eliminate those where fees > max_fees (where max_fees = stop_loss)
@@ -198,9 +196,7 @@ def run_us_price_change_simulation(execution_index, folder, end_date, duration, 
                 current_date_temp_working_df = current_date_temp_working_df.iloc[:-1]
                 current_date_temp_working_df['Allocation'] = current_date_temp_working_df['Previous 10D $ Volume'] / current_date_temp_working_df['Previous 10D $ Volume'].sum() * budget
                 current_date_temp_working_df['Quantity'] = np.floor(current_date_temp_working_df['Allocation'] / current_date_temp_working_df['Open'])
-                print(current_date_temp_working_df)
             else:
-                print(current_date_temp_working_df)
                 break
 
         # Append data to current_date_log_df
