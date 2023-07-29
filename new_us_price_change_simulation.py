@@ -189,12 +189,12 @@ def run_us_price_change_simulation(execution_index, folder, end_date, duration, 
                 print(current_date_temp_working_df)
                 break
 
-        # Reoptimize portfolio to eliminate those where fees > max_fees (where max_fees = stop_loss / 10)
+        # Reoptimize portfolio to eliminate those where fees > max_fees (where max_fees = stop_loss)
         while True and len(current_date_temp_working_df) > 0:
             current_date_temp_working_df['Investment'] = current_date_temp_working_df['Quantity'] * current_date_temp_working_df['Open']
             current_date_temp_working_df['Fees'] = current_date_temp_working_df.apply(lambda constituent: 2 * ibkr_us_fees(constituent['Open'], constituent['Quantity'], ibkr_pricing_mode, monthly_trade_volume), axis=1)
             current_date_temp_working_df['Fee Percentage'] = current_date_temp_working_df['Fees'] / current_date_temp_working_df['Investment']
-            if (current_date_temp_working_df['Fee Percentage'] > current_date_temp_working_df['Stop Loss'] / 10).any():
+            if (current_date_temp_working_df['Fee Percentage'] > current_date_temp_working_df['Stop Loss']).any():
                 current_date_temp_working_df = current_date_temp_working_df.iloc[:-1]
                 current_date_temp_working_df['Allocation'] = current_date_temp_working_df['Previous 10D $ Volume'] / current_date_temp_working_df['Previous 10D $ Volume'].sum() * budget
                 current_date_temp_working_df['Quantity'] = np.floor(current_date_temp_working_df['Allocation'] / current_date_temp_working_df['Open'])
