@@ -3,11 +3,12 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 # Load data into DataFrame
-data_series_1 = pd.read_csv('Portfolio Performance/reference.csv')
+data_series_1 = pd.read_csv('Portfolio Performance/dynamic_price_change_%5EGSPC_exec_2023-07-15_date_15.0_dura_25000.0_budg_1e-06_liqu_tiered_pmod_0_motv_True_reve_final_df - Sheet4.csv')
 
 # Convert the 'Date' column to datetime format and set it as the index
-data_series_1['Date'] = pd.to_datetime(data_series_1['Date'])
+data_series_1['Date'] = pd.to_datetime(data_series_1['Date'], format='ISO8601')
 data_series_1.set_index('Date', inplace=True)
+data_series_1['Balance'] = data_series_1['Balance'].str.replace(',', '').astype(float)
 
 # Calculate daily returns
 data_series_1['Daily Return'] = data_series_1['Balance'].pct_change()
