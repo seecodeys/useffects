@@ -64,8 +64,8 @@ def run_us_price_change_simulation(execution_index, folder, end_date, duration, 
     execution_index_df = pd.read_csv(f"INDEX/{execution_index}.csv")
     execution_index_initial_budget = None
     execution_index_df['Date'] = pd.to_datetime(execution_index_df["Date"])
+    execution_index_initial_budget = execution_index_df[execution_index_df["Date"] >= start_date].loc[0, 'Open']
     execution_index_df = execution_index_df[execution_index_df["Date"] >= instance_start_date].reset_index(drop=True)
-    execution_index_initial_budget = execution_index_df.loc[0, "Open"]
     instance_start_date = execution_index_df.loc[0, "Date"]
     if instance_start_date == pd.to_datetime("Dec 1, 2003"):
         execution_index_df = execution_index_df.loc[10:].reset_index(drop=True)
