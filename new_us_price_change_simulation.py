@@ -23,9 +23,9 @@ def run_us_price_change_simulation(execution_index, folder, end_date, duration, 
     # Initiate start date for this instance
     instance_start_date = None
 
-    # Initiate base file name
-    base_file_name = f"dynamic_price_change_{execution_index}_exec_{end_date.strftime('%Y-%m-%d')}_date_{duration}_dura_{initial_budget}_budg_{liquidity}_liqu_{ibkr_pricing_mode}_pmod_{monthly_trade_volume}_motv_{reverse}_reve"
-
+    # # Initiate base file name
+    # base_file_name = f"dynamic_price_change_{execution_index}_exec_{end_date.strftime('%Y-%m-%d')}_date_{duration}_dura_{initial_budget}_budg_{liquidity}_liqu_{ibkr_pricing_mode}_pmod_{monthly_trade_volume}_motv_{reverse}_reve"
+    base_file_name = "test"
     # Create list of execution symbols
     execution_symbol_list = []
     for file_name in os.listdir(folder):
@@ -64,7 +64,7 @@ def run_us_price_change_simulation(execution_index, folder, end_date, duration, 
     execution_index_df = pd.read_csv(f"INDEX/{execution_index}.csv")
     execution_index_initial_budget = None
     execution_index_df['Date'] = pd.to_datetime(execution_index_df["Date"])
-    execution_index_initial_budget = execution_index_df[execution_index_df["Date"] >= start_date].loc[0, 'Open']
+    execution_index_initial_budget = execution_index_df[execution_index_df["Date"] >= start_date].reset_index(drop=True).loc[0, 'Open']
     execution_index_df = execution_index_df[execution_index_df["Date"] >= instance_start_date].reset_index(drop=True)
     instance_start_date = execution_index_df.loc[0, "Date"]
     if instance_start_date == pd.to_datetime("Dec 1, 2003"):
