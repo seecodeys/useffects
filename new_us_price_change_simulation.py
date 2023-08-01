@@ -10,7 +10,7 @@ from functions import *
 
 # Runs a simulation with the provided settings
 
-def run_us_price_change_simulation(execution_index, folder, end_date, duration, budget, lot_size=1, liquidity=0.000001, ibkr_pricing_mode="tiered", monthly_trade_volume=0, reverse=False):
+def run_us_price_change_simulation(execution_index, folder, end_date, duration, budget, lot_size=1, liquidity=0.000001, stop_loss=0.977, ibkr_pricing_mode="tiered", monthly_trade_volume=0, reverse=False):
     # Set initial budget for future reference
     initial_budget = budget
 
@@ -24,7 +24,7 @@ def run_us_price_change_simulation(execution_index, folder, end_date, duration, 
     instance_start_date = None
 
     # # Initiate base file name
-    base_file_name = f"dynamic_price_change_{execution_index}_exec_{end_date.strftime('%Y-%m-%d')}_date_{duration}_dura_{initial_budget}_budg_{liquidity}_liqu_{ibkr_pricing_mode}_pmod_{monthly_trade_volume}_motv_{reverse}_reve"
+    base_file_name = f"dynamic_price_change_{execution_index}_exec_{end_date.strftime('%Y-%m-%d')}_date_{duration}_dura_{initial_budget}_budg_{liquidity}_liqu_{stop_loss}_stop_{ibkr_pricing_mode}_pmod_{monthly_trade_volume}_motv_{reverse}_reve"
 
     # Create list of execution symbols
     execution_symbol_list = []
@@ -134,7 +134,7 @@ def run_us_price_change_simulation(execution_index, folder, end_date, duration, 
                             }
                         )
                         # Assign stop loss
-                        symbol_entry_stop_loss = previous_symbol_entries['Max Opposite Change'].quantile(q=0.1573)
+                        symbol_entry_stop_loss = previous_symbol_entries['Max Opposite Change'].quantile(q=stop_loss)
 
                         # Get maximum quantity based on liquidity
                         symbol_entry_max_qty = np.floor((previous_symbol_entries['$ Volume'].min() * liquidity) / lot_size) * lot_size
@@ -238,7 +238,7 @@ def run_us_price_change_simulation(execution_index, folder, end_date, duration, 
             # Assign asset change to Profit/Loss
             if entry_prediction == "H":
                 # Implement stop losses
-                if 1 - entry['Low'] / entry['Open'] > entry['Stop Loss']:
+                if 1 - entry['Low'] / entry['Open'] > entry['Stop Loss'] and stop_loss:
                     current_date_log_df.loc[0, f"Profit/Loss #{index + 1}"] = (entry['Open'] * entry['Stop Loss']) * entry['Quantity'] * -1
                     current_date_log_df.loc[0, f"Stop Loss Triggered #{index + 1}"] = True
                     stop_loss_count += 1
@@ -247,7 +247,7 @@ def run_us_price_change_simulation(execution_index, folder, end_date, duration, 
                     current_date_log_df.loc[0, f"Stop Loss Triggered #{index + 1}"] = False
             elif entry_prediction == "L":
                 # Implement stop losses
-                if entry['High'] / entry['Open'] - 1 > entry['Stop Loss']:
+                if entry['High'] / entry['Open'] - 1 > entry['Stop Loss'] and stop_loss:
                     current_date_log_df.loc[0, f"Profit/Loss #{index + 1}"] = (entry['Open'] * entry['Stop Loss']) * entry['Quantity'] * -1
                     current_date_log_df.loc[0, f"Stop Loss Triggered #{index + 1}"] = True
                     stop_loss_count += 1
@@ -340,14 +340,16 @@ def main():
     budget = float(25000)
     lot_size = 1
     liquidity = 0.000001
+    stop_loss = 0.977
     ibkr_pricing_mode = "tiered"
     monthly_trade_volume = 0
     reverse = True
 
     duration = float(input("Enter duration in years: "))
     budget = float(input("Enter budget in USD: "))
+    stop_loss = float(input("Enter stop loss percentile in decimals: "))
 
-    time_function(run_us_price_change_simulation, execution_index, folder, end_date, duration, budget, lot_size, liquidity, ibkr_pricing_mode, monthly_trade_volume, reverse)
+    time_function(run_us_price_change_simulation, execution_index, folder, end_date, duration, budget, lot_size, liquidity, stop_loss, ibkr_pricing_mode, monthly_trade_volume, reverse)
 
 if __name__ == "__main__":
     main()
