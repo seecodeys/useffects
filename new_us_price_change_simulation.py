@@ -10,7 +10,7 @@ from functions import *
 
 # Runs a simulation with the provided settings
 
-def run_us_price_change_simulation(execution_index, folder, end_date, duration, budget, lot_size=1, liquidity=0.000001, stop_loss=0.977, ibkr_pricing_mode="tiered", monthly_trade_volume=0, reverse=False):
+def run_us_price_change_simulation(execution_index, folder, end_date, duration, budget, lot_size=1, liquidity=0.00005, stop_loss=0.977, portfolio_weight="DV", ibkr_pricing_mode="tiered", monthly_trade_volume=0, reverse=False):
     # Set initial budget for future reference
     initial_budget = budget
 
@@ -24,7 +24,7 @@ def run_us_price_change_simulation(execution_index, folder, end_date, duration, 
     instance_start_date = None
 
     # # Initiate base file name
-    base_file_name = f"dynamic_price_change_{execution_index}_exec_{end_date.strftime('%Y-%m-%d')}_date_{duration}_dura_{initial_budget}_budg_{liquidity}_liqu_{stop_loss}_stop_{ibkr_pricing_mode}_pmod_{monthly_trade_volume}_motv_{reverse}_reve"
+    base_file_name = f"dynamic_price_change_{execution_index}_exec_{end_date.strftime('%Y-%m-%d')}_date_{duration}_dura_{initial_budget}_budg_{liquidity}_liqu_{stop_loss}_stop_{portfolio_weight}_weig_{ibkr_pricing_mode}_pmod_{monthly_trade_volume}_motv_{reverse}_reve"
 
     # Create list of execution symbols
     execution_symbol_list = []
@@ -178,14 +178,28 @@ def run_us_price_change_simulation(execution_index, folder, end_date, duration, 
         # Sort current_date_temp_working_df according to Previous 10D $ Volume
         current_date_temp_working_df = current_date_temp_working_df.sort_values(by='Previous 10D $ Volume', ascending=False).reset_index(drop=True)
 
-        # Reoptimize portfolio to eliminate those where quantity = 0
-        while True and len(current_date_temp_working_df) > 0:
-            current_date_temp_working_df['Allocation'] = current_date_temp_working_df['Previous 10D $ Volume'] / current_date_temp_working_df['Previous 10D $ Volume'].sum() * budget
-            current_date_temp_working_df['Quantity'] = np.floor(current_date_temp_working_df['Allocation'] / current_date_temp_working_df['Open'])
-            if (current_date_temp_working_df['Quantity'] == 0).any():
-                current_date_temp_working_df = current_date_temp_working_df.iloc[:-1]
-            else:
-                break
+        # Dollar Volume (DV)
+        if portfolio_weight == "DV":
+            # Reoptimize portfolio to eliminate those where quantity = 0
+            while True and len(current_date_temp_working_df) > 0:
+                current_date_temp_working_df['Allocation'] = current_date_temp_working_df['Previous 10D $ Volume'] / current_date_temp_working_df['Previous 10D $ Volume'].sum() * budget
+                current_date_temp_working_df['Quantity'] = np.floor(current_date_temp_working_df['Allocation'] / current_date_temp_working_df['Open'])
+                if (current_date_temp_working_df['Quantity'] == 0).any():
+                    current_date_temp_working_df = current_date_temp_working_df.iloc[:-1]
+                else:
+                    break
+        # Equal Weight (EW)
+        elif portfolio_weight == "EW":
+            # Reoptimize portfolio to eliminate those where allocation > max allocation
+            while True and len(current_date_temp_working_df) > 0:
+                current_date_temp_working_df['Max Allocation'] = current_date_temp_working_df['Previous 10D $ Volume'] * liquidity
+                current_date_temp_working_df['Allocation'] = budget / len(current_date_temp_working_df)
+                if (current_date_temp_working_df['Allocation'] > current_date_temp_working_df['Max Allocation']).any():
+                    current_date_temp_working_df = current_date_temp_working_df.iloc[:-1]
+                else:
+                    current_date_temp_working_df.drop('Max Allocation', axis=1, inplace=True)
+                    current_date_temp_working_df['Quantity'] = np.floor(current_date_temp_working_df['Allocation'] / current_date_temp_working_df['Open'])
+                    break
 
         # Reoptimize portfolio to eliminate those where fees > max_fees (where max_fees = stop_loss)
         while True and len(current_date_temp_working_df) > 0:
@@ -336,20 +350,21 @@ def main():
     execution_index = "%5EGSPC"
     folder = "US"
     end_date = "Jul 15, 2023"
-    duration = float(20)
+    duration = float(5)
     budget = float(25000)
     lot_size = 1
-    liquidity = 0.000001
+    liquidity = 0.00005
     stop_loss = 0.977
+    portfolio_weight = "EW"
     ibkr_pricing_mode = "tiered"
     monthly_trade_volume = 0
     reverse = True
 
     duration = float(input("Enter duration in years: "))
     budget = float(input("Enter budget in USD: "))
-    stop_loss = float(input("Enter stop loss percentile in decimals: "))
+    # stop_loss = float(input("Enter stop loss percentile in decimals: "))
 
-    time_function(run_us_price_change_simulation, execution_index, folder, end_date, duration, budget, lot_size, liquidity, stop_loss, ibkr_pricing_mode, monthly_trade_volume, reverse)
+    time_function(run_us_price_change_simulation, execution_index, folder, end_date, duration, budget, lot_size, liquidity, stop_loss, portfolio_weight, ibkr_pricing_mode, monthly_trade_volume, reverse)
 
 if __name__ == "__main__":
     main()
