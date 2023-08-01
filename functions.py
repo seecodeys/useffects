@@ -794,6 +794,7 @@ def log_empty_column_remover(file_name, folder):
     # Save cumulative dataframes
     save_data(df, f"{file_name}_empty_removed", folder)
 
+   
 # Creates dataframe from Securities List that identifies unique "types" of data in each exchange
 
 def securities_symbols_type_finder(type, file_path):
@@ -1116,3 +1117,4 @@ def process_symbol_bombay(symbol, name):
         return yh_symbol
 
     raise Exception(f"ERROR COULD NOT FIND STOCK: {symbol} | {name}")
+
