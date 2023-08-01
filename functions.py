@@ -13,6 +13,7 @@ import re
 import numpy as np
 from jukes import *
 from dateutil.relativedelta import relativedelta
+from difflib import SequenceMatcher
 
 
 # Fetches historical data from Yahoo Finance
@@ -237,7 +238,6 @@ def yh_process_symbol(code, end_date, duration):
 
     # Format the URL
     url = f"https://query1.finance.yahoo.com/v8/finance/chart/{code}?symbol={code}&period1={start_date_epoch}&period2={end_date_epoch}&useYfid=true&interval=1d&includePrePost=false&events=div%7Csplit%7Cearn&lang=en-US&region=US&crumb=eREX9CqAe3K&corsDomain=finance.yahoo.com"
-    print(url)
     headers = generate_header()
     response = requests.get(url, headers=headers)
 
@@ -620,7 +620,7 @@ def mw_fetch_page(security_type, page_letter, page_number):
     # Scrape the page
     response = requests.get(url, headers=headers)
     if response.status_code != 200:
-        print(url)
+        print("IP Blocked")
     soup = BeautifulSoup(response.text, "html.parser")
     table = soup.find("table")
     data_rows = table.find("tbody").find_all("tr")
@@ -641,6 +641,7 @@ def mw_fetch_page(security_type, page_letter, page_number):
     page_df = page_df[['Symbol', 'Name', 'Country', 'Exchange', 'Sector']]
 
     print(f"[{datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')}] {security_type}: {page_letter} Page {page_number} Completed")
+
     return page_df
 
 # Fetches the number of pages for a given A-Z page
@@ -702,9 +703,6 @@ def mw_fetch_process_pages(security_type, page_letter):
     for data in security_data_list:
         az_page_df = pd.concat([data, az_page_df])
 
-    # Remove duplicates from dataframe
-    az_page_df = az_page_df.drop_duplicates()
-
     return az_page_df
 
 # Fetches all available securities on MarketWatch given a security type
@@ -750,7 +748,7 @@ def mw_fetch_security_list(security_type, data_save=True):
     df = df.drop_duplicates()
 
     # Sort dataframe by ascending symbols
-    df = df.sort_values(by='Symbol', ascending=True).reset_index(drop=True)
+    df = df.sort_values(by='Exchange', ascending=True).reset_index(drop=True)
 
     # Save dataframe if data_save is True
     if data_save:
@@ -796,4 +794,327 @@ def log_empty_column_remover(file_name, folder):
     # Save cumulative dataframes
     save_data(df, f"{file_name}_empty_removed", folder)
 
-# log_empty_column_remover('dynamic_price_change_%5EGSPC_exec_2023-07-15_date_5.0_dura_25000.0_budg_1e-06_liqu_tiered_pmod_0_motv_True_reve_log_df', 'simulations')
+   
+# Creates dataframe from Securities List that identifies unique "types" of data in each exchange
+
+def securities_symbols_type_finder(type, file_path):
+    # Open dataframe from file_path
+    df = pd.read_csv(file_path, dtype=str, keep_default_na=False)
+
+    # Initiate unique_df
+    unique_df_columns = df.columns.tolist()
+    unique_df_columns.append('RegexExchange')
+    unique_df = pd.DataFrame(columns=unique_df_columns)
+
+    # Loop through each entry and add if entry is new type + exchange
+    for index, entry in df.iterrows():
+        # Assign regex variable
+        regex = identify_regex_symbol(entry['Symbol'])
+        exchange = entry['Exchange']
+        regexexchange = None
+        try:
+            regexexchange = regex + exchange
+        except:
+            print("Unrecognized Regex:", entry)
+            break
+
+        # Check if RegexExchange exists
+        if regexexchange not in unique_df['RegexExchange'].tolist():
+
+            # Initiate each column value
+            symbol = entry['Symbol']
+            name = entry['Name']
+            country = entry['Country']
+            exchange = entry['Exchange']
+            sector = entry['Sector']
+
+            # Initiate entry data
+            entry_data = [{
+                'Symbol': symbol,
+                'Name': name,
+                'Country': country,
+                'Exchange': exchange,
+                'Sector': sector,
+                'Regex': regex,
+                'RegexExchange': regexexchange
+            }]
+
+            # Initiate entry dataframe
+            entry_df = pd.DataFrame(entry_data)
+
+            # Add entry dataframe to unique dataframe
+            unique_df = pd.concat([entry_df, unique_df]).reset_index(drop=True)
+
+    # Drop RegexExchange column
+    unique_df.drop(columns=["RegexExchange"], inplace=True)
+
+    # Save unique_df
+    save_data(unique_df, f"{type}_symbol_types", "Securities List")
+
+    # Return unique_df
+    return unique_df
+
+
+# Identifies the type of symbol by testing against regex
+
+def identify_regex_symbol(symbol):
+    # List of regex patterns to test against the input string
+    regex_patterns = [
+        r'^[A-Za-z0-9]+$',      # Alphanumeric characters only
+        r'^[A-Za-z0-9]+.0$',
+        r'^[A-Za-z0-9]+.1$',
+        r'^[A-Za-z0-9]+.A$',
+        r'^[A-Za-z0-9]+.B$',
+        r'^[A-Za-z0-9]+.BAH$',
+        r'^[A-Za-z0-9]+.BAT$',
+        r'^[A-Za-z0-9]+.BH$',
+        r'^[A-Za-z0-9]+.C$',
+        r'^[A-Za-z0-9]+.CHAI$',
+        r'^[A-Za-z0-9]+.CON$',
+        r'^[A-Za-z0-9]+.D$',
+        r'^[A-Za-z0-9]+.DK$',
+        r'^[A-Za-z0-9]+.E$',
+        r'^[A-Za-z0-9]+.ED$',
+        r'^[A-Za-z0-9]+.EM$',
+        r'^[A-Za-z0-9]+.FI$',
+        r'^[A-Za-z0-9]+.H$',
+        r'^[A-Za-z0-9]+.HAJTEX$',
+        r'^[A-Za-z0-9]+.I0000$',
+        r'^[A-Za-z0-9]+.II$',
+        r'^[A-Za-z0-9]+.J$',
+        r'^[A-Za-z0-9]+.KZ$',
+        r'^[A-Za-z0-9]+.M$',
+        r'^[A-Za-z0-9]+.N0000$',
+        r'^[A-Za-z0-9]+.O$',
+        r'^[A-Za-z0-9]+.P$',
+        r'^[A-Za-z0-9]+.PF$',
+        r'^[A-Za-z0-9]+.PFA$',
+        r'^[A-Za-z0-9]+.PFB$',
+        r'^[A-Za-z0-9]+.PFC$',
+        r'^[A-Za-z0-9]+.PFD$',
+        r'^[A-Za-z0-9]+.PFE$',
+        r'^[A-Za-z0-9]+.PFF$',
+        r'^[A-Za-z0-9]+.PFG$',
+        r'^[A-Za-z0-9]+.PFH$',
+        r'^[A-Za-z0-9]+.PFI$',
+        r'^[A-Za-z0-9]+.PFJ$',
+        r'^[A-Za-z0-9]+.PFK$',
+        r'^[A-Za-z0-9]+.PFL$',
+        r'^[A-Za-z0-9]+.PFM$',
+        r'^[A-Za-z0-9]+.PR$',
+        r'^[A-Za-z0-9]+.PRA$',
+        r'^[A-Za-z0-9]+.PRAN$',
+        r'^[A-Za-z0-9]+.PRB$',
+        r'^[A-Za-z0-9]+.PRC$',
+        r'^[A-Za-z0-9]+.PRD$',
+        r'^[A-Za-z0-9]+.PRE$',
+        r'^[A-Za-z0-9]+.PREF$',
+        r'^[A-Za-z0-9]+.PREFB$',
+        r'^[A-Za-z0-9]+.PRF$',
+        r'^[A-Za-z0-9]+.PRG$',
+        r'^[A-Za-z0-9]+.PRH$',
+        r'^[A-Za-z0-9]+.PRI$',
+        r'^[A-Za-z0-9]+.PRJ$',
+        r'^[A-Za-z0-9]+.PRK$',
+        r'^[A-Za-z0-9]+.PRL$',
+        r'^[A-Za-z0-9]+.PRM$',
+        r'^[A-Za-z0-9]+.PRN$',
+        r'^[A-Za-z0-9]+.PRO$',
+        r'^[A-Za-z0-9]+.PRP$',
+        r'^[A-Za-z0-9]+.PRQ$',
+        r'^[A-Za-z0-9]+.PRR$',
+        r'^[A-Za-z0-9]+.PRS$',
+        r'^[A-Za-z0-9]+.PRT$',
+        r'^[A-Za-z0-9]+.PRU$',
+        r'^[A-Za-z0-9]+.PRV$',
+        r'^[A-Za-z0-9]+.PRW$',
+        r'^[A-Za-z0-9]+.PRX$',
+        r'^[A-Za-z0-9]+.PRY$',
+        r'^[A-Za-z0-9]+.PRZ$',
+        r'^[A-Za-z0-9]+.R$',
+        r'^[A-Za-z0-9]+.RC$',
+        r'^[A-Za-z0-9]+.RT$',
+        r'^[A-Za-z0-9]+.SE$',
+        r'^[A-Za-z0-9]+.SPAC$',
+        r'^[A-Za-z0-9]+.STR$',
+        r'^[A-Za-z0-9]+.USD$',
+        r'^[A-Za-z0-9]+.UT$',
+        r'^[A-Za-z0-9]+.V$',
+        r'^[A-Za-z0-9]+.WORK$',
+        r'^[A-Za-z0-9]+.WT$',
+        r'^[A-Za-z0-9]+.WTA$',
+        r'^[A-Za-z0-9]+.WTB$',
+        r'^[A-Za-z0-9]+.WTC$',
+        r'^[A-Za-z0-9]+.WTR$',
+        r'^[A-Za-z0-9]+.X$',
+        r'^[A-Za-z0-9]+.X0000$',
+        r'^[A-Za-z0-9]+.Y$',
+        r'^[A-Za-z0-9]+.R.A$',
+        r'^[A-Za-z0-9]+.PREF.B$',
+        r'^[A-Za-z0-9]+.PREF.P2$',
+        r'^[A-Za-z0-9]+.SPAC.A$',
+        r'^[A-Za-z0-9]+&[A-Za-z0-9]+$'
+    ]
+
+    # Initialize variables to store the best pattern and its match count
+    best_pattern = None
+    best_match_count = 0
+
+    # Test each regex pattern against the input string and find the best match
+    for pattern in regex_patterns:
+        matches = re.findall(pattern, symbol)
+        match_count = len(matches)
+        if match_count > best_match_count:
+            best_pattern = pattern
+            best_match_count = match_count
+
+    return best_pattern
+
+# Converts symbol based on Regex and Regex Substitution
+
+def process_symbol_regex_substitution(symbol, name, regex_substitution):
+    result = eval(regex_substitution)
+    return result
+
+# Tests process_process_symbol_regex_substitution
+
+def process_symbol_regex_substitution_test(file_path):
+    # Initiate dataframe
+    df = pd.read_csv(file_path)
+
+    # Filter dataframe where Regex Substitution is not N/A
+    df = df[df["Regex Substitution"].notna()]
+
+    # Loop through each entry that is not N/A for substitution
+    for index, entry in df.iterrows():
+        # Initialize response and data variables
+        response = ""
+        data = ""
+
+        # Execute given the situations where Y.E is blank
+        if pd.isna(entry['Yahoo Exchange']):
+            code = f"{process_symbol_regex_substitution(entry['Symbol'], entry['Name'], entry['Regex Substitution'])}"
+            url = f"https://query1.finance.yahoo.com/v8/finance/chart/{code}?symbol={code}"
+            response = requests.get(url, headers=generate_header())
+            data = response.json()['chart']['result']
+        # Execute given a normal Y.E
+        else:
+            code = f"{process_symbol_regex_substitution(entry['Symbol'], entry['Name'], entry['Regex Substitution'])}{entry['Yahoo Exchange']}"
+            url = f"https://query1.finance.yahoo.com/v8/finance/chart/{code}?symbol={code}"
+            response = requests.get(url, headers=generate_header())
+            data = response.json()['chart']['result']
+
+        print(data)
+
+# Finds symbol_regex_substitution given Exchange, Regex and securities symbol types dataframe + raise unknown combinations
+
+def process_symbol_regex_substitution_finder(exchange, regex, symbol_types_df):
+    try:
+        entry = symbol_types_df[(symbol_types_df['Exchange'] == exchange) & (symbol_types_df['Regex'] == regex)]
+
+        return entry['Yahoo Exchange'].values[0], entry['Regex Substitution'].values[0]
+    except:
+        raise Exception(f"Undocumented Exchange-Regex Pair Found: Exchange - {exchange} | Regex - {regex}")
+
+# Return Yahoo Finance symbol for Bombay Stock Exchange
+
+def process_symbol_bombay(symbol, name):
+    # Initialize original name
+    original_name = name
+
+    # Initialize Yahoo Symbol
+    yh_symbol = None
+    print(symbol, name)
+
+    # # Generate proxy for connection
+    # proxy = generate_free_proxy()
+
+    # Initialize function that runs Yahoo Finance API and searches for stock code
+    def process_symbol_yh(symbol, name):
+        nonlocal yh_symbol
+        yh_response = requests.get(f"https://query1.finance.yahoo.com/v1/finance/search?q={name}&lang=en-US&region=US&quotesCount=6&newsCount=0&listsCount=0&enableFuzzyQuery=false&quotesQueryId=tss_match_phrase_query&multiQuoteQueryId=multi_quote_single_token_query&newsQueryId=news_cie_vespa&enableCb=true&enableNavLinks=true&enableEnhancedTrivialQuery=true&enableResearchReports=false&enableCulturalAssets=true&enableLogoUrl=true&researchReportsCount=0", headers=generate_header()).json()['quotes']
+        for entry in yh_response:
+            try:
+                if (entry['exchange'] == 'BSE' or entry['exchange'] == 'NSI'):
+                    yh_symbol = re.search(r'^(.*?)\.[A-Z]{2}$', entry['symbol']).group(1)
+                    break
+            except:
+                pass
+
+    # List of URLs to process with different variations of the name
+    urls = [
+        name.split('Ltd.')[0].strip().replace(' ', '%20'),
+        name.split('Ltd.')[0].strip().replace('&', '%26').replace(' ', '%20'),
+        name.replace('Ltd.', 'Limited').split('Ltd.')[0].strip().replace(' ', '%20'),
+        ' '.join(name.split(' ')[:3]).split('Ltd.')[0].strip().replace(' ', '%20'),
+        ''.join(f'{char}.' if char.isupper() and (index + 1 < len(name) and (name[index + 1].isupper() or name[index + 1] == ' ')) else char for index, char in enumerate(name.replace('Ltd.', 'Limited'))).replace('. ', '.').replace(' ', '%20'),
+        ''.join(f'{char}.' if char.isupper() and (i + 1 < len(name) and (name[i + 1].isupper() or name[i + 1] == ' ')) else char for i, char in enumerate(name.replace('Ltd.', 'Limited'))).replace('Ltd.', '').replace('. ', '.').replace(' ', '%20').replace('.', '. '),
+        re.sub(r"(?<=\w)([A-Z])", r" \1", name).split('Ltd.')[0].strip().replace(' ', '%20'),
+        name.split('Ltd.')[0].strip().replace(' ', '%20').replace('.', ''),
+        name.split('Ltd.')[0].strip()[:-1].replace(' ', '%20'),
+        name.split('Ltd.')[0].strip().replace('ies', '').replace(' ', '%20'),
+        name.split('Ltd.')[0].strip().replace('&', ' and ').replace(' ', '%20'),
+        str(''.join(f'{char}.' if char.isupper() and (index + 1 < len(name) and (name[index + 1].isupper() or name[index + 1] == ' ')) else char for index, char in enumerate(name.replace('Ltd.', 'Limited'))).replace('. ', '.').rsplit('.', 1)[0] + '. ' + ''.join(f'{char}.' if char.isupper() and (index + 1 < len(name) and (name[index + 1].isupper() or name[index + 1] == ' ')) else char for index, char in enumerate(name.replace('Ltd.', 'Limited'))).replace('. ', '.').rsplit('.', 1)[-1] if '.' in ''.join(f'{char}.' if char.isupper() and (index + 1 < len(name) and (name[index + 1].isupper() or name[index + 1] == ' ')) else char for index, char in enumerate(name.replace('Ltd.', 'Limited'))).replace('. ', '.') else ''.join(f'{char}.' if char.isupper() and (index + 1 < len(name) and (name[index + 1].isupper() or name[index + 1] == ' ')) else char for index, char in enumerate(name.replace('Ltd.', 'Limited'))).replace('. ', '.')).replace(' ', '%20')
+    ]
+
+    # # Process each URL and try to find the stock symbol
+    # for url in urls:
+    #     process_symbol_yh(symbol, url)
+    #     if yh_symbol:
+    #         return yh_symbol
+    # Process each URL and try to find the stock symbol
+    for index, url in enumerate(urls):
+        process_symbol_yh(symbol, url)
+        if yh_symbol:
+            print(f"Yahoo {index + 1}")
+            return yh_symbol
+
+    # Initialize Stockopedia Name
+    sp_name = None
+
+    # Get new name from Stockopedia
+    sp_response = requests.get(f"https://api.growth.stockopedia.com/v1/search?term={symbol}", headers=generate_header()).json()['data']
+    print(f"https://api.growth.stockopedia.com/v1/search?term={symbol}")
+
+    # Loop through response, if exchange is BSE or NSI, break
+    if len(sp_response) > 0:
+        for entry in sp_response:
+            if (entry['exchange'] == 'BSE' or entry['exchange'] == 'NSI') and symbol == entry['googleTicker'].split(":")[1]:
+                sp_name = entry['name']
+                print(f"Stockpedia 1")
+                break
+    else:
+        # Get new name from Stockopedia
+        sp_response = requests.get(f"https://api.growth.stockopedia.com/v1/search?term={name.split('Ltd.')[0].strip().replace(' ', '%20')}", headers=generate_header()).json()['data']
+        print(f"https://api.growth.stockopedia.com/v1/search?term={name.split('Ltd.')[0].strip().replace(' ', '%20')}")
+        # Loop through response, if exchange is BSE or NSI, break
+        if len(sp_response) > 0:
+            for entry in sp_response:
+                if (entry['exchange'] == 'BSE' or entry['exchange'] == 'NSI'):
+                    sp_name = entry['name']
+                    print(f"Stockpedia 2")
+                    break
+        else:
+            # Get new name from Stockopedia
+            sp_response = requests.get(f"https://api.growth.stockopedia.com/v1/search?term={name.split('Ltd.')[0].strip().replace(' ', '%20')}", headers=generate_header()).json()['data']
+            print(f"https://api.growth.stockopedia.com/v1/search?term={name.split('Ltd.')[0].strip().replace('&', ' and ').replace(' ', '%20')}")
+            # Loop through response, if exchange is BSE or NSI, break
+            if len(sp_response) > 0:
+                for entry in sp_response:
+                    if (entry['exchange'] == 'BSE' or entry['exchange'] == 'NSI'):
+                        sp_name = entry['name']
+                        print(f"Stockpedia 3")
+                        break
+
+    # Set name as original Stockopedia name
+    name = sp_name
+
+    # Run Yahoo search on original Stockopedia name
+    process_symbol_yh(symbol, name)
+    print(symbol, name, yh_symbol)
+    # If 2nd search works, return value
+    if yh_symbol:
+        return yh_symbol
+
+    raise Exception(f"ERROR COULD NOT FIND STOCK: {symbol} | {name}")
+
