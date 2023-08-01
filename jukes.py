@@ -49,7 +49,7 @@ def generate_header():
 # Generates the first working proxy available
 
 def generate_free_proxy():
-    # print(f"[{datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')}] generate_free_proxy(): Generating Valid Proxy...")
+    print(f"[{datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')}] generate_free_proxy(): Generating Valid Proxy...")
     url = "https://free-proxy-list.net/"
 
     # Create dataframe
