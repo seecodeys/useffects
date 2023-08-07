@@ -150,6 +150,7 @@ def run_us_price_change_simulation(execution_index, folder, end_date, duration, 
                             symbol_entry.insert(4, 'Stop Loss', symbol_entry_stop_loss)
 
                             # Return symbol_entry to add to current_date_final_df and current_date_log_df
+                            print(symbol_entry)
                             return symbol_entry
 
     # Create function to process each day
@@ -177,7 +178,7 @@ def run_us_price_change_simulation(execution_index, folder, end_date, duration, 
 
         # Sort current_date_temp_working_df according to Previous 10D $ Volume
         current_date_temp_working_df = current_date_temp_working_df.sort_values(by='Previous 10D $ Volume', ascending=False).reset_index(drop=True)
-
+        save_data(current_date_temp_working_df, "temp_working_df_test", "simulations")
         # Reoptimize portfolio to eliminate those where quantity = 0
         while True and len(current_date_temp_working_df) > 0:
             current_date_temp_working_df['Allocation'] = current_date_temp_working_df['Previous 10D $ Volume'] / current_date_temp_working_df['Previous 10D $ Volume'].sum() * budget
@@ -319,6 +320,7 @@ def run_us_price_change_simulation(execution_index, folder, end_date, duration, 
     for date in execution_index_df['Date']:
         # Run process_date for current date
         process_date(date)
+        break
 
         # if date == pd.to_datetime("2003/12/30", format="%Y/%m/%d"):
         #     print(date)
@@ -336,18 +338,18 @@ def main():
     execution_index = "%5EGSPC"
     folder = "US"
     end_date = "Jul 15, 2023"
-    duration = float(20)
+    duration = float(5)
     budget = float(25000)
     lot_size = 1
-    liquidity = 0.000001
+    liquidity = t
     stop_loss = 0.977
     ibkr_pricing_mode = "tiered"
     monthly_trade_volume = 0
     reverse = True
 
-    duration = float(input("Enter duration in years: "))
-    budget = float(input("Enter budget in USD: "))
-    stop_loss = float(input("Enter stop loss percentile in decimals: "))
+    # duration = float(input("Enter duration in years: "))
+    # budget = float(input("Enter budget in USD: "))
+    # stop_loss = float(input("Enter stop loss percentile in decimals: "))
 
     time_function(run_us_price_change_simulation, execution_index, folder, end_date, duration, budget, lot_size, liquidity, stop_loss, ibkr_pricing_mode, monthly_trade_volume, reverse)
 
