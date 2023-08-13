@@ -11,7 +11,7 @@ data_series_1 = pd.read_csv(f'Portfolio Performance/{file_name}.csv')
 # Convert the 'Date' column to datetime format and set it as the index
 data_series_1['Date'] = pd.to_datetime(data_series_1['Date'], format='%d-%b-%Y')
 data_series_1.set_index('Date', inplace=True)
-data_series_1['Balance'] = data_series_1['Balance'].str.replace(',', '').astype(float)
+data_series_1['Balance'] = data_series_1['Balance'].astype(str).str.replace(',', '').astype(float)
 
 # Calculate daily returns
 data_series_1['Daily Return'] = data_series_1['Balance'].pct_change()
