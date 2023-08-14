@@ -353,7 +353,7 @@ def search_fx_data(end_date, duration, folder, base_currency):
 
 # Processes each stock's Yahoo Finance historical data by:
 # 1) Changing all the currencies to base currency
-# 2) Adds Change, Previous Change, $ Volume and 10D $ Volume columns
+# 2) Adds Change, Previous Change, Market Open Change, $ Volume and 10D $ Volume columns
 
 def yh_process_historical_data(code, folder, base_currency):
     df = pd.read_csv(f"{folder}/{code}.csv")
@@ -386,6 +386,7 @@ def yh_process_historical_data(code, folder, base_currency):
     df = df.drop('Currency', axis=1)
     df['% Day Change'] = round(df['Close'] / df['Open'] - 1, 4)
     df['% Previous Change'] = round(df['Close'] / df['Close'].shift(1) - 1, 4)
+    df['% Market Open Change'] = round(df['Open'] / df['Close'].shift(1) - 1, 4)
     df['$ Volume'] = round(df['Close'] * df['Volume'], 2)
     df['10D $ Volume'] = round(df['$ Volume'].rolling(window=10).mean(), 2)
     df['Previous 10D $ Volume'] = df['10D $ Volume'].shift(1)

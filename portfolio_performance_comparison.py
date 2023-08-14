@@ -26,6 +26,10 @@ data_series_1['Cumulative Returns'] = (1 + data_series_1['Daily Return']).cumpro
 data_series_1['Year'] = data_series_1.index.year
 data_series_1['Yearly Cumulative Returns'] = data_series_1.groupby('Year')['Cumulative Returns'].transform(lambda x: x / x.iloc[0])
 
+# Calculate the breakdown of returns every month
+data_series_1['YearMonth'] = data_series_1.index.to_period('M')
+data_series_1['Monthly Cumulative Returns'] = data_series_1.groupby('YearMonth')['Cumulative Returns'].transform(lambda x: x / x.iloc[0])
+
 # Calculate the total return of the portfolio over the period
 total_return_series_1 = data_series_1['Cumulative Returns'][-1] - 1
 
@@ -40,6 +44,7 @@ annualized_volatility_series_1 = data_series_1['Daily Return'].std() * np.sqrt(2
 risk_free_rate = 0.02
 sharpe_ratio_series_1 = (annualized_return_series_1 - risk_free_rate) / annualized_volatility_series_1
 
+
 # Calculate the maximum drawdown of the portfolio
 def calculate_max_drawdown(cumulative_returns):
     # Calculate the cumulative wealth index
@@ -51,6 +56,7 @@ def calculate_max_drawdown(cumulative_returns):
     # Calculate the maximum drawdown
     max_drawdown = drawdowns.min()
     return max_drawdown
+
 
 max_drawdown_series_1 = calculate_max_drawdown(data_series_1['Daily Return'])
 
@@ -81,6 +87,17 @@ plt.legend()
 plt.grid(True)
 plt.show()
 
+# Plot the breakdown of returns every month
+plt.figure(figsize=(10, 6))
+for year_month, month_data in data_series_1.groupby('YearMonth'):
+    plt.plot(month_data.index, month_data['Monthly Cumulative Returns'], label=f'Month {year_month}')
+plt.xlabel('Date')
+plt.ylabel('Monthly Cumulative Returns')
+plt.title('Monthly Cumulative Returns - Portfolio Performance')
+plt.legend()
+plt.grid(True)
+plt.show()
+
 # Print performance metrics
 print("Portfolio 1 Performance Metrics:")
 print("Total Return:", total_return_series_1)
@@ -94,3 +111,8 @@ print("Maximum Drawdown:", max_drawdown_series_1)
 for year, year_data in data_series_1.groupby('Year'):
     year_return = year_data['Cumulative Returns'].iloc[-1] / year_data['Cumulative Returns'].iloc[0] - 1
     print(f"Year {year}: {year_return:.2%}")
+
+# Print breakdown of returns every month
+for year_month, month_data in data_series_1.groupby('YearMonth'):
+    month_return = month_data['Cumulative Returns'].iloc[-1] / month_data['Cumulative Returns'].iloc[0] - 1
+    print(f"Month {year_month}: {month_return:.2%}")
