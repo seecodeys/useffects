@@ -10,9 +10,9 @@ from functions import *
 
 # Runs a simulation with the provided settings
 
-def run_us_price_change_simulation(execution_index, folder, end_date, duration, budget, lot_size=1, liquidity=0.00005, ibkr_pricing_mode="tiered", monthly_trade_volume=0, reverse=False):
-    # Set initial budget for future reference
-    initial_budget = budget
+def run_us_price_change_simulation(execution_index, folder, end_date, duration, lot_size=1, liquidity=0.00005, ibkr_pricing_mode="tiered", monthly_trade_volume=0, reverse=False):
+    # Initiate cumulative profit
+    cumulative_profit = 0
 
     # Parse the end_date string to a datetime object
     end_date = datetime.datetime.strptime(end_date, "%b %d, %Y")
@@ -24,7 +24,7 @@ def run_us_price_change_simulation(execution_index, folder, end_date, duration, 
     instance_start_date = None
 
     # Initiate base file name
-    base_file_name = f"dynamic_price_change_{execution_index}_exec_{end_date.strftime('%Y-%m-%d')}_date_{duration}_dura_{initial_budget}_budg_{liquidity}_liqu_{ibkr_pricing_mode}_pmod_{monthly_trade_volume}_motv_{reverse}_reve"
+    base_file_name = f"dynamic_price_change_{execution_index}_exec_{end_date.strftime('%Y-%m-%d')}_date_{duration}_dura_{liquidity}_liqu_{ibkr_pricing_mode}_pmod_{monthly_trade_volume}_motv_{reverse}_reve"
 
     # Create list of execution symbols
     execution_symbol_list = []
@@ -40,19 +40,18 @@ def run_us_price_change_simulation(execution_index, folder, end_date, duration, 
     # Open / Create simulation final dataframe
     if not os.path.exists(f"simulations/{base_file_name}_final_df.csv"):
         # Create simulation's final dataframe
-        final_df_columns = ['Date', 'Starting Amount', 'Invested Amount', 'Remainder', 'Asset Change', 'Fees', 'Profit/Loss', 'Yield', 'Bottom Line']
+        final_df_columns = ['Date', 'Portfolio Size', 'Invested Amount', 'Remainder', 'Asset Change', 'Fees', 'Profit/Loss']
         instance_start_date = start_date
     else:
         # Open existing dataframe
         final_df = pd.read_csv(f"simulations/{base_file_name}_final_df.csv")
         instance_start_date = pd.to_datetime(final_df['Date'].iloc[-1]) + pd.DateOffset(days=1)
-        budget = final_df['Bottom Line'].iloc[-1]
         del final_df
 
     # Open / Create simulation log dataframe
     if not os.path.exists(f"simulations/{base_file_name}_log_df.csv"):
         # Create simulation's log dataframe according to number of stocks
-        log_df_columns = ['Date', 'Portfolio Size', 'Starting Amount', 'Bottom Line']
+        log_df_columns = ['Date', 'Portfolio Size']
         log_df_additional_columns = [f'Constituent #{i + 1}' for i in range(len(execution_symbol_list))]
         log_df_additional_columns += [f'{col} #{i + 1}' for col in ['Prediction', 'Open', 'High', 'Low', 'Close', 'Volume', 'Change', 'Quantity', 'Stop Loss', 'Stop Loss Triggered', 'Fees', 'Profit/Loss'] for i in range(len(execution_symbol_list))]
         log_df_columns += log_df_additional_columns
@@ -62,15 +61,11 @@ def run_us_price_change_simulation(execution_index, folder, end_date, duration, 
 
     # Create execution_index dataframe, filter by start_date or instance_start_date and remove first 10 days (Previous 10D $ Volume)
     execution_index_df = pd.read_csv(f"INDEX/{execution_index}.csv")
-    execution_index_initial_budget = None
     execution_index_df['Date'] = pd.to_datetime(execution_index_df["Date"])
-    execution_index_initial_budget = execution_index_df[execution_index_df["Date"] >= start_date].reset_index(drop=True).loc[0, 'Open']
     execution_index_df = execution_index_df[execution_index_df["Date"] >= instance_start_date].reset_index(drop=True)
     instance_start_date = execution_index_df.loc[0, "Date"]
     if instance_start_date == pd.to_datetime("Dec 1, 2003"):
         execution_index_df = execution_index_df.loc[10:].reset_index(drop=True)
-        execution_index_initial_budget = execution_index_df.loc[0, 'Open']
-        instance_start_date = execution_index_df.loc[0, "Date"]
 
     # Create function to process each symbol
     def process_symbol(symbol, current_date):
@@ -156,7 +151,7 @@ def run_us_price_change_simulation(execution_index, folder, end_date, duration, 
     # Create function to process each day
     def process_date(current_date):
         # Import nonlocal variables
-        nonlocal budget
+        nonlocal cumulative_profit
 
         # Create current_date_temp_working_df, current_date_log_df and current_date_final_df
         current_date_temp_working_df = pd.DataFrame(columns=['Date', 'Symbol', 'Previous 10D $ Volume', 'Prediction', 'Stop Loss', 'Open', 'High', 'Low', 'Close', 'Volume'])
@@ -200,19 +195,15 @@ def run_us_price_change_simulation(execution_index, folder, end_date, duration, 
         # Append data to current_date_log_df
         current_date_log_df.loc[0, f"Date"] = current_date
         current_date_log_df.loc[0, f"Portfolio Size"] = len(current_date_temp_working_df)
-        current_date_log_df.loc[0, f"Starting Amount"] = budget
-        current_date_log_df.loc[0, f"Bottom Line"] = budget
 
         # Append data to current_date_final_df
         current_date_final_df.loc[0, f"Date"] = current_date
-        current_date_final_df.loc[0, f"Starting Amount"] = budget
+        current_date_final_df.loc[0, f"Portfolio Size"] = len(current_date_temp_working_df)
         current_date_final_df.loc[0, f"Invested Amount"] = 0
         current_date_final_df.loc[0, f"Remainder"] = 0
         current_date_final_df.loc[0, f"Asset Change"] = 0
         current_date_final_df.loc[0, f"Fees"] = 0
         current_date_final_df.loc[0, f"Profit/Loss"] = 0
-        current_date_final_df.loc[0, f"Yield"] = 0
-        current_date_final_df.loc[0, f"Bottom Line"] = budget
 
         # Initiate stop loss counter for observation
         stop_loss_count = 0
@@ -265,8 +256,6 @@ def run_us_price_change_simulation(execution_index, folder, end_date, duration, 
                 current_date_log_df.loc[0, f"Fees #{index + 1}"] += ibkr_us_fees(entry['Close'], entry['Quantity'], ibkr_pricing_mode, monthly_trade_volume)
             # Deduct fees
             current_date_log_df.loc[0, f"Profit/Loss #{index + 1}"] -= current_date_log_df.loc[0, f"Fees #{index + 1}"]
-            # Calculate and append Bottom Line
-            current_date_log_df.loc[0, f"Bottom Line"] += current_date_log_df.loc[0, f"Profit/Loss #{index + 1}"]
 
             # Append data to current_date_final_df
             current_date_final_df.loc[0, f"Invested Amount"] += entry['Investment']
@@ -278,8 +267,7 @@ def run_us_price_change_simulation(execution_index, folder, end_date, duration, 
                 current_date_final_df.loc[0, f"Asset Change"] += (entry['Open'] - entry['Close']) * current_date_log_df.loc[0, f"Quantity #{index + 1}"]
             current_date_final_df.loc[0, f"Fees"] += ibkr_us_fees(entry['Open'], entry['Quantity'], ibkr_pricing_mode, monthly_trade_volume) + ibkr_us_fees(entry['Close'], entry['Quantity'], ibkr_pricing_mode, monthly_trade_volume)
             current_date_final_df.loc[0, f"Profit/Loss"] += current_date_log_df.loc[0, f"Profit/Loss #{index + 1}"]
-            current_date_final_df.loc[0, f"Yield"] += current_date_log_df.loc[0, f"Profit/Loss #{index + 1}"] / budget
-            current_date_final_df.loc[0, f"Bottom Line"] += current_date_log_df.loc[0, f"Profit/Loss #{index + 1}"]
+            cumulative_profit += current_date_log_df.loc[0, f"Profit/Loss #{index + 1}"]
 
         # Add the 2 current_date dataframes to the full dataframe csv files in append mode
         output_file_final_df = f"simulations/{base_file_name}_final_df.csv"
@@ -293,43 +281,26 @@ def run_us_price_change_simulation(execution_index, folder, end_date, duration, 
         current_date_final_df.to_csv(output_file_final_df, mode='a', header=not file_exists_final_df, index=False)
         current_date_log_df.to_csv(output_file_log_df, mode='a', header=not file_exists_log_df, index=False)
 
-        # Set budget to bottom line
-        budget = max(current_date_final_df.loc[0, f"Bottom Line"], 0)
-
         # Initiate status update variables
-        daily_yield = current_date_final_df.loc[0, 'Yield']
-        balance = current_date_final_df.loc[0, 'Bottom Line']
-        average_return = 0
-        execution_index_average_return = 0
-        years = ((current_date - start_date).days / 365)
-        execution_index_close = execution_index_df.loc[execution_index_df['Date'] == current_date, 'Close'].values[0]
-        if current_date > start_date:
-            average_return = ((balance / initial_budget) ** (1 / years)) - 1
-            execution_index_average_return = ((execution_index_close / execution_index_initial_budget) ** (1 / years)) - 1
+        daily_yield = current_date_final_df.loc[0, 'Profit/Loss']
+        average_daily_yield = 0
 
         # Format status update variables
-        daily_yield = f"{'%.2f' % (round(daily_yield, 4) * 100)}%"
-        balance = f"${'%.2f' % (round(balance, 2))}"
-        average_return = f"{'%.2f' % (round(average_return, 4) * 100)}%"
-        execution_index_average_return = f"{'%.2f' % (round(execution_index_average_return, 4) * 100)}%"
+        daily_yield = f"${'%.2f' % (round(daily_yield, 2))}"
+        if current_date > start_date:
+            average_daily_yield = f"${'%.2f' % (round(cumulative_profit / (current_date - start_date).days, 2))}"
 
         # Print status update
-        print(f"[{datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')}] {current_date.strftime('%Y-%m-%d')} Daily Yield: {daily_yield} | Balance: {balance } Average Return: {average_return} | Execution Index Average Return: {execution_index_average_return}")
+        print(f"[{datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')}] {current_date.strftime('%Y-%m-%d')} Daily Yield: {daily_yield} | Average Daily Yield: {average_daily_yield}")
 
-    for date in execution_index_df['Date']:
-        # Run process_date for current date
-        process_date(date)
+    # Initiate multithreading
+    with concurrent.futures.ThreadPoolExecutor() as executor:
+        # Submit symbol processing tasks to the executor
+        futures = [executor.submit(process_date, date) for date in execution_index_df['Date']]
 
-        # if date == pd.to_datetime("2003/12/30", format="%Y/%m/%d"):
-        #     print(date)
-        #     # Run process_date for current date
-        #     process_date(date)
-    #
-    #     # # Graph cumulative final_df performance
-    #     # final_df_x = [final_df.iloc[0, 0]]
-    #     # final_df_y = [initial_budget]
-    #     # final_df_x.extend(final_df['Date'])
-    #     # final_df_y.extend(final_df['Bottom Line'])
+    # for date in execution_index_df['Date']:
+    #     # Run process_date for current date
+    #     process_date(date)
 
 
 def main():
@@ -337,17 +308,16 @@ def main():
     folder = "US"
     end_date = "Jul 15, 2023"
     duration = float(5)
-    budget = float(200000)
     lot_size = 1
     liquidity = 0.00005
     ibkr_pricing_mode = "tiered"
     monthly_trade_volume = 0
     reverse = True
 
-    # duration = float(input("Enter duration in years: "))
-    # budget = float(input("Enter budget in USD: "))
+    duration = float(input("Enter duration in years: "))
+    budget = float(input("Enter budget in USD: "))
 
-    time_function(run_us_price_change_simulation, execution_index, folder, end_date, duration, budget, lot_size, liquidity, ibkr_pricing_mode, monthly_trade_volume, reverse)
+    time_function(run_us_price_change_simulation, execution_index, folder, end_date, duration, lot_size, liquidity, ibkr_pricing_mode, monthly_trade_volume, reverse)
 
 if __name__ == "__main__":
     main()
