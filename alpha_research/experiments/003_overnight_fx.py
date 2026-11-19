@@ -21,7 +21,8 @@ EXP = "003_overnight_fx"
 
 
 def ny_minute_close(sym, years):
-    df = pd.concat([histdata.load(sym, y) for y in years])
+    cached = [y for y in years if os.path.exists(os.path.join(histdata.CACHE, f"{sym.upper()}_{y}.zip"))]
+    df = pd.concat([histdata.load(sym, y) for y in (cached or years)])
     df.index = df.index.tz_localize("Etc/GMT+5").tz_convert("America/New_York").tz_localize(None)
     return df["Close"].sort_index()
 

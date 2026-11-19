@@ -106,3 +106,8 @@ Verdict: **weak / execution-dependent** — same signature as 004: a few bp of r
 hour after the opening print, so it requires real opening-auction fills at ≤1bp. Not standalone-tradable on this evidence.
 Pattern across 004 and 006: the only surviving intraday "edges" are open-print reversals concentrated in the first hour.
 Registry: 114 tests.
+
+## 003 (part 3, closed) — Overnight gold (XAUUSD 1-min, 2009-2025)  ·  2026-11-19
+6 variants. Gold's overnight move barely relates to SPY's gap (corr 0.07) or its open→close (+0.03). All |valid t| < 1.1.
+**Dead.** 003 closed: USDJPY, AUDUSD, gold overnight moves have no open→close predictive power for SPY/QQQ.
+(WTI crude not downloaded — low prior after three dead FX/commodity tests; parked.) Registry: 120 tests (luck t ≈ 3.1).
