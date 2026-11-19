@@ -13,8 +13,8 @@
 - [ ] 008 Lead-lag at the open: large-cap gap vs small-cap gap (SPY vs IWM), QQQ vs SPY — does the lagging one catch up intraday?
 
 ## Regime / volatility
-- [ ] 009 VIX term structure (^VIX/^VIX3M, ^VIX9D) and VIX gap overnight → SPY intraday direction / magnitude.
-- [ ] 010 Prior-day intraday vs overnight decomposition (yesterday's oc and gap) → today's oc, by regime.
+- [x] 009 VIX term structure (^VIX/^VIX3M, ^VIX9D) and VIX gap overnight → SPY intraday direction / magnitude.
+- [x] 010 Prior-day intraday vs overnight decomposition (yesterday's oc and gap) → today's oc, by regime.
 - [ ] 011 Extreme overseas sell-off rebound (the one weak pattern from global_open_close) — event study with VIX filter.
 
 ## Ideas parking lot

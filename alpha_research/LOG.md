@@ -51,3 +51,16 @@ Verdict: **promising but unverifiable with free data.** Real only if you can act
 (NYSE opening auction via MOO orders) at ~≤3bp all-in. Could equally be bid/ask bounce in the open print.
 Next step needs execution evidence: paper-trade MOO/MOC fills, or quote-level data at 9:30.
 Total registry: 70 tests (luck benchmark t ≈ 2.9).
+
+## 009/010 — VIX regime & prior-day decomposition → SPY/QQQ open→close  ·  2026-11-19
+12 variants (6 pre-specified hypotheses × SPY, QQQ), 0.5bp/side. VIX/VIX3M from prior close only.
+- H1 fade yesterday's open→close: **QQQ passed gate** (train t=+2.21, valid t=+2.44, +6bp/trade); SPY weak (t≈1).
+  But QQQ P&L is crisis-concentrated (2000, 2001, 2008, 2020 ≈ 80% of total; ex-best-3-years +133% vs +345%).
+  **Holdout (one look): t=+0.15, +0.5bp/trade @0.5bp; negative @1bp.** Dead.
+- H2 (H1 only when VIX>VIX3M): QQQ valid t=+2.96, +45bp/trade on 8.5% of days — but train t only 1.58 (fails gate).
+  Same crisis-reversal effect; few independent episodes.
+- H6 (follow yesterday's intraday when its gap disagreed) is reliably *negative* (QQQ valid t=−2.7) — the same
+  reversal seen from another angle, not independent evidence.
+- H3 gap-fade|VIX>25, H4 long after VIX spike, H5 long in backwardation: nothing.
+Verdict: **dead** as standalone. Index intraday reversal exists only in high-vol crisis regimes; too few episodes to trust.
+Registry: 82 tests (luck benchmark t ≈ 3.0).
