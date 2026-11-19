@@ -119,3 +119,20 @@ HYG prior-day and SPY prior-day returns): the SPY prior-day **reversal** term ca
 the HYG term flips sign (train −0.9/−0.4 → valid +2.0/+1.6). So H1 is the index day-to-day reversal from 009 in disguise,
 which already failed its holdout. H2 (fade TLT prior day) wrong-signed in valid; best-case simultaneous HYG/TLT gaps: nothing.
 Verdict: **dead.** Registry: 128 tests.
+
+## 013 — Month-end rebalancing: fade the stock-bond month-to-date gap on the last trading day  ·  2026-11-19
+gap_mtd = SPY MTD − TLT MTD through the prior close (known pre-open). 4 variants (2002-08 →, TLT start).
+- **H1 SPY, last trading day of month, pos = −sign(gap_mtd), open→close: train t=+3.34, valid t=+2.01, Sharpe 0.71,
+  +17bp/trade → passed gate.** 16/21 years positive 2002-22 (ex-best-3-years total +23% vs +49%).
+  Dose-response: mean edge by |gap_mtd| tercile = +5bp / +18bp / +39bp — the bigger the imbalance, the bigger the
+  move, as a rebalancing-flow story predicts (consistent with published work on pension/balanced-fund rebalancing).
+- H2 (last 2 days): valid t=+2.6 but train t=1.1. H3 quarter-ends only: weak (few obs). H1 mirror on TLT: right sign, t<2.
+- **Holdout (2023→Nov 2026):** @0.5bp: **Sharpe 1.63, t=+3.20, +35.8bp/trade, hit 66%**; @2bp: t=+2.98.
+  Bug found right after: the unfinished current month's latest day (2026-11-18) was treated as a month-end (one
+  −43bp trade). Fixed (`complete` mask) and the holdout re-run, logged as such: @0.5bp Sharpe 1.68, t=+3.30,
+  +37.5bp/trade, hit 67% (46 trades); @2bp t=+3.09. Train/valid rows unaffected.
+Verdict: **SURVIVED HOLDOUT — first robust finding.** Small in time (12 trades/yr, ~4-5%/yr at 1× notional on the days
+traded, ~1.5% max drawdown), but large per trade and cost-insensitive. Registry: 132 tests (luck t ≈ 3.1); holdout t=3.3
+on a pre-specified rule is meaningful evidence.
+Follow-ups: same rule on IWM/QQQ/DIA and on equity-vs-bond pairs (SPY long/short vs TLT) as confirmation; sizing by
+|gap_mtd|; check whether the effect sits in the last hour (MOC flows) using 1h data.
