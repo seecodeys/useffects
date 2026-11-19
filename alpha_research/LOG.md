@@ -136,3 +136,17 @@ traded, ~1.5% max drawdown), but large per trade and cost-insensitive. Registry:
 on a pre-specified rule is meaningful evidence.
 Follow-ups: same rule on IWM/QQQ/DIA and on equity-vs-bond pairs (SPY long/short vs TLT) as confirmation; sizing by
 |gap_mtd|; check whether the effect sits in the last hour (MOC flows) using 1h data.
+
+## 013c — Month-end rebalancing: confirmation on IWM/QQQ/DIA + intraday timing  ·  2026-11-19
+Same pre-specified rule (signal = −sign(SPY MTD − TLT MTD), last trading day, open→close, 1bp/side):
+| ETF | train t | valid t | holdout Sharpe | holdout t | holdout bp/trade | hit |
+|---|---|---|---|---|---|---|
+| IWM | +3.61 | +2.38 | 1.41 | +2.77 | +37.7 | 74% |
+| QQQ | +2.04 | +2.07 | 1.80 | +3.55 | +48.3 | 70% |
+| DIA | +2.94 | +2.03 | 1.22 | +2.39 | +26.2 | 70% |
+All gate-passed and all positive in holdout. (Highly correlated with SPY, so confirmation of consistency, not
+independent evidence.) Timing on SPY (Yahoo 1h, 32 month-ends 2023-26): signed bp open→12:30 +20.7 (75% hit),
+12:30→15:30 +10.3 (53%), 15:30→close +17.8 (81% hit) — the move is spread through the day with a strong last hour,
+consistent with MOC rebalancing flows. Registry: 135 tests.
+Verdict: **013 confirmed as the project's main finding.** Ideas: higher-beta/small-cap ETF for larger moves, gap-size
+sizing, combining with the 001 OPEX tilt when month-end and OPEX don't coincide (they rarely do).
