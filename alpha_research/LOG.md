@@ -111,3 +111,11 @@ Registry: 114 tests.
 6 variants. Gold's overnight move barely relates to SPY's gap (corr 0.07) or its open→close (+0.03). All |valid t| < 1.1.
 **Dead.** 003 closed: USDJPY, AUDUSD, gold overnight moves have no open→close predictive power for SPY/QQQ.
 (WTI crude not downloaded — low prior after three dead FX/commodity tests; parked.) Registry: 120 tests (luck t ≈ 3.1).
+
+## 012 — Credit & rates ETFs (HYG, TLT) as risk signals → SPY/IWM open→close  ·  2026-11-19
+8 variants. H1 "follow yesterday's credit-equity divergence" (HYG_cc − 0.4·SPY_cc) looked consistent:
+SPY train/valid t = +1.4/+1.8, IWM +1.7/+2.8 (fails gate on train). Decomposition (HAC regression of open→close on
+HYG prior-day and SPY prior-day returns): the SPY prior-day **reversal** term carries it (t ≈ −1.6…−2.7 in both periods);
+the HYG term flips sign (train −0.9/−0.4 → valid +2.0/+1.6). So H1 is the index day-to-day reversal from 009 in disguise,
+which already failed its holdout. H2 (fade TLT prior day) wrong-signed in valid; best-case simultaneous HYG/TLT gaps: nothing.
+Verdict: **dead.** Registry: 128 tests.
