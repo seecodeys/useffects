@@ -79,3 +79,11 @@ large before ~2010 and have been arbitraged to below costs. Deprioritise further
 gap but −0.015 with the subsequent open→close. Follow-overnight-FX, catch-up-to-FX-implied-gap and follow-last-hour
 (08:29→09:29) all |valid t| < 0.7. **Dead** — overnight FX is priced into the open, same as overseas equities.
 Remaining for 003: AUDUSD, XAUUSD (downloading; run `python experiments/003_overnight_fx.py AUDUSD XAUUSD`).
+
+## 005 — Europe at 9:30 ET, measured properly (HistData DAX/CAC 1-min CFDs, Nov 2010-2025)  ·  2026-11-19
+12 variants: DAX→SPY/EWG, CAC→SPY/EZU × {follow Europe's move since the US close (15:59→09:29 NY), catch-up to
+Europe-implied gap, follow Europe's last hour 08:29→09:29}. Train is only 2010-14 here.
+Europe's true 9:30 move correlates 0.79-0.88 with the US/ETF opening gap and 0.00-0.03 with the open→close.
+No variant has train or valid t > 1.4 in the right direction. **Dead.**
+This closes the original thesis: with correct timing (no look-ahead, real 9:30 levels), neither Asian closes (000),
+overnight FX (003) nor European levels at the US open (005) predict US index open→close returns — it's all in the gap.
