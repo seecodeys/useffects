@@ -92,3 +92,17 @@ overnight FX (003) nor European levels at the US open (005) predict US index ope
 6 variants, 2001-2025. corr(AUDUSD overnight, SPY gap) = +0.46, with open→close +0.01. All |valid t| < 1.5,
 mostly wrong sign. **Dead.** Gold (XAUUSD) still downloading — low prior given USDJPY/AUDUSD; run it when cached,
 then close 003. Registry: 110 tests (luck benchmark t ≈ 3.1).
+
+## 006/007 — Cross-sectional intraday signals, ~95 US large caps (price ≥ $20)  ·  2026-11-19
+Hand-picked universe of names listed since ~2000 → survivorship-biased (flagged). Dollar-neutral decile L/S, open→close.
+- 007a tug-of-war (long low past-20d overnight return): valid t=−2.5 @2bp. Dead.
+- 007b intraday momentum (past-20d intraday): valid t=−1.6. Dead.
+- **006 overnight-gap reversal** (long bottom-decile gap vs SPY, short top): gross 15-30bp/day 2003-10, ~5bp/day
+  2015-22. @2bp/side valid t=+0.6 (fail); **@1bp/side valid t=+2.10, Sharpe 0.74 → passed gate** (cost level is the
+  only difference; MOO/MOC on large caps can plausibly reach ~1bp all-in).
+  **Holdout (one look):** @1bp: Sharpe 0.51, t=+1.0, +2.1bp/day; @2bp: t≈0. Gross ~5bp/day in 2023-25.
+  Delayed-entry check (Yahoo 1h, Dec 2023→Nov 2026): open→10:30 +4.9bp/day (t=2.7), 10:30→close −0.9bp (t=−0.6).
+Verdict: **weak / execution-dependent** — same signature as 004: a few bp of reversal that lives entirely in the first
+hour after the opening print, so it requires real opening-auction fills at ≤1bp. Not standalone-tradable on this evidence.
+Pattern across 004 and 006: the only surviving intraday "edges" are open-print reversals concentrated in the first hour.
+Registry: 114 tests.
