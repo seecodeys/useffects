@@ -64,3 +64,12 @@ Total registry: 70 tests (luck benchmark t ≈ 2.9).
 - H3 gap-fade|VIX>25, H4 long after VIX spike, H5 long in backwardation: nothing.
 Verdict: **dead** as standalone. Index intraday reversal exists only in high-vol crisis regimes; too few episodes to trust.
 Registry: 82 tests (luck benchmark t ≈ 3.0).
+
+## 008 — Relative opening gaps (IWM/QQQ/DIA vs SPY; sector SPDR cross-section)  ·  2026-11-19
+Fade the part of an ETF's gap not explained by SPY's gap (beta from TRAIN), hedged with SPY; 1bp/side per leg. 4 variants.
+- IWM: train t=+2.9 → valid t=−1.1. QQQ/DIA: valid t≈−6, but that's ~4bp/day of two-leg costs on a ~1-2bp gross
+  edge — momentum direction doesn't clear costs either.
+- Sector XS fade (long 2 most-negative residual gap, short 2 most-positive): train t=+15, gross 20-30bp/day 2002-09,
+  then ~2-3bp/day 2011-22 → valid t=−1.3 net.
+Verdict: **dead.** Third instance of the same pattern (000, 002, 008): open-based relative-value signals among ETFs were
+large before ~2010 and have been arbitraged to below costs. Deprioritise further ETF-open relative-value ideas.

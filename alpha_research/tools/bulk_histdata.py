@@ -7,7 +7,7 @@ jobs = [(s, y) for s in sys.argv[1].split(",") for y in range(int(sys.argv[2]), 
 for sym, y in jobs:
     for attempt in range(6):
         try:
-            print(sym, y, histdata.download(sym, y, pause=25), flush=True)
+            print(sym, y, histdata.download(sym, y, pause=8), flush=True)
             break
         except Exception as e:
             print(sym, y, "retry", attempt, e, flush=True)
