@@ -87,3 +87,8 @@ Europe's true 9:30 move correlates 0.79-0.88 with the US/ETF opening gap and 0.0
 No variant has train or valid t > 1.4 in the right direction. **Dead.**
 This closes the original thesis: with correct timing (no look-ahead, real 9:30 levels), neither Asian closes (000),
 overnight FX (003) nor European levels at the US open (005) predict US index open→close returns — it's all in the gap.
+
+## 003 (part 2) — Overnight AUDUSD  ·  2026-11-19
+6 variants, 2001-2025. corr(AUDUSD overnight, SPY gap) = +0.46, with open→close +0.01. All |valid t| < 1.5,
+mostly wrong sign. **Dead.** Gold (XAUUSD) still downloading — low prior given USDJPY/AUDUSD; run it when cached,
+then close 003. Registry: 110 tests (luck benchmark t ≈ 3.1).
