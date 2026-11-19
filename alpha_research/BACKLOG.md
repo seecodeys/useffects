@@ -1,7 +1,7 @@
 # Backlog (top = next). Mark `[x]` when done, `[~]` in progress.
 
 ## Overseas / cross-market signals (core theme)
-- [ ] 001 Calendar & baseline anomalies for SPY/QQQ/IWM open→close (day-of-week, turn-of-month, pre-holiday, FOMC days, OPEX). Establishes baselines other signals must beat.
+- [x] 001 Calendar & baseline anomalies for SPY/QQQ/IWM open→close (day-of-week, turn-of-month, pre-holiday, FOMC days, OPEX). Establishes baselines other signals must beat.
 - [ ] 002 Country/sector ETF universe (EWJ, EWG, EWU, FXI, EWT, EWY, SMH, XLE, XLK, XLF, …): does each ETF's open→close depend on its *home* market's move since the last US close vs. its own gap (catch-up / over-reaction per ETF)? Cross-sectional long/short across ETFs.
 - [ ] 003 Overnight FX & commodities as signals: USDJPY, AUDUSD, EURUSD, DXY, crude (CL=F), gold (GC=F), copper, US 10y (^TNX), BTC-USD moves since last US close → SPY/sector open→close.
 - [ ] 004 ADRs: Asian ADRs (TSM, BABA, SONY, TM, HMC, MUFG, INFY, HDB) — open→close vs home close & ADR gap (ADR premium/discount at the open).
@@ -18,5 +18,6 @@
 - [ ] 011 Extreme overseas sell-off rebound (the one weak pattern from global_open_close) — event study with VIX filter.
 
 ## Ideas parking lot
+- OPEX-week structure follow-up to 001 (Mon-Thu before OPEX, Monday after, quarterly-only, VIX-expiry Wednesdays). Lower priority: each new test raises N.
 - Earnings-season effects on SPY intraday; month-end rebalancing flows; quad witching.
 - Treasury ETF (TLT) / credit (HYG) gaps as signals for SPY intraday.
