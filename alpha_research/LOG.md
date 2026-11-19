@@ -20,3 +20,16 @@ Verdict: **dead for SPY on daily data.** Spawned backlog items 002, 004, 011.
 Verdict: **weak-but-alive.** A real-looking, persistent tilt but tiny: ~12 trades/yr, ~1-1.5%/yr at 1× notional.
 Usable as a filter/overlay rather than a standalone strategy. Follow-ups: OPEX-week structure (Mon-Thu before,
 Monday after), quarterly-only, VIX-expiry Wednesdays — but these are new tests and count against N.
+
+## 002 — Asian country ETFs vs home-market move (catch-up / over-reaction)  ·  2026-11-19
+8 ETFs (EWJ, EWH, FXI, EWY, EWT, EWA, EWS, INDA) vs home index since last US close; implied gap fitted on TRAIN;
+surprise = implied − actual ETF gap. Costs 2bp/side. 20 registry rows (10 from a first run whose cross-sectional
+row had its sign flipped vs its label — kept for an honest count, annotated).
+- Per-ETF catch-up: strong in train for EWT (t=+7.5), EWS, INDA, but **every ETF negative in valid** (t −2.2…−3.7).
+  Those valid losses are mostly costs: gross edge ≈ −0.6bp/trade, so fading doesn't work either.
+- Cross-sectional catch-up L/S (long 2 cheapest-vs-home, short 2 richest): train t=+25 (!), gross 22bp/day;
+  valid gross 2.7bp/day < 4bp/day costs → t=−2.8 net. Gross edge by year decays monotonically:
+  45bp (2001-03) → 10bp (2009-13) → 3bp (2017-19) → ~0 (2020-22).
+Verdict: **dead.** Classic arbitraged-away (and/or stale-opening-print) effect; mirrors the 000 finding that
+country-ETF opens stopped predicting SPY after ~2014. Lesson for later experiments: in pre-2010 data, opening prints
+of thinner ETFs are unreliable — be suspicious of huge train-period t-stats from open-based signals.
