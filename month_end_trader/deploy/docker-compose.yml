@@ -1,0 +1,27 @@
+# IB Gateway (headless, auto-login via IBC) + the trader, on one small always-on machine.
+# 1. cp deploy/.env.example deploy/.env  and fill it in (chmod 600; never commit it)
+# 2. docker compose -f deploy/docker-compose.yml up -d
+# Pin the ib-gateway image to a specific release tag you have checked (https://github.com/gnzsnz/ib-gateway-docker).
+services:
+  ib-gateway:
+    image: ghcr.io/gnzsnz/ib-gateway:stable
+    restart: always
+    env_file: .env            # TWS_USERID, TWS_PASSWORD, TRADING_MODE=paper|live, TWOFA_TIMEOUT_ACTION=restart, ...
+    ports:
+      - "127.0.0.1:4002:4004"   # paper API (container 4004 -> host 4002)
+      - "127.0.0.1:4001:4003"   # live API
+  trader:
+    build:
+      context: ..
+      dockerfile: deploy/Dockerfile
+    restart: always
+    depends_on: [ib-gateway]
+    env_file: .env            # MET_IB_ACCOUNT, MET_TELEGRAM_*, MET_HEARTBEAT_URL, (MET_LIVE_CONFIRM only when live)
+    environment:
+      TZ: America/New_York
+    volumes:
+      - ../config.yaml:/app/config.yaml:ro
+      - ../state:/app/state
+      - ../reports:/app/reports
+      - ../logs:/app/logs
+    command: ["python", "-m", "met.cli", "run", "--config", "/app/config.yaml"]

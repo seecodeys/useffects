@@ -1,0 +1,8 @@
+config.yaml
+state/
+reports/
+logs/
+deploy/.env
+__pycache__/
+.pytest_cache/
+.venv/

@@ -60,6 +60,8 @@ def compute_signal(trade_date: dt.date, equity: pd.Series, bond: pd.Series, sour
 
 
 def _as_date_index(s: pd.Series) -> pd.Series:
+    if len(s) and type(s.index[0]) is dt.date and s.index.is_monotonic_increasing and s.index.is_unique:
+        return s
     s = s.copy()
     s.index = [pd.Timestamp(i).date() for i in s.index]
     return s[~pd.Index(s.index).duplicated(keep="last")].sort_index()

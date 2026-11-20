@@ -1,0 +1,38 @@
+# Copy to config.yaml. Everything not listed uses the defaults in met/config.py.
+mode: paper                 # paper | live. Live also needs env MET_LIVE_CONFIRM=<your live account id>
+
+ib:
+  host: 127.0.0.1
+  port: 4002                # IB Gateway 4002 paper / 4001 live; TWS 7497 paper / 7496 live
+  client_id: 17
+  account: DU0000000        # your PAPER account id (DU...). Or set env MET_IB_ACCOUNT
+  market_data_type: 1       # 1 = live (needs CME real-time data), 3 = delayed (sizing only)
+
+strategy:
+  leverage: 2.0             # MES notional = 2 x net liquidation, on top of your SPY core
+  instrument: MES
+  entry_delay_s: 1          # enter at 09:30:01 ET
+  exit_lead_s: 2            # exit at 15:59:58 ET (12:59:58 on 1 pm half days)
+  entry_grace_s: 90         # never enter after 09:31:30
+  min_abs_gap: 0.0
+
+signal:
+  sources: [ibkr, yahoo]    # both are computed; if they disagree on direction the month is skipped
+  require_agreement: true
+
+guardrails:
+  max_leverage: 3.0
+  max_contracts: 40
+  min_net_liq: 10000
+  margin_buffer_pct: 0.10
+  disaster_stop_pct_equity: 0.06   # flatten early if the overlay loses 6% of equity (~3% SPY move at 2x); 0 = off
+  core_symbol: SPY
+  core_min_weight: 0.5
+  core_policy: warn                # warn | block | ignore
+  auto_derisk: true                # SPRT decay monitor can halve or stop the trade
+
+monitoring:
+  start: "2026-11"
+  state_dir: ./state
+  report_dir: ./reports
+  log_dir: ./logs

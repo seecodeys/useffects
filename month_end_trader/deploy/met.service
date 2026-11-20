@@ -1,0 +1,21 @@
+# systemd unit for the month-end trader daemon.
+#   sudo cp deploy/met.service /etc/systemd/system/ && sudo systemctl daemon-reload
+#   sudo systemctl enable --now met && journalctl -u met -f
+# Secrets (Telegram token, SMTP password, MET_LIVE_CONFIRM) go in /etc/met.env (chmod 600), never in the repo.
+[Unit]
+Description=Month-end SPY overlay trader (IBKR)
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=met
+WorkingDirectory=/opt/month_end_trader
+EnvironmentFile=-/etc/met.env
+ExecStart=/opt/month_end_trader/.venv/bin/python -m met.cli run --config /opt/month_end_trader/config.yaml
+Restart=always
+RestartSec=20
+# The daemon is restart-safe: state is on disk and every step is idempotent.
+
+[Install]
+WantedBy=multi-user.target

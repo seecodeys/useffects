@@ -168,7 +168,7 @@ def _write_md(cfg, res, led, live, path, A, B, asof):
     (rd / f"decay_{asof}.md").write_text("\n".join(lines) + "\n")
     try:
         import matplotlib; matplotlib.use("Agg"); import matplotlib.pyplot as plt
-        fig, (a1, a2) = plt.subplots(1, 2, figsize=(11, 3.6))
+        fig, (a1, a2) = plt.subplots(1, 2, figsize=(12, 4))
         c = led["paper_bp"].cumsum()
         a1.step(pd.to_datetime(c.index), c.values, where="post", color="#2a78d6", lw=1.6)
         a1.set_title("Paper result, cumulative net bp (1x)", loc="left", fontsize=9); a1.grid(axis="y", color="#e6e5e0")
