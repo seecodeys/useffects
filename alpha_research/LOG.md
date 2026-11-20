@@ -801,3 +801,7 @@ in 2002-14 but not 2015-22 → keep the long-only month-end bid. Registry: 373 r
 ## 284 — Month-end bond bid in global bond ETFs (consistency)  ·  2026-11-20
 BWX (intl govt, unhedged) +1.2 / +0.6; EMB (EM USD sovereigns) +2.65 / +1.38. Right sign, weaker than US Treasuries/MBS/
 TIPS (FX noise in BWX; EMB partly tracks the US-dollar index-extension bid). Registry: 375 rows.
+
+## 285 — Controls for the month-end bond bid (assets without bond-index extension)  ·  2026-11-20
+Last-3-session timing value: GLD −0.1 / −1.7; SPY +0.2 / −0.5; UUP +0.1 / −1.1. No month-end bid outside bonds — the
+effect is specific to index-tracked bonds, as the index-extension mechanism predicts. Registry: 378 rows.
