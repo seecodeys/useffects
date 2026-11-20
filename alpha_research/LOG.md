@@ -314,3 +314,13 @@ own closing print).
 - D ETF streak reversal held 1 day: +1.5 / −0.7.
 Verdict: **dead/weak.** Allowing overnight/multi-day holds doesn't rescue the classic short-term over-reaction
 (reversal) effects in liquid US assets: they were large in 2000-09 and have decayed to ~1-2bp/day gross. Registry: 208.
+
+## 062 — Country-level over-reaction (20 single-country iShares ETFs, survivorship-free)  ·  2026-11-20
+Long 3 worst / short 3 best countries by past-N-day return vs the cross-section, overlapping H-day holds, lag-1, 2bp/side.
+- a) weekly (N=5,H=5): train t=+4.0 → valid −0.9; gross 6bp/day (2000-04) decaying to ≤0 after 2015. Dead (same decay).
+- **b) monthly (N=21,H=21): train +1.1, valid +1.5; gross bp/day by 5-yr block 1.0 / 0.1 / 1.7 / 1.5 / 1.1 / 1.1 —
+  small but unusually stable across eras (≈2.5-4%/yr gross on a half-long/half-short book, low turnover).** Fails gate.
+- c) quarterly losers vs winners (N=63,H=21): +0.2 / +1.6; erratic.
+Verdict: weekly over-reaction dead; **monthly country reversal = weak-but-stable** (doesn't decay like the short-horizon
+effects; plausible story: country-level herding/over-reaction to macro news over weeks). Candidate for refinement with
+pre-specified variants (e.g. skip-week, vol-scaling) — but each adds to N. Registry: 211.

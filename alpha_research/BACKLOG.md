@@ -52,7 +52,7 @@ is an opening-print artifact (015). New tests use prior-close information only.
 - [ ] 061 Behavioral, longer horizon (user OK on holds): post-crash over-reaction at the market level — after SPY
       drawdowns of >10% from a 52w high, 20-day forward returns vs normal (sentiment capitulation); and investor-attention
       'news-driven' vs 'no-news' monthly reversal at ETF level (country ETFs, 1-month reversal, survivorship-free).
-- [ ] 062 Over-reaction to macro surprises across countries: country ETFs after their worst week vs world (EFA/EEM
+- [x] 062 Over-reaction to macro surprises across countries: country ETFs after their worst week vs world (EFA/EEM
       components), hold 1-4 weeks (country-level reversal, Balvers-Wu-Gilliland style mean reversion).
 
 ## Flow-driven ideas (the 013 theme is the only robust winner so far)
