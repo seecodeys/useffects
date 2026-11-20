@@ -690,3 +690,8 @@ is calendar (month-end) rebalancing. Dead. Registry: 338.
 Actual +21.0bp/trade over 245 month-ends. Sign permutation (10,000 shuffles, long/short counts preserved): p < 0.0001.
 Same rule on 245 random NON-month-end days (2,000 draws): mean +0.8bp, 95th pct +10.2bp, share ≥ actual 0.0005 —
 the stock-bond-gap signal only works ON the month's last day. Strong, non-parametric support for 013 as a calendar flow.
+
+## 255 — Month-end flow through volatility (VIXY)  ·  2026-11-20
+−d in VIXY open→close on the last day: +20bp/trade (2011-14), +37bp (2015-22), t=+0.2 / +0.9 — right sign, too noisy
+(VIXY is ~4-5× SPY's volatility, so a 20-37bp edge is small relative to its swings). Consistent, not tradable alone.
+Registry: 339.
