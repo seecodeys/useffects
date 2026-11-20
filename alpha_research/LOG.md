@@ -617,3 +617,7 @@ no outflow-driven continuation in credit ETFs. Registry: 311.
 and other days 0.87 / 0.84. Quarter-end sessions are systematically calmer in BOTH eras, so it isn't specific to the JPM
 Hedged Equity collar's growth (2016+); more likely general quarter-end pinning (large quarterly option OI). Explains why
 013's edge is smaller at quarter-ends (116). No trade.
+
+## 209 — Treasury coupon/maturity reinvestment (refunding 15ths)  ·  2026-11-20
+Long TLT over the 2 sessions into the 15th of Feb/May/Aug/Nov: train **+2.7** → valid −0.2; control months −0.5 / +0.3.
+Worked in 2002-14, gone since. Dead. Registry: 313.

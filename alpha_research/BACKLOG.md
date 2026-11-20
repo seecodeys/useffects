@@ -55,6 +55,7 @@
 - [x] 206 JPM Hedged Equity collar reset (last business day of each quarter, ~$15-20bn SPX put-spread/call collar,
       2016+): SPY behaviour around quarter-end resets — descriptive split of 013's weak quarter-end months (116), then
       one pre-specified test if a pattern is clear in 2016-22.
+- [x] 209 Treasury coupon reinvestment — dead (train-only).
 - [ ] 183 Retry OpenAlex/Semantic Scholar later (rate limits) for flow papers; Crossref with targeted titles.: web-fetch NBER working-paper search pages (nber.org/papers?q=...) for 'rebalancing',
       'price pressure', 'flows' — empirical asset-pricing papers with daily-testable rules.
 - [x] 179 Month-end rule applied to QQQ-vs-TLT and IWM-vs-TLT pairs with the vol filter (168) — robustness only if cheap.
