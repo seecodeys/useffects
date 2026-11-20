@@ -94,6 +94,7 @@
 - [x] 281 Full month-end bond cycle — reversal leg faded; keep long-only.
 - [x] 284 Month-end bond bid in BWX/EMB — right sign, weaker.
 - [x] 285 Bond-bid controls (GLD/SPY/UUP) — no bid outside bonds.
+- [x] 286 Mid-month Treasury cash flows — dead.
 - [ ] 183 Retry OpenAlex/Semantic Scholar later (rate limits) for flow papers; Crossref with targeted titles.: web-fetch NBER working-paper search pages (nber.org/papers?q=...) for 'rebalancing',
       'price pressure', 'flows' — empirical asset-pricing papers with daily-testable rules.
 - [x] 179 Month-end rule applied to QQQ-vs-TLT and IWM-vs-TLT pairs with the vol filter (168) — robustness only if cheap.

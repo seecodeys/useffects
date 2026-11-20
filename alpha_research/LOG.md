@@ -814,3 +814,6 @@ Long EWJ on the last day of Mar/Sep: +0.5 / +1.1 (+14.5bp/trade valid, 46 events
 Mean return over the last 3 sessions vs a random 3-session window in each month (5,000 draws): IEF +23.2bp vs +2.7bp
 (99th pct +12.2; p<0.0002); TLT +39.7bp vs +2.6bp (99th pct +23.4; p<0.0002). The month-end window is extreme relative
 to any other 3-day window — strong non-parametric support.
+
+## 286 — Mid-month Treasury cash flows (IEF, 3 sessions into the 15th)  ·  2026-11-20
++1.1 / +0.5. Dead — the bond bid is a month-END (index rebalancing) effect, not a coupon-date effect. Registry: 381 rows.
