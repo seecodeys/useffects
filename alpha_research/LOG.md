@@ -778,3 +778,9 @@ returns are small in absolute terms (legs active on a few days a month) unless l
 276 was pre-specified as consistency-only; this deliberate look is logged as the family's 2nd holdout look (after 275/TLT).
 IEF long over the last 3 sessions of each month, 2023→Nov 2026: **Sharpe 0.83, t=+1.63 @1bp (0.72 / 1.42 @2bp),
 +1.9%/yr, max DD −2.9%; yearly +1.2 / +3.1 / +3.3 / −0.3%.** Weak-but-alive, better than TLT's holdout (0.31).
+
+## 276c — Anatomy of the month-end bond bid (descriptive, 2002-22, not registered)  ·  2026-11-20
+IEF mean bp by session from month-end: last day +11.2, day −2 +6.8, day −3 +5.1, day −4 −0.8, day −5 +3.3, day −6 +1.2
+(all-day mean 1.5). Builds into the final session. Independent of the stock-bond gap: +6.7bp/session when stocks led vs
++8.8 when they lagged — i.e. a mechanical index-extension / month-end portfolio bid, distinct from 013's equity
+rebalancing (which is why the two legs are uncorrelated in 279).
