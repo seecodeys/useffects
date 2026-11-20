@@ -79,7 +79,7 @@
 - [x] 257 International month-end replication — positive 2015-22 everywhere; Canada holdout failed.
 - [x] 258 Japan month-end — right sign, short data.
 - [x] 263 BOJ ETF purchase support — tracks BOJ era, not tradable net.
-- [ ] 264 Pooled international month-end (257) with the 168 volatility filter (local 20d vol > local train median) —
+- [x] 264 Pooled international month-end (257) with the 168 volatility filter (local 20d vol > local train median) —
       robustness on train/valid only.
 - [ ] 183 Retry OpenAlex/Semantic Scholar later (rate limits) for flow papers; Crossref with targeted titles.: web-fetch NBER working-paper search pages (nber.org/papers?q=...) for 'rebalancing',
       'price pressure', 'flows' — empirical asset-pricing papers with daily-testable rules.

@@ -726,3 +726,8 @@ the US holdout. Registry: 345.
 markets in 257; too short to judge. 263 long 1306.T open→close after a >0.5% gap-down open: mean +2.9bp (2009-12),
 +7.7bp (2013-20, heavy BOJ buying), −7.6bp (2021-22, BOJ scaled back) — the pattern tracks BOJ activity, but net of
 3bp/side it's −0.3 / −0.5 t. Dead as a trade; interesting as evidence of central-bank flow support. Registry: 347.
+
+## 264 — International month-end + volatility filter (train/valid only)  ·  2026-11-20
+Pooled 4-country rule, trading only when local equity 20d vol > its pre-2015 median: train +1.0, valid **+2.9**
+(vs +2.0 / +3.35 unfiltered). The vol filter doesn't sharpen it abroad. (Importing 257 accidentally re-ran its 5
+registrations; those rows are marked DUPLICATE in the registry.) Registry: 353 rows (348 unique tests).
