@@ -194,3 +194,12 @@ as 009 H2/H4; parked. Registry: 151.
 Short quarterly OPEX Friday: SPY train t=+2.48, valid +2.03, +45bp/trade → gate passed (a subset of 001's rule, so
 not independent). **Holdout: Sharpe 0.17, t=+0.34, +6.7bp/trade (14 trades)** — weak, consistent with 001's
 half-strength holdout. Verdict: **OPEX effects are a small, fading tilt; nothing new.** Registry: 157.
+
+## 020 — signals.py (live helper + combined backtest)  ·  2026-11-20
+`python signals.py` prints SPY/TLT month-to-date, the stock-bond gap, the next last-trading-day (NYSE month-end
+holidays handled: Good Friday, Memorial Day, fixed dates) and the next monthly OPEX. `--backtest` writes
+results/combined_yearly_pct.csv and combined_equity.png. Combined 2002-08→2026-11 at 1bp/side (in-sample years included):
+013 SPY month-end: +2.6%/yr, Sharpe 0.93, maxDD −3.9%, t=4.6; 001 QQQ OPEX: +2.1%/yr, Sharpe 0.59; combined +4.7%/yr,
+Sharpe 1.04, maxDD −5.3% (at 1× notional only on ~24 trade days/yr — capital is idle the rest of the time).
+Fix: lib.get dropped a *completed* same-day bar when run after the close; now only drops it before 16:30 ET (earlier
+experiments ran intraday and are unaffected).

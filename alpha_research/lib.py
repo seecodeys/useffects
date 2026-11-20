@@ -66,8 +66,10 @@ def get(sym, refresh=False, drop_today=True):
         time.sleep(0.3)
     df = pd.read_csv(path, parse_dates=["Date"]).set_index("Date")
     if drop_today:
-        today = pd.Timestamp.now(tz="America/New_York").normalize().tz_localize(None)
-        df = df[df.index < today]
+        now = pd.Timestamp.now(tz="America/New_York")
+        today = now.normalize().tz_localize(None)
+        if now.hour * 60 + now.minute < 16 * 60 + 30:      # today's bar is live/partial until after the close
+            df = df[df.index < today]
     f = df["Adj Close"] / df["Close"] if "Adj Close" in df else 1.0
     for c in ["Open", "High", "Low", "Close"]:
         df["a" + c[0]] = df[c] * f
