@@ -72,6 +72,13 @@ is an opening-print artifact (015). New tests use prior-close information only.
 - [x] 071 Sports-sentiment style: big national events are hard to source; instead US equity reaction on the day after
       large single-day crypto crashes (BTC < −10% UTC day) → QQQ/ARKK open→close (retail risk appetite shock).
 
+- [ ] 075 Record-high attention: the session after SPY closes at an all-time high (headline attention) — retail buys at
+      the open, price fades → short SPY open→close; also 'first record high in > 6 months' (bigger headline).
+- [ ] 077 Under-reaction / conservatism (the other side of over-reaction): country ETF 12-1 month momentum
+      (Asness-Moskowitz-Pedersen), monthly rebalance, survivorship-free; and sector-SPDR 12-1 momentum.
+- [ ] 073 Round-number anchoring: S&P 500 (^GSPC) closing within 0.5% below a multiple of 100 / 500 → next-day
+      open→close (resistance) vs just above (breakout).
+
 ## Flow-driven ideas (the 013 theme is the only robust winner so far)
 - [x] 016 Quarter-end window-dressing vs rebalancing: last day of quarter, sector/style winners vs losers MTD (XLK vs XLU etc.) — does the losing sleeve get bought? (cross-sectional sector version of 013).
 - [x] 017 Month-end rebalancing in other markets with US-listed vehicles: EFA/EEM vs TLT; small-cap vs large-cap (IWM vs SPY) month-to-date gap on last day.
