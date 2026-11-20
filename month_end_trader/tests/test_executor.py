@@ -25,7 +25,7 @@ def levels(alerts, lvl):
 
 
 def test_happy_path_long(env):
-    cfg, clock, b, ex, alerts = env()
+    cfg, clock, b, ex, alerts = env(report=True)
     run_until(ex, clock, dt.datetime(2025, 9, 30, 19, 0))
     s = st(cfg)
     assert s.phase == "FLAT" and s.get("reconciled") and s.get("reported")

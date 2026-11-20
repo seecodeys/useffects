@@ -20,8 +20,11 @@ def env(tmp_path, data):
     """Factory: env(start_datetime_et, **fake_broker_kwargs) -> (cfg, clock, broker, executor, alerts)."""
     spy, tlt = data
 
-    def make(start=dt.datetime(2025, 9, 29, 8, 0), **kw):
-        return make_env(start.replace(tzinfo=cal.ET), str(tmp_path), spy, tlt, **kw)
+    def make(start=dt.datetime(2025, 9, 29, 8, 0), report=False, **kw):
+        cfg, clock, b, ex, alerts = make_env(start.replace(tzinfo=cal.ET), str(tmp_path), spy, tlt, **kw)
+        if not report:
+            ex.reporter = None              # speed: the monitor has its own tests
+        return cfg, clock, b, ex, alerts
     return make
 
 

@@ -81,6 +81,12 @@ The daemon is a single loop of idempotent `tick()`s over the state saved in `sta
    - Subscribe to CME real-time L1 data (needed for MES prices and the disaster stop).
    - Open a paper account (DU…).
    - In TWS/Gateway: Configure → API → enable ActiveX/Socket clients, untick Read-Only API, trusted IP 127.0.0.1.
+   - **Operational settings that matter:**
+     - Turn on "Bypass Order Precautions for API orders" under Global Configuration → API → Precautions. Otherwise a multi-contract market order can be rejected at 09:30:01 (error 201/383).
+     - Set the IB Gateway/TWS auto-restart **outside 09:00–16:30 ET**. It is set in the machine's local time: in Singapore, avoid 21:00–05:30 SGT (Nov–Mar) or 20:00–04:30 SGT (Mar–Nov).
+     - Use a **dedicated second IBKR username** for the API (free in Client Portal). Logging into TWS or the Mobile app with the same username either blocks market data (error 10197) or logs the Gateway out.
+     - US equity market data, so SPY/TLT `ADJUSTED_LAST` daily bars are available for the signal.
+     - The machine's clock must be NTP-synced. The bot alerts if it is more than 5 s off IB server time.
 2. **Install the bot:**
    ```bash
    python -m venv .venv && . .venv/bin/activate && pip install -r requirements.txt
@@ -90,6 +96,7 @@ The daemon is a single loop of idempotent `tick()`s over the state saved in `sta
    ```bash
    python -m met.cli signal  --config config.yaml   # current signal from IBKR + Yahoo
    python -m met.cli check   --config config.yaml   # connect + full preflight, no orders
+   python -m met.cli validate-data --config config.yaml  # IBKR vs Yahoo adjusted prices agree?
    python -m met.cli test-order --config config.yaml # PAPER ONLY: buy 1 MES and sell it
    python -m met.cli dry-run --months 4             # whole daemon against the simulator
    ```
@@ -137,6 +144,10 @@ The tests cover:
   - Auto de-risking, live-mode confirmation, wrong account, overnight guard.
 - **Decay monitor:** SPRT and the monitor report.
 - **Historical replay:** every month-end since 2002 through the simulated broker, checked against the paper ledger.
+
+## Unscheduled exchange closures
+
+The NYSE calendar comes from `exchange_calendars` and is refreshed daily, 5 years ahead. A closure announced at short notice (such as a national day of mourning) is only included after a library upgrade. Until then, set `MET_EXTRA_CLOSURES=2027-01-15` (comma-separated dates) in the bot's environment and restart.
 
 ## Known limitations
 

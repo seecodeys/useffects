@@ -9,6 +9,7 @@
   python -m met.cli kill | unkill                         create / remove the kill switch file
   python -m met.cli report     --config config.yaml      run the decay monitor now
   python -m met.cli dry-run    [--months N]              full daemon run against the simulated broker
+  python -m met.cli validate-data --config config.yaml   compare IBKR ADJUSTED_LAST with Yahoo adjclose (run once)
 """
 from __future__ import annotations
 
@@ -122,6 +123,25 @@ def main(argv=None):
 
     if a.cmd == "run":
         ex.run_forever(); return 0
+
+    if a.cmd == "validate-data":
+        from .signal import yahoo_daily
+        bad = 0
+        for sym in (cfg.signal.equity, cfg.signal.bond):
+            ib_s = broker.daily_adjusted_closes(sym, days=150)
+            yh = yahoo_daily(sym, days=220)["adjclose"]
+            j = ib_s.to_frame("ib").join(yh.rename("yahoo"), how="inner").dropna()
+            r_ib, r_yh = j["ib"].pct_change().dropna(), j["yahoo"].pct_change().dropna()
+            diff = (r_ib - r_yh).abs() * 1e4
+            print(f"{sym}: {len(j)} common days, daily return diff median {diff.median():.2f}bp, max {diff.max():.2f}bp "
+                  f"on {diff.idxmax()}")
+            big = diff[diff > 5]
+            for d, v in big.items():
+                print(f"   {d}: {v:.1f}bp (ex-dividend handled differently?)")
+            bad += len(big)
+        T = cal.next_trade_date(now().date())
+        print("OK: sources consistent" if bad == 0 else f"WARNING: {bad} days differ by >5bp; signals near zero may disagree")
+        return 0 if bad == 0 else 3
 
     if a.cmd == "check":
         from .guardrails import preflight
