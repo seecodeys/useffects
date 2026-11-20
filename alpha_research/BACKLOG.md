@@ -27,6 +27,14 @@
 - [x] 116 Quarter-end vs month-end rebalancing size: does 013's edge scale with fund size proxies (e.g. calendar
       quarter-ends, year-end) — interaction test.
 
+- [x] 127 013 held close→close — no improvement.
+- [x] 129 Mid-month rebalancing — dead.
+- [x] 133 Treasury auction cycle (TLT) — gate passed but concentrated in 2009-10/2020; no holdout.
+- [ ] 134 Auction cycle conditional on rate volatility: run 133c only when TLT 20d realized vol > its trailing 1y median
+      (dealer stress regime) — pre-specified; also on IEF with 10y auctions only.
+- [ ] 135 Second paper-sourcing round: arXiv queries on 'Treasury auction', 'dealer inventory', 'closing auction',
+      'index reconstitution', 'ETF creation redemption', 'month-end' for more flow ideas.
+
 ## OPTIONS (user request 2026-11-20) — behavioral angle: people overpay for insurance after fear spikes
 - [x] 080 Data: pull CBOE strategy-index CSVs (PUT, BXM, CNDR, BFLY, WPUT, PPUT) into data/cboe/; sanity-check vs ^PUT.
 - [x] 081 Fear-premium timing of put-writing: PUT/WPUT index returns when VIX−RV fear premium is high vs low

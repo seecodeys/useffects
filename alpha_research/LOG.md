@@ -477,3 +477,13 @@ sharpen it; the 112 family stays a weak, valid-period-only lead.
 paper frames it).
 123 [2504.20116/2506.19200] SSO when SPY's 63d trend > 0, else SPY: Sharpe 0.48 vs 0.36 always-SSO (2007-14) but 0.45 vs
 0.54 (2015-22); excess t −0.2 / −1.5; cuts drawdowns (−65% vs −85%). Not alpha. Registry: 263.
+
+## 127/129/133 — Month-end close→close, mid-month rebalancing, Treasury auction supply cycle  ·  2026-11-20
+127 013 held close→close (adds the overnight before the last day): +2.7 / +1.9 — no better than open→close (3.3/2.0).
+129 013 rule on the first trading day ≥ the 15th: +0.5 / −1.1. Dead — the rebalancing effect is a month-END effect.
+133 Treasury auctions (Lou-Yan-Zhang; 750 long-duration auction dates 2002-26 from api.fiscaldata.treasury.gov saved in
+data/auctions.json): (a) short TLT d−3..d−1: +0.8 / +2.3; (b) long TLT d+1..d+2: +2.7 / +0.8;
+**(c) full cycle: train t=+2.46, valid +2.51, Sharpe 0.89 → gate passed** — but highly concentrated: valid ex-2020 t=+1.0,
+train ex-2009/10 t=+0.8 (13/21 positive years). Fails the "not driven by one year" rule → **no holdout look**; the
+effect appears only in high-volatility bond regimes (dealer balance-sheet stress). Candidate refinement: scale by rate
+volatility (MOVE-like proxy from TLT realized vol) — pre-specify before testing. Registry: 268.
