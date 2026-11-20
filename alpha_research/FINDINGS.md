@@ -12,3 +12,4 @@
 | 013g | Month-end rebalancing as a SPY−TLT pair (both sides of the flow) | t=+2.17, +25bp/trade | t=+2.67, Sharpe 1.36, +39bp/trade, 76% hit | Survived; similar to SPY-only with higher hit rate |
 | 168 | 013 only when SPY 20d vol > train median (≈6 trades/yr) | t=+2.53, Sharpe 0.90, +44bp/trade | t=+2.90, Sharpe 1.47, +61.5bp/trade, 78% hit (18 trades) | Survived; edge scales with volatility → size up on volatile month-ends |
 | 013h | Permutation tests of 013 (2002-22) | sign-shuffle p<0.0001; same rule on random non-month-end days: +0.8bp (p≈0.0005) | — | Confirms it's a month-END effect, not a generic stock-bond reversal |
+| 257 | Month-end rule replicated in Canada / UK / Australia / euro area (local equity vs bond ETFs) | all 4 positive in 2015-22, pooled t=+3.35; Canada t=+2.42 | Canada (only gate-passer): t=−0.19, +1.9bp gross | International in 2015-22; Canada failed 2023+ → caution on persistence |

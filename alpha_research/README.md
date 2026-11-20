@@ -49,6 +49,9 @@ Refinements that also survived holdout: the SPY−TLT pair version (013g: +39bp/
 month-end family has now had ~8 holdout looks (013, 013c×3, 013d, 013g, 083, 168), so treat these as one finding
 with variants, not independent confirmations.
 
+International replication (257): the same rule on local equity/bond ETFs is positive in Canada, the UK, Australia
+and the euro area in 2015-22 (pooled t=3.35), but Canada — the only one passing the gate — failed its 2023+ holdout.
+
 Non-parametric check (013h, 2002-22): shuffling the trade signs never matches the real +21bp/trade (p<0.0001), and
 the same rule on random non-month-end days earns +0.8bp (p≈0.0005) — the effect is tied to the last trading day.
 

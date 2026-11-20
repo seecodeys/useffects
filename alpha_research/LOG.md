@@ -705,3 +705,18 @@ Note: arXiv API works over https from this container (http returns empty). Queri
 ETF, predictable + flows, end of month, institutional trading + returns. ~45 new abstracts: mostly microstructure/LOB,
 crypto, ML alpha-mining, electricity — no new daily-testable flow mechanisms for US ETFs. OpenAlex still 429.
 Flow-idea sources look close to exhausted for free daily data; remaining avenues need intraday/auction or holdings data.
+
+## 257 — Out-of-country replication of the month-end rebalancing rule  ·  2026-11-20
+Local equity vs local government-bond ETFs, local last trading day, equity open→close, 2bp/side:
+| market | train t (n) | valid t (n) | per-trade train / valid |
+|---|---|---|---|
+| Canada XIU/XBB | **+2.97** (169) | **+2.42** (96) | +24.8 / +21.5bp |
+| UK ISF/IGLT | +1.29 (71) | +1.10 (96) | +19.7 / +13.1 |
+| Australia STW/IAF | −1.61 (33) | +1.67 (96) | −14.2 / +15.8 |
+| Euro EXS1/EUNH | +0.12 (68) | +1.97 (96) | +5.6 / +20.8 |
+| pooled | +1.96 | **+3.35** | — |
+2015-22: positive in all four markets (pooled t=3.35) — independent support for the rebalancing mechanism.
+Canada passed the gate → **holdout (2023+): −2.1bp/trade net (+1.9 gross), 39% hit, t=−0.19 (46 trades). Failed.**
+Pooled missed the gate on train (short histories) → no holdout look. Verdict: the month-end rebalancing effect is
+international in 2015-22, but its 2023+ persistence is shown only for the US so far — a caution against over-trusting
+the US holdout. Registry: 345.
