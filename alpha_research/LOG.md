@@ -874,3 +874,8 @@ Registry: 385 rows.
 12:00-15:00 +5.9 (t=1.5), 15:00-16:00 −0.8. The OPEX-Friday weakness happens mid-session (after the AM settlement hour,
 10:30-15:00) — consistent with dealer hedge unwinds once the SOQ is fixed. Not a new rule (it's 001's edge, located).
 Registry: 386 rows.
+
+## 293 — Month-end equity trade: morning-only vs full session (SPX CFD, post-hoc, no holdout)  ·  2026-11-20
+Morning only (09:30-12:00): +6.9bp/trade, per-trade mean/sd 0.158; full session: +16.1bp, 0.223 → full session is
+better; don't truncate. CFD replication also re-confirms 013e: ~0 in 2010-14 (t −0.0) and strong in 2015-22 (t +2.9).
+Registry: 388 rows.
