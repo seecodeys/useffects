@@ -296,3 +296,9 @@ are ~0 after 2010 in liquid US stocks/ETFs held open→close. The open→close c
 over-reaction correction happens **overnight** or over **several days**, and in **small, retail-heavy stocks** —
 neither of which this setup captures. Logical next steps: (a) allow overnight/multi-day holds for behavioral signals;
 (b) a survivorship-free small-cap universe (not freely available).
+
+## 059/060 — Crowd-sentiment gauges, contrarian  ·  2026-11-20
+060a long SPY when the fear premium (VIX − 20d realized vol) is in its top 20%: +1.4 / +0.8. 060b long SPY when
+VIX9D > VIX (short-term panic): +0.8 / +0.2. 059 long QQQ when the bearish 3× ETF (SQQQ) takes an unusually large
+share of TQQQ+SQQQ dollar volume (z>2): +0.3 / +0.8, +13bp/trade. All right-signed (contrarian works a little), none
+significant. **Weak/dead.** Registry: 199.

@@ -44,9 +44,9 @@ is an opening-print artifact (015). New tests use prior-close information only.
 
 - [ ] 058 (needs user OK to relax open→close) Behavioral signals with close→next-close or close→open holds: short-term
       reversal of extreme residual moves, fear rebounds, attention reversal — where the literature says the effect lives.
-- [ ] 059 Retail-attention proxies available free: Google-Trends-like? (not free/clean) → instead: abnormal volume in
+- [x] 059 Retail-attention proxies available free: Google-Trends-like? (not free/clean) → instead: abnormal volume in
       leveraged/meme-adjacent ETFs (TQQQ/SQQQ volume share) as a crowd-sentiment gauge → SPY next-day open→close (contrarian).
-- [ ] 060 Put/call-style sentiment from free data: VIX vs realized vol spread (fear premium), VIX9D/VIX inversion as panic
+- [x] 060 Put/call-style sentiment from free data: VIX vs realized vol spread (fear premium), VIX9D/VIX inversion as panic
       gauge → contrarian SPY open→close.
 
 ## Flow-driven ideas (the 013 theme is the only robust winner so far)
