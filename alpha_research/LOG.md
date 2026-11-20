@@ -765,3 +765,11 @@ Robust in 2002-22; its 2023+ strength is only weakly confirmed (275 holdout t=0.
 Long over the last 3 sessions of each month: LQD +1.75 / +2.67; HYG +1.16 / +1.68; UK gilts IGLT.L +0.5 / +1.0;
 Canada XBB.TO +1.95 / +2.64; euro govts EUNH.DE +0.9 / +0.8. Right sign in all 10 period-instrument pairs; strongest in
 US Treasuries/IG credit and Canadian bonds. Supports a broad month-end bond-index-extension bid. Registry: 368 rows.
+
+## 279 — Survivor portfolio v2 (construction, 2002-22 only)  ·  2026-11-20
+Legs: A 013 SPY month-end (vol-tilted: 1.0 high-vol / 0.5 otherwise), B IEF last-3-sessions month-end bid (276),
+C monthly country reversal (062b). Pairwise correlations ≈ 0 (|ρ| ≤ 0.03). Sharpe (max DD):
+2003-14: A 0.84 (−3.3%), B 0.87 (−6.1%), C 0.30 (−15.9%), equal-risk combo **1.14 (−2.0%)**;
+2015-22: A 0.82 (−2.3%), B 1.14 (−2.6%), C 0.52 (−7.8%), equal-risk combo **1.38 (−1.7%)**.
+Diversified month-end flow book. Caveats: B and C were never holdout-confirmed (B's TLT sibling 275 was weak in 2023+);
+returns are small in absolute terms (legs active on a few days a month) unless levered.

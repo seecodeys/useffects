@@ -66,6 +66,11 @@ from 46 holdout trades leave a wide uncertainty band. It's also a published, kno
 Check the current state with `python alpha_research/signals.py`. `--backtest` plots it combined with the OPEX tilt.
 
 
+## Month-end flow book (279, construction on 2002-22)
+Combining the SPY month-end trade (vol-tilted), the IEF last-3-sessions month-end bond bid (276) and monthly country
+reversal (062b) — uncorrelated legs — gives Sharpe 1.14 (2003-14) and 1.38 (2015-22) with ~2% max drawdown. Only
+the SPY leg is holdout-confirmed.
+
 ## Month-end playbook (how the surviving signal would actually be traded)
 
 1. **Day before the last trading day, after the close:** run `python alpha_research/signals.py`. It reports SPY and TLT
