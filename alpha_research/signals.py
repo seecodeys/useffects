@@ -61,6 +61,14 @@ def status():
     med = spy["cc"].rolling(20).std().loc["2002":"2014"].median()
     print(f"  SPY 20d vol {v20*100:.2f}%/day vs 2002-14 median {med*100:.2f}% -> "
           f"{'HIGH-vol month-end: edge historically ~+44-62bp/trade (168) -> full size' if v20 > med else 'low-vol month-end: edge historically small (~0-13bp) -> reduced size'}")
+    d3 = ltd
+    k = 0
+    while k < 2:                                   # walk back 2 more trading days -> start of the last-3-session window
+        d3 -= pd.Timedelta(days=1)
+        if not nyse_closed(d3):
+            k += 1
+    print(f"  Month-end bond bid (276): hold IEF from the close before {d3.date()} through the close of {ltd.date()}"
+          f" (last 3 sessions; 2002-22 Sharpe ~1.1, 2023+ Sharpe 0.83)")
     t = third_friday(asof.year, asof.month)
     if t <= asof:
         n = asof + pd.offsets.MonthBegin(1); t = third_friday(n.year, n.month)
