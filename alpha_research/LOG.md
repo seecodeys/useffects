@@ -176,3 +176,9 @@ negligible impact; a 5-minute delay already erases them. Not worth more research
   roughly half as strong as the US stock-bond effect; sector/size rotation flows show nothing.
 Verdict: **dead/weak.** The month-end effect is specific to the broad US equity-vs-Treasury rebalance (013).
 Registry: 145 tests.
+
+## 018 — Vol-target (de)leveraging; 019 — Russell reconstitution day  ·  2026-11-20
+018 (SPY, 0.5bp): short when 5d/60d realized vol > 2: train t=+1.0, valid +0.2. Long when < 0.5: −0.5/+0.7.
+Combined: +0.2/+0.6. **Dead** — no detectable open→close footprint of vol-target selling on daily data.
+019 IWM−SPY spread on the last Friday of June (27 events; direction +1 chosen on train, mean +38bp train, +12bp valid):
+t=+1.6/+0.6. **Dead/untestable** (too few events). Registry: 149 tests (luck t ≈ 3.2).
