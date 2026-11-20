@@ -409,3 +409,9 @@ Weak — mirrors the stock version's fade (001 holdout +12.6bp). Model-priced an
 086 SKEW top-20% (tail insurance over-bought) → contrarian put-writing: PUT timing value **−2.95 / −1.15**; SPY −1.6 /
 −0.7. Wrong-signed: high SKEW precedes *worse* put-writing returns (tail demand is informed, not over-reaction). Dead.
 Registry: 240.
+
+## 073/075/077 — Round numbers, record-high attention, under-reaction momentum  ·  2026-11-20
+075 short SPY the session after an all-time-high close (621 events): −0.2 / −1.4 (records are followed by slight
+*gains*, not attention fades); first ATH in >126 sessions (6 events): untestable. 077 12-1 momentum: countries
+top4/bottom4 −0.2 / −0.9, sectors +0.1 / +0.3, gross ≈ 0 in every 5-year block. 073 S&P near round 100s (short just
+below / long just above): −0.2 / −0.4. **All dead.** Registry: 245 (luck t ≈ 3.3).

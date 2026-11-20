@@ -87,12 +87,19 @@ is an opening-print artifact (015). New tests use prior-close information only.
 - [x] 071 Sports-sentiment style: big national events are hard to source; instead US equity reaction on the day after
       large single-day crypto crashes (BTC < −10% UTC day) → QQQ/ARKK open→close (retail risk appetite shock).
 
-- [ ] 075 Record-high attention: the session after SPY closes at an all-time high (headline attention) — retail buys at
+- [x] 075 Record-high attention: the session after SPY closes at an all-time high (headline attention) — retail buys at
       the open, price fades → short SPY open→close; also 'first record high in > 6 months' (bigger headline).
-- [ ] 077 Under-reaction / conservatism (the other side of over-reaction): country ETF 12-1 month momentum
+- [x] 077 Under-reaction / conservatism (the other side of over-reaction): country ETF 12-1 month momentum
       (Asness-Moskowitz-Pedersen), monthly rebalance, survivorship-free; and sector-SPDR 12-1 momentum.
-- [ ] 073 Round-number anchoring: S&P 500 (^GSPC) closing within 0.5% below a multiple of 100 / 500 → next-day
+- [x] 073 Round-number anchoring: S&P 500 (^GSPC) closing within 0.5% below a multiple of 100 / 500 → next-day
       open→close (resistance) vs just above (breakout).
+
+- [ ] 090 Seasonal mood ('Sell in May' / SAD, Kamstra): SPY Nov-Apr vs May-Oct timing value (excess over
+      exposure-matched B&H), and the autumn-equinox SAD window; few independent obs → strict.
+- [ ] 091 Tug-of-war (Lou-Polk-Skouras) at index level: after ≥4 consecutive positive OVERNIGHT returns (retail/attention
+      buying) → SPY open→close (institutions lean against) — pre-specified short.
+- [ ] 095 Retail-heavy ETF over-reaction: ARKK / TQQQ / SMH big prior-day moves (|z|>2) → next-day close→close reversal
+      (lag-1) vs the same rule on SPY (institutional) — does over-reaction concentrate where retail is?
 
 ## Flow-driven ideas (the 013 theme is the only robust winner so far)
 - [x] 016 Quarter-end window-dressing vs rebalancing: last day of quarter, sector/style winners vs losers MTD (XLK vs XLU etc.) — does the losing sleeve get bought? (cross-sectional sector version of 013).
