@@ -681,3 +681,7 @@ d × (top-quintile beta − bottom-quintile beta), last day, open→close: train
 (+30bp). Right direction in both periods (high-beta names move more with the month-end flow) but fails train t; costs
 of a 4-leg book (8bp/day) eat much of it. Weak, consistent with the index-level effect; not a separate edge.
 Registry: 336.
+
+## 253 — Threshold rebalancers (first |MTD stock-bond gap| > 5% / 4% in a month → next day)  ·  2026-11-20
+5%: −0.1 / +1.0 (154 events); 4%: −0.4 / +0.2. No threshold-rebalancing footprint intra-month — the observable flow
+is calendar (month-end) rebalancing. Dead. Registry: 338.

@@ -72,6 +72,7 @@
 - [x] 234 SPY dividend reinvestment month-ends — dead.
 - [x] 245 SOQ overnight — dead.  - [x] 250 QTD/YTD rebalancing — dead.
 - [x] 252 Month-end high-minus-low beta spread — weak, consistent.
+- [x] 253 Threshold rebalancers — dead.
 - [ ] 183 Retry OpenAlex/Semantic Scholar later (rate limits) for flow papers; Crossref with targeted titles.: web-fetch NBER working-paper search pages (nber.org/papers?q=...) for 'rebalancing',
       'price pressure', 'flows' — empirical asset-pricing papers with daily-testable rules.
 - [x] 179 Month-end rule applied to QQQ-vs-TLT and IWM-vs-TLT pairs with the vol filter (168) — robustness only if cheap.
