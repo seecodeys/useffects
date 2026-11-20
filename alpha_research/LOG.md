@@ -369,3 +369,10 @@ value over exposure-matched always-on writing, net of switch costs.
 - 081b daily exposure switch (hypothesis formed from that table): 10bp/switch −0.4 / +1.3; 25bp/switch −1.2 / −0.4.
 Verdict: **dead/weak** — the insurance premium is real (put-writing earns ~equity-like returns) but timing it by the
 fear premium adds no robust value. Registry: 231.
+
+## 082 — VIX futures ETP (VIXY) and fear over-shoot  ·  2026-11-20
+Timing value over exposure-matched always-short VIXY (close→close, lag-1, 5bp/side; train only 2011-14):
+a) short VIXY for 5 days after VIX > 1.25× its 20-day mean (fear over-shoot): +0.8 / −0.5. Dead.
+b) short VIXY only in contango (VIX < VIX3M): timing value ≈ 0 (−0.0 / +0.2), but raw Sharpe 2011-22 0.66 vs 0.25 for
+always-short — the rule's benefit is **risk reduction** (it sits out backwardation crashes like Feb-2018/Mar-2020), not
+extra return. Known, not behavioral alpha; noted as a risk overlay. Registry: 233.

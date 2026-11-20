@@ -4,7 +4,7 @@
 - [x] 080 Data: pull CBOE strategy-index CSVs (PUT, BXM, CNDR, BFLY, WPUT, PPUT) into data/cboe/; sanity-check vs ^PUT.
 - [x] 081 Fear-premium timing of put-writing: PUT/WPUT index returns when VIX−RV fear premium is high vs low
       (excess over always-on writing), monthly decision at prior close.
-- [ ] 082 Short-vol ETPs after fear over-reaction: short VIXY / long SVXY (−0.5x era) for N days after VIX spikes,
+- [x] 082 Short-vol ETPs after fear over-reaction: short VIXY / long SVXY (−0.5x era) for N days after VIX spikes,
       and when VIX/VIX3M is in contango; behavioral = VIX over-shoots then mean-reverts.
 - [ ] 083 Model-priced SPY options for the month-end signal (013): sell the put (when long signal) / call (when short)
       vs buying 1-day ATM options — premium (VIX9D-implied) vs realized edge; is options expression better than stock?
