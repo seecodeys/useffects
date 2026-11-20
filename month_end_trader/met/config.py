@@ -172,6 +172,10 @@ def load_config(path: str | os.PathLike | None, require_account: bool = True) ->
     for k in ("state_dir", "report_dir", "log_dir"):
         v = Path(getattr(m, k))
         setattr(m, k, str(v if v.is_absolute() else (base / v).resolve()))
+    if os.environ.get("MET_IB_HOST"):
+        cfg.ib.host = os.environ["MET_IB_HOST"]
+    if os.environ.get("MET_IB_PORT"):
+        cfg.ib.port = int(os.environ["MET_IB_PORT"])
     env_acct = os.environ.get("MET_IB_ACCOUNT")
     if env_acct:
         cfg.ib.account = env_acct

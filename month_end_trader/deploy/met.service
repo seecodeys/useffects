@@ -4,8 +4,9 @@
 # Secrets (Telegram token, SMTP password, MET_LIVE_CONFIRM) go in /etc/met.env (chmod 600), never in the repo.
 [Unit]
 Description=Month-end SPY overlay trader (IBKR)
-After=network-online.target
+After=network-online.target docker.service
 Wants=network-online.target
+# If IB Gateway runs in docker on this host, also: Requires=docker.service
 
 [Service]
 Type=simple
@@ -15,7 +16,9 @@ EnvironmentFile=-/etc/met.env
 ExecStart=/opt/month_end_trader/.venv/bin/python -m met.cli run --config /opt/month_end_trader/config.yaml
 Restart=always
 RestartSec=20
-# The daemon is restart-safe: state is on disk and every step is idempotent.
+# The daemon is restart-safe: state is on disk and every step is idempotent. `run` exits if IB is not
+# reachable at start (e.g. Gateway still logging in); Restart=always retries.
+# User 'met' must own /opt/month_end_trader/{state,logs,reports}.
 
 [Install]
 WantedBy=multi-user.target

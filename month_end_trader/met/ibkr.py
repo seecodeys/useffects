@@ -25,7 +25,7 @@ from .broker import (AccountSnapshot, Broker, BrokerError, FutureContract, Margi
 
 log = logging.getLogger("met.ibkr")
 PRICE_MAX_AGE_S = 30
-CRITICAL_CODES = {1100, 10197, 354, 10089, 10090, 201, 2110, 326}
+CRITICAL_CODES = {1100, 10197, 354, 10089, 201, 326, 321}      # 10090/2110 are routine: logged only
 
 
 def _f(x, default=float("nan")):
@@ -74,7 +74,7 @@ class IBKRBroker(Broker):
         self._tickers = {}
         self._hist_cache = {}
         self._ib_down = False
-        self._md_blocked = False
+        self._md_blocked_at = None
         self.fx_base_per_usd = 1.0
         self.last_errors = collections.deque(maxlen=100)
 
@@ -88,7 +88,7 @@ class IBKRBroker(Broker):
             if code == 1101:                     # data lost: resubscribe
                 self._tickers = {}
         elif code == 10197:
-            self._md_blocked = True
+            self._md_blocked_at = time.monotonic()
         if code in CRITICAL_CODES:
             log.error("IB error %s (req %s): %s", code, reqId, msg)
             if self.on_critical:
@@ -112,15 +112,22 @@ class IBKRBroker(Broker):
             raise BrokerError(f"{what}: {e!r}") from e
 
     # ---------------------------------------------------------------- connection & time
+    def socket_ok(self):
+        return self.ib.isConnected()
+
     def connect(self):
         c = self.cfg.ib
+        if self.ib.isConnected():
+            return                       # never drop a live socket (e.g. during an IB 1100 outage)
         last = None
         for attempt in range(3):
             try:
-                if self.ib.isConnected():
-                    self.ib.disconnect()
-                self.ib.connect(c.host, c.port, clientId=self.client_id, timeout=c.connect_timeout_s,
-                                readonly=False, account=c.account, raiseSyncErrors=True)
+                rt, self.ib.RequestTimeout = self.ib.RequestTimeout, 0    # connect has its own staged timeouts
+                try:
+                    self.ib.connect(c.host, c.port, clientId=self.client_id, timeout=c.connect_timeout_s,
+                                    readonly=False, account=c.account, raiseSyncErrors=True)
+                finally:
+                    self.ib.RequestTimeout = rt
                 break
             except Exception as e:
                 last = e
@@ -134,7 +141,7 @@ class IBKRBroker(Broker):
         if c.account not in accts:
             self.ib.disconnect()
             raise BrokerError(f"account {c.account} not in managed accounts {accts}")
-        self._tickers, self._ib_down, self._md_blocked = {}, False, False
+        self._tickers, self._ib_down, self._md_blocked_at = {}, False, None
         try:
             srv = self.ib.reqCurrentTime()
             skew = abs((srv - dt.datetime.now(dt.timezone.utc)).total_seconds())
@@ -221,9 +228,7 @@ class IBKRBroker(Broker):
 
     def contract_from(self, symbol, exchange, con_id, local_symbol, expiry, multiplier):
         from ib_async import Future
-        raw = Future(conId=int(con_id), exchange=exchange, currency="USD", symbol=symbol,
-                     lastTradeDateOrContractMonth=expiry.strftime("%Y%m%d"), localSymbol=local_symbol,
-                     multiplier=str(int(multiplier)) if float(multiplier).is_integer() else str(multiplier))
+        raw = Future(conId=int(con_id), exchange=exchange)       # conId alone identifies it; extra fields risk 200/478
         return FutureContract(symbol, expiry, float(multiplier), local_symbol, int(con_id), raw=raw)
 
     def working_orders(self, ref_prefix="MET-"):
@@ -233,8 +238,11 @@ class IBKRBroker(Broker):
 
     def price(self, contract):
         self._need()
-        if self._md_blocked:
-            raise BrokerError("market data blocked by a competing session (IB 10197)")
+        if self._md_blocked_at is not None:
+            if time.monotonic() - self._md_blocked_at < 60:
+                raise BrokerError("market data blocked by a competing session (IB 10197)")
+            self._md_blocked_at = None
+            self._tickers.pop(contract.con_id, None)              # resubscribe after the block
         now = dt.datetime.now(dt.timezone.utc)
         t = self._tickers.get(contract.con_id)
         if t is not None and t.time is not None and (now - t.time).total_seconds() > PRICE_MAX_AGE_S:
@@ -246,6 +254,9 @@ class IBKRBroker(Broker):
         if t is None:
             t = self.ib.reqMktData(contract.raw, "", False, False)
             self._tickers[contract.con_id] = t
+        if self.cfg.ib.market_data_type != 1 and not getattr(self, "_warned_delayed", False):
+            log.warning("market_data_type=%s: prices may be delayed; disaster stop uses them", self.cfg.ib.market_data_type)
+            self._warned_delayed = True
         for _ in range(40):
             fresh = t.time is not None and (dt.datetime.now(dt.timezone.utc) - t.time).total_seconds() < PRICE_MAX_AGE_S
             if fresh:
@@ -280,18 +291,23 @@ class IBKRBroker(Broker):
         from ib_async import MarketOrder
         if not self.is_connected():
             return OrderResult("", "Rejected", qty, 0, 0.0, "not connected")
-        o = MarketOrder(action, qty, account=self.cfg.ib.account, tif="DAY", orderRef=ref, outsideRth=True)
+        o = MarketOrder(action, qty, account=self.cfg.ib.account, tif="DAY", orderRef=ref)
         try:
             trade = self.ib.placeOrder(contract.raw, o)
             end = time.monotonic() + timeout_s
             while not trade.isDone() and time.monotonic() < end:
                 self.ib.sleep(0.2)
             timed_out = not trade.isDone()
-            if timed_out or trade.orderStatus.status == "Inactive":
+            if timed_out:
                 self.ib.cancelOrder(trade.order)
                 end = time.monotonic() + 15
-                while trade.orderStatus.status not in ("Cancelled", "ApiCancelled", "Filled") and time.monotonic() < end:
+                while not trade.isDone() and time.monotonic() < end:
                     self.ib.sleep(0.2)
+            elif trade.orderStatus.status == "Inactive":
+                try:
+                    self.ib.cancelOrder(trade.order)      # best effort; Inactive is already 'done' locally
+                except Exception:
+                    pass
         except Exception as e:
             log.error("order %s failed mid-flight: %r", ref, e)
             return OrderResult(str(o.orderId), "Unknown", qty, 0, 0.0, f"exception: {e!r}")
@@ -310,7 +326,12 @@ class IBKRBroker(Broker):
         return OrderResult(str(o.orderId), res_status, qty, filled, avg, msg, fills)
 
     def open_orders(self, ref_prefix="MET-"):
-        return [t for t in self.ib.openTrades() if (t.order.orderRef or "").startswith(ref_prefix)]
+        """All working MET orders on the account, including those placed by another clientId (daemon vs CLI)."""
+        try:
+            trades = self._call("reqAllOpenOrders", self.ib.reqAllOpenOrders)
+        except BrokerError:
+            trades = self.ib.openTrades()
+        return [t for t in trades if not t.isDone() and (t.order.orderRef or "").startswith(ref_prefix)]
 
     def daily_adjusted_closes(self, symbol, days=120):
         self._need()
@@ -320,9 +341,9 @@ class IBKRBroker(Broker):
         from ib_async import Stock
         c = Stock(symbol, "SMART", "USD")
         self._call("qualifyContracts", self.ib.qualifyContracts, c)
-        bars = self._call("reqHistoricalData", self.ib.reqHistoricalData, c, endDateTime="",
-                          durationStr=f"{max(days, 30)} D", barSizeSetting="1 day", whatToShow="ADJUSTED_LAST",
-                          useRTH=True, formatDate=1)
+        bars = self._call("reqHistoricalData", lambda: self.ib.run(self.ib.reqHistoricalDataAsync(
+            c, endDateTime="", durationStr=f"{max(days, 30)} D", barSizeSetting="1 day", whatToShow="ADJUSTED_LAST",
+            useRTH=True, formatDate=1), timeout=60))
         if not bars:
             raise BrokerError(f"no historical bars for {symbol}")
         s = pd.Series({pd.Timestamp(b.date).date(): float(b.close) for b in bars}).sort_index()

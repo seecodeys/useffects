@@ -85,6 +85,9 @@ class Executor:
     def ensure_connected(self) -> bool:
         if self.broker.is_connected():
             return True
+        sock = getattr(self.broker, "socket_ok", None)
+        if sock is not None and sock():
+            return False             # socket fine, IB itself unreachable (1100): wait for 1102, don't reconnect
         try:
             self.broker.connect()
             self.alert.info("reconnected to broker")

@@ -1,0 +1,10 @@
+.env
+deploy/*.env
+config.yaml
+state/
+logs/
+reports/
+ibgw-settings/
+.venv/
+__pycache__/
+.pytest_cache/

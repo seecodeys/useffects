@@ -1,24 +1,32 @@
 # IB Gateway (headless, auto-login via IBC) + the trader, on one small always-on machine.
-# 1. cp deploy/.env.example deploy/.env  and fill it in (chmod 600; never commit it)
-# 2. docker compose -f deploy/docker-compose.yml up -d
-# Pin the ib-gateway image to a specific release tag you have checked (https://github.com/gnzsnz/ib-gateway-docker).
+#   cp deploy/gateway.env.example deploy/gateway.env   (IBKR login; chmod 600; never commit)
+#   cp deploy/trader.env.example  deploy/trader.env    (account id, alerts)
+#   docker compose -f deploy/docker-compose.yml up -d
+# Then once, over VNC (ssh -L 5900:127.0.0.1:5900 yourserver): Configure > API > Precautions >
+# "Bypass Order Precautions for API orders". Settings persist in ../ibgw-settings.
+# Pin the image to a release tag you have checked: https://github.com/gnzsnz/ib-gateway-docker
 services:
   ib-gateway:
     image: ghcr.io/gnzsnz/ib-gateway:stable
     restart: always
-    env_file: .env            # TWS_USERID, TWS_PASSWORD, TRADING_MODE=paper|live, TWOFA_TIMEOUT_ACTION=restart, ...
+    env_file: gateway.env
+    volumes:
+      - ../ibgw-settings:/home/ibgateway/tws_settings
     ports:
-      - "127.0.0.1:4002:4004"   # paper API (container 4004 -> host 4002)
-      - "127.0.0.1:4001:4003"   # live API
+      - "127.0.0.1:4002:4004"   # paper API (container 4004)
+      - "127.0.0.1:4001:4003"   # live API  (container 4003)
+      - "127.0.0.1:5900:5900"   # VNC for one-time settings
   trader:
     build:
       context: ..
       dockerfile: deploy/Dockerfile
-    restart: always
+    restart: always            # also covers the first minutes while the Gateway logs in
     depends_on: [ib-gateway]
-    env_file: .env            # MET_IB_ACCOUNT, MET_TELEGRAM_*, MET_HEARTBEAT_URL, (MET_LIVE_CONFIRM only when live)
+    env_file: trader.env
     environment:
       TZ: America/New_York
+      MET_IB_HOST: ib-gateway
+      MET_IB_PORT: "4004"      # paper. For live use 4003 (and mode: live, MET_LIVE_CONFIRM)
     volumes:
       - ../config.yaml:/app/config.yaml:ro
       - ../state:/app/state

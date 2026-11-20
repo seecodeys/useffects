@@ -50,6 +50,7 @@ class FakeIB:
     def reqMktData(self, *a): return self.ticker
     def cancelMktData(self, c): pass
     def openTrades(self): return []
+    def reqAllOpenOrders(self): return []
 
 
 @pytest.fixture
@@ -58,7 +59,7 @@ def br(monkeypatch):
     b = IBKRBroker.__new__(IBKRBroker)
     b.cfg, b.client_id, b.on_critical = cfg, 17, None
     b.ib = FakeIB()
-    b._tickers, b._hist_cache, b._ib_down, b._md_blocked = {}, {}, False, False
+    b._tickers, b._hist_cache, b._ib_down, b._md_blocked_at = {}, {}, False, None
     b.fx_base_per_usd = 1.0
     import collections; b.last_errors = collections.deque(maxlen=10)
     return b
@@ -88,7 +89,7 @@ def test_fill_summary_prefers_executions():
 @pytest.mark.parametrize("trade,expect_status,expect_filled,cancels", [
     (FakeTrade("Filled", 7, 7000.0, [(7, 7000.0)]), "Filled", 7, 0),
     (FakeTrade("Cancelled", 0, 0.0, [], done=True), "Rejected", 0, 0),
-    (FakeTrade("Inactive", 0, 0.0, [], done=True, cancel_to="Cancelled"), "Rejected", 0, 1),
+    (FakeTrade("Inactive", 0, 0.0, [], done=True), "Rejected", 0, 1),
     (FakeTrade("Submitted", 0, 0.0, [], done=False, cancel_to="Cancelled"), "Timeout", 0, 1),
     (FakeTrade("Submitted", 3, 7000.0, [(3, 7000.0)], done=False, cancel_to="Cancelled"), "Timeout", 3, 1),
     (FakeTrade("Submitted", 0, 0.0, [], done=False, cancel_to=None), "Unknown", 0, 1),   # cancel never confirmed
@@ -172,3 +173,20 @@ def test_connectivity_lost_means_not_connected(br):
     assert not br.is_connected()
     br._on_error(-1, 1102, "restored, data maintained")
     assert br.is_connected()
+
+
+def test_competing_session_block_expires(br, monkeypatch):
+    import met.ibkr as m
+    t = [1000.0]
+    monkeypatch.setattr(m.time, "monotonic", lambda: t[0])
+    br._on_error(-1, 10197, "competing session")
+    with pytest.raises(BrokerError):
+        br.price(C)
+    t[0] += 61
+    br.ib.ticker = NS(time=dt.datetime.now(dt.timezone.utc), bid=7000.0, ask=7000.5, close=6990.0, marketPrice=lambda: 7000.25)
+    assert br.price(C) == 7000.25
+
+
+def test_connect_keeps_live_socket(br):
+    br.ib.connect = lambda *a, **k: (_ for _ in ()).throw(AssertionError("must not reconnect"))
+    br.connect()     # socket is up -> no-op

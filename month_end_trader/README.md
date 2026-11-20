@@ -102,7 +102,7 @@ The daemon is a single loop of idempotent `tick()`s over the state saved in `sta
    ```
 4. **Run it continuously** on a machine that is always on (a VPS or home server):
    - systemd: `deploy/met.service`
-   - Docker: `deploy/docker-compose.yml`, which uses IB Gateway with IBC auto-login.
+   - Docker: `deploy/docker-compose.yml`, which uses IB Gateway with IBC auto-login. Copy `deploy/gateway.env.example` and `deploy/trader.env.example` to `.env` files (chmod 600); the Gateway settings persist in `ibgw-settings/`. Set "Bypass Order Precautions" once over VNC, then run `met check` and `met test-order` inside the container before the first trade day.
 
    IBKR forces a daily Gateway restart and periodic re-authentication. IBC handles most of it, but the bot alerts when it can't connect on a trade day, so keep alerts on.
 5. **Paper-trade at least one month-end.** The next trade dates are 30 Nov 2026 and 31 Dec 2026.

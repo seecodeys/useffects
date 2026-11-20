@@ -15,7 +15,7 @@ Branch: `claude/blissful-mccarthy-mt2shh`. Scheduled check-ins (4 hourly tasks, 
 - [x] README: IBKR operational settings (bypass order precautions, Gateway restart time outside 09:00-16:30 ET, dedicated API username, US equity data for ADJUSTED_LAST); document MET_EXTRA_CLOSURES
 - [x] Script `met validate-data`: compare IBKR ADJUSTED_LAST vs Yahoo adjclose ratios over 120d incl. TLT ex-dates (user runs once)
 - [x] Speed up tests (reporter off by default in env fixture; plotting optional)
-- [ ] Review round 2 on the rewritten executor/ibkr (2 agents launched ~08:45 UTC 20 Nov); fix findings
+- [ ] Review round 2: IBKR/ops review (15 findings) FIXED; executor/state review pending -> fix its findings
 - [x] Test suite (49 tests): calendar, signal vs backtest_signals.csv, sizing, guardrails, executor failure modes, restart recovery, monitor/SPRT
 - [x] README + config.example.yaml + deploy (systemd, docker-compose with IB Gateway, IBC notes)
 - [x] Review round 1 (3 agents: safety 18, IBKR 15, signal/monitor 12 findings) -> fixed: broker-sized exits, late-fill/timeout
