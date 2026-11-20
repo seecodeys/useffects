@@ -262,3 +262,4 @@ is an opening-print artifact (015). New tests use prior-close information only.
 - [x] 303 013 vs asset-manager ES length — long-side weak when AM very long (descriptive, n≈20; watch item).
 - [x] 304 Fed net liquidity (WALCL−TGA−RRP) — weak, fails gate.
 - [x] 305 Tax-date TGA drain — dead.
+- [x] 306 Weekend crypto → Monday open→close — dead.

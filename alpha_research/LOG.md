@@ -954,3 +954,8 @@ drain days: +5.2bp vs +4.2bp average. Registered calendar rule, short SPY close�
 B tax day + next −1.9 / −0.7 (wrong sign: the day after a tax date averaged strongly positive, which is post-hoc and
 overlaps the generally firm OPEX week — not pursued). Dead: reserve drains don't move equities day-to-day.
 Registry: 406 rows.
+
+## 306 — Weekend crypto moves → Monday US equities (arXiv 2610.35702)  ·  2026-11-20
+BTC-USD Friday→Sunday (UTC closes), known before Monday's open. Correlation with Monday's SPY gap +0.09, with Monday
+open→close −0.01 (2015-22). Follow the weekend crypto move on Monday open→close: SPY valid t −0.7, QQQ −0.9; QQQ only
+when |BTC weekend| > 5%: +0.6. Dead (and no 2000-14 sample exists). Registry: 409 rows.
