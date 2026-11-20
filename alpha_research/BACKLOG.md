@@ -48,7 +48,7 @@
 
 - [x] 037 Commodity roll window (short USO bd 5-9) — dead.
 - [x] 038 LETF rebalancing proxy (follow big gaps) — dead.
-- [ ] 039 Corporate-bond index extension at month-end: HYG/LQD long last trading day (companion to 031).
+- [x] 039 Corporate-bond index extension at month-end: HYG/LQD long last trading day (companion to 031).
 - [x] 040 Month-end effect robustness: does 013 hold in the pre-2002 period using a bond proxy available earlier (e.g. ^TYX/^TNX yield change as bond-return proxy, SPY 1993-2002)? Fresh out-of-sample *backwards*.
 
 ## Ideas parking lot

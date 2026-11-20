@@ -252,3 +252,15 @@ Interpretation: the effect is **era-dependent** — much weaker before 2002 than
 holdout 3.3). A plausible (post-hoc) reason is the growth of rebalancing-driven assets (balanced/target-date funds,
 especially after the 2006 Pension Protection Act); but it also means the edge depends on a flow regime that can change.
 This lowers confidence somewhat: still the best finding, but not a timeless law.
+
+## 039 — Corporate-bond month-end; 046 — Tax-loss selling / January effect  ·  2026-11-20
+039 long HYG / LQD on the last trading day: HYG −0.2/+0.4, LQD +1.9/+1.3 (same weak-consistent pattern as Treasuries in
+031, smaller). Dead/weak.
+046 IWM−SPY spread: short last 5 days of December −0.3/+0.6 (dead); long first 5 days of January **−2.6/−1.4** — the
+classic January small-cap effect is *reversed* intraday (small caps lag SPY open→close in early January). Not
+pre-specified in that direction, so only noted. Registry: 181.
+
+## 013e — Month-end signal stability through time (descriptive)  ·  2026-11-20
+Per-trade P&L by 5-year block (TYX proxy pre-2002-08, TLT after): 1993-94 −16bp (t=−1.7, 23 trades), 1995-99 +14 (0.8),
+2000-04 +22 (1.9), 2005-09 +37 (3.3), 2010-14 −1 (−0.1), 2015-19 +13 (1.8), 2020-24 +26 (2.0), 2025-26 +47 (3.2).
+Positive in 6 of 8 blocks, strongest post-2005, with a dead 2010-14 stretch. results/013_stability.png.
