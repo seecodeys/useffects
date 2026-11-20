@@ -21,7 +21,7 @@
 - [x] 012 Credit/rates gaps as risk signals: HYG, LQD, TLT, IEF opening gaps & prior-day moves → SPY open→close (all US-listed, liquid).
 - [x] 013 Month-end / quarter-end rebalancing: last 1-2 trading days of month, SPY vs TLT intraday direction conditioned on month-to-date stock-bond performance gap (pension rebalancing story).
 - [x] 013c Month-end follow-ups: same pre-specified rule on IWM/QQQ/DIA, SPY-vs-TLT pair, |gap| sizing, intraday timing via 1h bars (last-hour MOC flows?).
-- [ ] 014 Earnings-season intensity: SPY/QQQ intraday during heavy mega-cap earnings weeks vs not (needs earnings dates — Yahoo events or skip).
+- [~] 014 Earnings-season intensity: SPY/QQQ intraday during heavy mega-cap earnings weeks vs not (needs earnings dates — Yahoo events or skip).
 - [x] 015 Execution reality check for 004/006 (first-hour open-print reversals): document what evidence would confirm them (MOO paper fills, TAQ-like data); test robustness to entering at 9:35 using Yahoo 5m bars (60 days) — descriptive only.
 
 ## Flow-driven ideas (the 013 theme is the only robust winner so far)
@@ -34,6 +34,14 @@
 - [x] 020 Practical tool: `signals.py` that prints today's/next month-end 013 signal (SPY MTD − TLT MTD, direction, size) and the 001 OPEX-Friday tilt, plus a combined backtest/equity curve of 013(+001) with realistic costs.
 - [x] 021 OPEX-week structure (from parking lot): Mon-Thu before monthly OPEX, Monday after, quarterly-only — pre-specify 3 variants on QQQ/SPY.
 - [x] 022 Write-up: alpha_research/README.md summarising method, all verdicts, the 013 result and caveats (survivorship, costs, holdout contamination).
+
+## Scheduled-event ideas (added 2026-11-20)
+- [ ] 024 FOMC announcement days (14:00 ET): SPY/QQQ open→close on FOMC days (long; and conditional on pre-FOMC drift). Needs FOMC dates 2000-2026 (fetch from federalreserve.gov → tools/fomc_dates.csv).
+- [ ] 025 Jobs-report days (8:30 ET, usually first Friday): does the post-release gap reverse or continue intraday? Rule-based first-Friday dates (approximate; note exceptions).
+- [ ] 026 Pre-holiday/post-holiday half-days (day after Thanksgiving, Christmas Eve) and the "Santa"/year-end window — few events, descriptive.
+- [ ] 027 Month-end rebalancing, more evidence: does 013's edge scale with the *bond* leg's size (TLT MTD alone) or the *equity* leg? Which one drives it? Also: month-ends when SPY MTD and gap disagree in sign.
+- [ ] 028 Japan fiscal-year-end (Mar 31) and China/HK holiday closures: EWJ/FXI open→close around those dates (repatriation flows) — few events.
+- [ ] 014 (parked: no reliable free historical earnings calendar) — revisit if a source turns up.
 
 ## Ideas parking lot
 - 004 follow-up: verify ADR opening-auction fills (paper MOO/MOC orders, or tick/quote data); same idea for European ADRs once 9:30 Europe levels exist (005).

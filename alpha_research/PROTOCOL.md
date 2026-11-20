@@ -48,5 +48,7 @@ existed, so the holdout is slightly contaminated for SPY + overseas-index signal
    gate-passed or holdout-tested.
 5. `git add -A alpha_research && git commit && git push` to the session branch
    after every experiment — the container can disappear at any time.
-6. Continue to the next item until the turn ends. If the backlog is truly exhausted
-   and no worthwhile ideas remain, say so in LOG.md and disable the scheduled task.
+6. Continue to the next item until the turn ends. **Never disable the scheduled task** (user's instruction,
+   2026-11-20: "keep going, don't stop the loop"). When the backlog runs low, brainstorm new hypotheses with an
+   economic story (flows, scheduled events, structural constraints), add them to BACKLOG.md, and keep testing.
+   Stay honest as N grows: prefer few, pre-specified, well-motivated variants over parameter sweeps.
