@@ -55,6 +55,9 @@ class FakeBroker(Broker):
         self.disconnect_at = None         # datetime at which connection drops
         self.price_unavailable = False
         self.whatif_excess = None         # override post-trade excess liquidity
+        self.late_fill_next = 0           # next N orders report Timeout/0 filled but DO fill (IB cancel race)
+        self.pos_glitch_reads = 0         # next N positions() calls omit the futures position (stale cache)
+        self.account_reported = None      # account id the broker reports (default: self.account)
         self.expiries = [_third_friday(y, m) for y in range(1993, 2041) for m in (3, 6, 9, 12)]
         self.commission = 0.62
         self._ids = itertools.count(1)
@@ -116,14 +119,17 @@ class FakeBroker(Broker):
     def account_snapshot(self):
         self._need()
         nl = self.cash + self.core_shares * self.spy_price + self.unrealised()
-        return AccountSnapshot(self.account, nl, nl * 0.6, nl * 0.6)
+        return AccountSnapshot(self.account_reported or self.account, nl, nl * 0.6, nl * 0.6)
 
     def positions(self):
         self._need()
         out = []
+        glitch = self.pos_glitch_reads > 0
+        if glitch:
+            self.pos_glitch_reads -= 1
         if self.core_shares:
             out.append(Position("SPY", "STK", self.core_shares, "SPY", self.core_shares * self.spy_price))
-        if self.fut_pos:
+        if self.fut_pos and not glitch:
             out.append(Position("MES", "FUT", self.fut_pos, self._local(self._front(self.clock.now().date())),
                                 self.fut_pos * self.fut_price_now() * self.multiplier))
         return out
@@ -139,6 +145,12 @@ class FakeBroker(Broker):
         self._need()
         e = self._front(min_expiry)
         return FutureContract(symbol, e, self.multiplier, self._local(e), con_id=1000 + e.month)
+
+    def contract_from(self, symbol, exchange, con_id, local_symbol, expiry, multiplier):
+        return FutureContract(symbol, expiry, multiplier, local_symbol, con_id)
+
+    def working_orders(self, ref_prefix="MET-"):
+        return 0
 
     def what_if(self, contract, action, qty):
         self._need()
@@ -170,6 +182,11 @@ class FakeBroker(Broker):
             self.fut_cost = 0.0
         self.clock.advance(0.3)
         status = "Filled" if fill == qty else "PartiallyFilled"
+        if self.late_fill_next > 0:
+            self.late_fill_next -= 1
+            self.orders.append(dict(id=oid, ref=ref, action=action, qty=qty, filled=fill, price=px, status="LateFill",
+                                    t=self.clock.now()))
+            return OrderResult(oid, "Timeout", qty, 0, 0.0, "simulated: cancel raced a fill")
         self.orders.append(dict(id=oid, ref=ref, action=action, qty=qty, filled=fill, price=px, status=status,
                                 t=self.clock.now()))
         return OrderResult(oid, status, qty, fill, px)

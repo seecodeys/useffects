@@ -63,11 +63,12 @@ def main(argv=None):
         return 0
     if a.cmd in ("kill", "unkill"):
         cfg = load_config(a.config, require_account=False)
-        p = Path(cfg.monitoring.state_dir) / "KILL"
+        p = (Path(cfg.monitoring.state_dir) / "KILL").resolve()
         if a.cmd == "kill":
-            p.write_text(dt.datetime.now().isoformat()); print(f"kill switch ON ({p})")
+            p.write_text(dt.datetime.now().isoformat())
+            print(f"kill switch ON: {p}\n(the daemon must use the same state_dir; it alerts when it sees the switch)")
         else:
-            p.unlink(missing_ok=True); print("kill switch OFF")
+            p.unlink(missing_ok=True); print(f"kill switch OFF: {p}")
         return 0
 
     cfg = load_config(a.config)
@@ -81,8 +82,8 @@ def main(argv=None):
         print(json.dumps(res, indent=2, default=str)); return 0
 
     if a.cmd == "signal":
-        T = cal.next_trade_date(now().date())
-        broker = _broker(cfg, connect=False)
+        T = cal.next_trade_date_after(now())
+        broker = _broker(cfg, connect=False, cli=True)
         try:
             broker.connect()
         except Exception as e:
@@ -100,7 +101,10 @@ def main(argv=None):
         return 0
 
     if a.cmd == "status":
-        T = cal.next_trade_date(now().date())
+        from .state import unfinished
+        T = cal.next_trade_date_after(now())
+        for d in unfinished(cfg.monitoring.state_dir):
+            print(f"!! unfinished trade state {d}: check the broker / run `met flatten`")
         st = TradeState(cfg.monitoring.state_dir, str(T))
         o, c = cal.session_open_close(T)
         print(f"mode={cfg.mode} account={cfg.ib.account} leverage={cfg.strategy.leverage}x {cfg.strategy.instrument}")
@@ -111,7 +115,7 @@ def main(argv=None):
         print("kill switch:", (Path(cfg.monitoring.state_dir) / "KILL").exists())
         return 0
 
-    broker = _broker(cfg)
+    broker = _broker(cfg, cli=(a.cmd != "run"), alerter=alerter)
     from .executor import Executor
     from .monitor import run_report
     ex = Executor(cfg, broker, alerter, make_fetchers(cfg, broker, broker.now), reporter=lambda d: run_report(cfg))
@@ -147,22 +151,32 @@ def main(argv=None):
         print("position now:", broker.future_position(c)); return 0
 
     if a.cmd == "flatten":
+        from .state import unfinished
         T = cal.next_trade_date(now().date())
-        for d in {T, cal.previous_session(T), now().date()}:
-            st = TradeState(cfg.monitoring.state_dir, str(d))
-            if st.open_quantity:
-                if not a.yes and input(f"flatten {st.open_quantity:+d} {st.get('contract_local_symbol')}? [y/N] ") != "y":
-                    return 1
-                ex.do_exit(d, st, reason="manual flatten")
-        print("bot-owned positions flat. Broker futures positions:",
-              broker.all_future_positions(cfg.strategy.instrument)); return 0
+        dates = set(unfinished(cfg.monitoring.state_dir))
+        st_t = TradeState(cfg.monitoring.state_dir, str(T))
+        if st_t.phase in ("ENTRY_SUBMITTED", "ENTERED", "EXIT_SUBMITTED", "ERROR", "FLAT"):
+            dates.add(str(T))
+        for d in sorted(dates):
+            st = TradeState(cfg.monitoring.state_dir, d)
+            c = ex.contract_for(st)
+            pos = broker.future_position(c)
+            print(f"{d}: state {st.phase}, broker {pos:+g} {c.local_symbol}")
+            if pos == 0:
+                continue
+            if not a.yes and input(f"flatten {pos:+g} {c.local_symbol}? [y/N] ") != "y":
+                return 1
+            ex.flatten(dt.date.fromisoformat(d), st, reason="manual flatten")
+        print("done. Broker futures positions:", broker.all_future_positions(cfg.strategy.instrument)); return 0
 
     ap.error(f"unknown command {a.cmd}")
 
 
-def _broker(cfg, connect=True):
+def _broker(cfg, connect=True, cli=False, alerter=None):
+    """CLI commands use clientId+1 so they never collide with the running daemon (IB error 326)."""
     from .ibkr import IBKRBroker
-    b = IBKRBroker(cfg)
+    b = IBKRBroker(cfg, client_id=cfg.ib.client_id + (1 if cli else 0),
+                   on_critical=(alerter.critical if alerter and not cli else None))
     if connect:
         b.connect()
     return b

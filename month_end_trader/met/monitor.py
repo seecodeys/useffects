@@ -22,7 +22,7 @@ import pandas as pd
 
 from . import calendar as cal
 from .config import Config
-from .signal import compute_signal, yahoo_daily, DataError
+from .signal import compute_signal, yahoo_daily, DataError, drop_partial_today, _as_date_index
 from .state import all_trades
 
 COST_BP = 1.0   # round-trip cost assumed for the paper ledger (MES ~1bp)
@@ -30,7 +30,10 @@ COST_BP = 1.0   # round-trip cost assumed for the paper ledger (MES ~1bp)
 
 def paper_ledger(spy: pd.DataFrame, tlt: pd.DataFrame, start="2002-08-01", until: dt.date | None = None) -> pd.DataFrame:
     """spy/tlt: DataFrames with open, close, adjclose indexed by date."""
-    rows = []
+    rows, skipped = [], []
+    spy = spy.copy(); tlt = tlt.copy()
+    spy.index = _as_date_index(spy["close"]).index if not (len(spy) and type(spy.index[0]) is dt.date) else spy.index
+    tlt.index = _as_date_index(tlt["close"]).index if not (len(tlt) and type(tlt.index[0]) is dt.date) else tlt.index
     s0 = pd.Timestamp(start).date()
     last = until or max(spy.index)
     d = s0
@@ -50,20 +53,31 @@ def paper_ledger(spy: pd.DataFrame, tlt: pd.DataFrame, start="2002-08-01", until
                            t1_oc_bp=sig.direction * 1e4 * (spy.at[t1, "close"] / spy.at[t1, "open"] - 1) if t1 in spy.index else np.nan,
                            tlt_bp=-sig.direction * 1e4 * (tlt.at[T, "close"] / tlt.at[T, "open"] - 1) if T in tlt.index else np.nan)
                 rows.append(row)
-            except DataError:
-                pass
+            except DataError as e:
+                skipped.append((T, str(e)))
+        else:
+            skipped.append((T, "no SPY bar"))
         d = (pd.Timestamp(d.replace(day=1)) + pd.offsets.MonthBegin(1)).date()
-    return pd.DataFrame(rows).set_index("date") if rows else pd.DataFrame()
+    cols = ["gap", "direction", "oc_bp", "paper_bp", "gap_in_bp", "t1_oc_bp", "tlt_bp"]
+    out = pd.DataFrame(rows).set_index("date") if rows else pd.DataFrame(columns=cols)
+    out.attrs["skipped"] = skipped
+    return out
 
 
-def sprt(x_bp, h1_bp, sd_bp, alpha, beta):
+def sprt(x_bp, h1_bp, sd_bp, alpha, beta, winsor_sd=2.0):
+    """Clamped (reflecting) SPRT: the score is held inside [B, A], so after 'alive' a decline starts counting
+    immediately, and after 'dead' a recovery can re-arm. Inputs winsorised at +-winsor_sd*sd so a single
+    extreme month cannot dominate. `decided` describes the CURRENT zone."""
     A, B = math.log((1 - beta) / alpha), math.log(beta / (1 - alpha))
-    path, L, decided = [], 0.0, None
+    lim = winsor_sd * sd_bp
+    path, L = [], 0.0
     for v in x_bp:
-        L += (v * h1_bp - h1_bp ** 2 / 2) / sd_bp ** 2
+        if v != v:
+            continue
+        v = min(max(v, -lim), lim)
+        L = min(max(L + (v * h1_bp - h1_bp ** 2 / 2) / sd_bp ** 2, B), A)
         path.append(L)
-        if decided is None and (L >= A or L <= B):
-            decided = "edge alive" if L >= A else "edge dead"
+    decided = "edge alive" if L >= A else ("edge dead" if L <= B else None)
     return L, path, A, B, decided
 
 
@@ -78,7 +92,8 @@ def size_multiplier(L, A, B, decided):
 
 
 def slope(df):
-    x, y = df["gap"].values, df["oc_bp"].values
+    df = df[["gap", "oc_bp"]].dropna()
+    x, y = df["gap"].values.astype(float), df["oc_bp"].values.astype(float)
     if len(x) < 6:
         return float("nan"), float("nan")
     X = np.column_stack([np.ones_like(x), x * 100])
@@ -92,7 +107,9 @@ def live_rows(cfg: Config) -> pd.DataFrame:
     rows = []
     for t in all_trades(cfg.monitoring.state_dir):
         if t.get("phase") == "FLAT" and t.get("trade_bp") is not None:
-            rows.append(dict(date=dt.date.fromisoformat(t["trade_date"]), live_bp=t["trade_bp"],
+            if t.get("exit_reason") not in (None, "scheduled close"):
+                continue                       # stops / manual exits are not comparable with the paper result
+            rows.append(dict(date=dt.date.fromisoformat(t["trade_date"]), live_bp=t["trade_bp"], direction=t.get("direction"),
                              net_pnl=t.get("net_pnl"), pnl_pct_equity=t.get("pnl_pct_equity"),
                              exit_reason=t.get("exit_reason")))
     return pd.DataFrame(rows).set_index("date") if rows else pd.DataFrame(columns=["live_bp"])
@@ -101,8 +118,9 @@ def live_rows(cfg: Config) -> pd.DataFrame:
 def run_report(cfg: Config, asof: dt.date | None = None, spy=None, tlt=None, write=True) -> dict:
     m = cfg.monitoring
     if spy is None:
-        spy = yahoo_daily(cfg.signal.equity, days=365 * 26)
-        tlt = yahoo_daily(cfg.signal.bond, days=365 * 26)
+        now = dt.datetime.now(cal.ET)
+        spy = drop_partial_today(yahoo_daily(cfg.signal.equity, days=365 * 26), now)
+        tlt = drop_partial_today(yahoo_daily(cfg.signal.bond, days=365 * 26), now)
     asof = asof or max(spy.index)
     led = paper_ledger(spy, tlt, until=asof)
     start = pd.Timestamp(m.start + "-01").date()
@@ -113,12 +131,16 @@ def run_report(cfg: Config, asof: dt.date | None = None, spy=None, tlt=None, wri
     b_all, t_all = slope(led)
     b_36, t_36 = slope(led.tail(36))
     last24 = led.tail(24)
-    lead = {k: (float(last24[k].mean()), float(last24[k].mean() / last24[k].std() * math.sqrt(len(last24))) if last24[k].std() > 0 else float("nan"))
-            for k in ("paper_bp", "gap_in_bp", "t1_oc_bp", "tlt_bp")}
+    def _mt(x):
+        x = x.dropna()
+        return (float(x.mean()), float(x.mean() / x.std() * math.sqrt(x.count()))) if x.count() > 2 and x.std() > 0 \
+            else (float("nan"), float("nan"))
+    lead = {k: _mt(last24[k]) for k in ("paper_bp", "gap_in_bp", "t1_oc_bp", "tlt_bp")}
     live = live_rows(cfg)
     exec_gap = None
     if len(live):
-        j = live.join(led[["paper_bp"]], how="inner")
+        j = live.join(led[["paper_bp", "direction"]], how="inner", rsuffix="_paper")
+        j = j[j["direction"] == j["direction_paper"]]
         if len(j):
             exec_gap = float((j["live_bp"] - (j["paper_bp"] + COST_BP)).mean())
     warnings = []
@@ -134,7 +156,7 @@ def run_report(cfg: Config, asof: dt.date | None = None, spy=None, tlt=None, wri
                           last36_mean_bp=float(led["paper_bp"].tail(36).mean())),
                slope=dict(all=b_all, all_t=t_all, last36=b_36, last36_t=t_36),
                leading_last24={k: dict(mean_bp=v[0], t=v[1]) for k, v in lead.items()},
-               execution_gap_bp=exec_gap, warnings=warnings)
+               execution_gap_bp=exec_gap, warnings=warnings, skipped_months=[str(d) for d, _ in led.attrs.get("skipped", [])])
     res["summary"] = (f"SPRT {L:+.2f} (bounds {B:+.2f}/{A:+.2f}, {len(live_start)} trades since {m.start}) -> size x{res['size_multiplier']:g}. "
                       f"Paper mean last 36: {res['paper']['last36_mean_bp']:+.1f}bp. Slope last 36: {b_36:+.1f}bp per 1% gap (t {t_36:+.1f}). "
                       + (" WARN: " + "; ".join(warnings) if warnings else ""))

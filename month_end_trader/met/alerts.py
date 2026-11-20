@@ -9,6 +9,7 @@ from __future__ import annotations
 import logging
 import os
 import smtplib
+import threading
 import time
 from email.message import EmailMessage
 
@@ -23,6 +24,7 @@ class Alerter:
         self.mode = mode
         self.sink = sink            # tests capture alerts here
         self._last_hb = 0.0
+        self._recent = {}            # title -> last sent time (dedupe repeats within 120s)
 
     def send(self, level: str, title: str, body: str = ""):
         text = f"[MET {self.mode.upper()}] {level}: {title}" + (f"\n{body}" if body else "")
@@ -30,6 +32,14 @@ class Alerter:
         if self.sink is not None:
             self.sink.append((level, title, body))
             return
+        now = time.time()
+        if now - self._recent.get(title, 0) < 120:
+            return
+        self._recent[title] = now
+        # network delivery never blocks the trading loop
+        threading.Thread(target=self._deliver, args=(level, title, text), daemon=True).start()
+
+    def _deliver(self, level, title, text):
         self._telegram(text)
         if level in ("WARN", "CRITICAL"):
             self._email(f"[MET {self.mode}] {level}: {title}", text)
@@ -42,10 +52,14 @@ class Alerter:
         url = os.environ.get("MET_HEARTBEAT_URL")
         if not url or self.sink is not None or time.time() - self._last_hb < min_interval_s:
             return
-        try:
-            requests.get(url, timeout=10); self._last_hb = time.time()
-        except Exception as e:
-            log.warning("heartbeat ping failed: %r", e)
+        self._last_hb = time.time()
+
+        def ping():
+            try:
+                requests.get(url, timeout=10)
+            except Exception as e:
+                log.warning("heartbeat ping failed: %r", e)
+        threading.Thread(target=ping, daemon=True).start()
 
     def _telegram(self, text):
         tok, chat = os.environ.get("MET_TELEGRAM_TOKEN"), os.environ.get("MET_TELEGRAM_CHAT_ID")

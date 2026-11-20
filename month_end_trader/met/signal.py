@@ -43,6 +43,8 @@ class Signal:
 
 def compute_signal(trade_date: dt.date, equity: pd.Series, bond: pd.Series, source: str = "") -> Signal:
     """equity/bond: adjusted closes indexed by datetime.date (or Timestamp). Requires exact base and T-1 closes."""
+    if not cal.is_last_session_of_month(trade_date):
+        raise DataError(f"{trade_date} is not the last session of its month")
     t1 = cal.previous_session(trade_date)
     base = cal.prior_month_last_session(trade_date)
     if t1 <= base:
@@ -83,12 +85,16 @@ def yahoo_daily(symbol: str, days: int = 120, session=None) -> pd.DataFrame:
             if r.status_code == 200:
                 res = r.json()["chart"]["result"][0]
                 q = res["indicators"]["quote"][0]
-                adj = res["indicators"].get("adjclose", [{}])[0].get("adjclose") or q["close"]
+                adj = (res["indicators"].get("adjclose") or [{}])[0].get("adjclose")
+                if not adj:     # never fall back to raw closes: missing TLT dividends flip ~5% of signals
+                    raise DataError(f"yahoo {symbol}: adjclose missing")
                 ts = pd.to_datetime(res["timestamp"], unit="s", utc=True).tz_convert(res["meta"]["exchangeTimezoneName"])
                 df = pd.DataFrame({"open": q["open"], "close": q["close"], "adjclose": adj},
                                   index=[t.date() for t in ts]).dropna()
                 return df[~df.index.duplicated(keep="last")]
             last_err = f"HTTP {r.status_code}"
+        except DataError:
+            raise
         except Exception as e:  # network / parse
             last_err = repr(e)
         time.sleep(1.5 * (attempt + 1))
@@ -106,7 +112,8 @@ def drop_partial_today(df: pd.DataFrame, now_et: dt.datetime) -> pd.DataFrame:
 
 
 def signals_from_sources(trade_date: dt.date, fetchers: dict, equity: str, bond: str,
-                         require_agreement: bool = True) -> tuple[Signal | None, list[str], list[Signal]]:
+                         require_agreement: bool = True, max_gap_diff: float = 0.0015
+                         ) -> tuple[Signal | None, list[str], list[Signal]]:
     """fetchers: {name: callable(symbol) -> pd.Series of adjusted closes}. Returns (signal, problems, all_signals).
     signal is None when no usable/consistent signal could be produced."""
     sigs, problems = [], []
@@ -117,6 +124,12 @@ def signals_from_sources(trade_date: dt.date, fetchers: dict, equity: str, bond:
             problems.append(f"signal source {name} failed: {e}")
     if not sigs:
         return None, problems + ["no signal source available"], sigs
+    if len(sigs) > 1:
+        spread = max(s.gap for s in sigs) - min(s.gap for s in sigs)
+        if spread > max_gap_diff:
+            return None, problems + ["signal sources differ by %.3f%% in gap (> %.3f%%): data error? " % (
+                100 * spread, 100 * max_gap_diff) + ", ".join(
+                f"{s.source}: {s.equity_mtd:+.4%}/{s.bond_mtd:+.4%}" for s in sigs)], sigs
     dirs = {s.direction for s in sigs}
     if len(dirs) > 1:
         msg = "signal sources disagree: " + ", ".join(f"{s.source}={s.side} gap={s.gap:+.4%}" for s in sigs)

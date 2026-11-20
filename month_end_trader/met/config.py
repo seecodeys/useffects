@@ -47,6 +47,7 @@ class SignalConfig:
     bond: str = "TLT"
     sources: list = field(default_factory=lambda: ["ibkr", "yahoo"])
     require_agreement: bool = True   # if both sources available and the sign differs -> skip
+    max_source_gap_diff: float = 0.0015  # sources' gaps must agree within 15bp, else treat as a data error
 
 
 @dataclass
@@ -101,10 +102,12 @@ class Config:
                 errs.append(f"mode=paper but account {self.ib.account} is not a paper account (DU...)")
             if self.mode == "live" and is_paper_acct:
                 errs.append(f"mode=live but account {self.ib.account} is a paper account")
-        if self.mode == "live" and self.ib.port in (4002, 7497):
-            errs.append("mode=live but port is a paper port (4002/7497)")
-        if self.mode == "paper" and self.ib.port in (4001, 7496):
-            errs.append("mode=paper but port is a live port (4001/7496)")
+        if self.mode == "live" and self.ib.port in (4002, 7497, 4004):
+            errs.append("mode=live but port is a paper port (4002/7497/4004)")
+        if self.mode == "paper" and self.ib.port in (4001, 7496, 4003):
+            errs.append("mode=paper but port is a live port (4001/7496/4003)")
+        if self.mode == "live" and self.ib.market_data_type != 1:
+            errs.append("mode=live requires ib.market_data_type: 1 (live data for the disaster stop)")
         s, g = self.strategy, self.guardrails
         if s.instrument not in ("MES", "ES"):
             errs.append("strategy.instrument must be MES or ES")
@@ -118,6 +121,16 @@ class Config:
             errs.append(f"strategy.exit_lead_s must be >= {HARD_MIN_EXIT_LEAD_S}")
         if not (0 <= s.entry_grace_s <= HARD_MAX_ENTRY_GRACE_S):
             errs.append(f"strategy.entry_grace_s must be in [0, {HARD_MAX_ENTRY_GRACE_S}]")
+        if not (5 <= g.disaster_poll_s <= 300):
+            errs.append("guardrails.disaster_poll_s must be in [5, 300]")
+        if not (5 <= s.fill_timeout_s <= 120):
+            errs.append("strategy.fill_timeout_s must be in [5, 120]")
+        if not (0 <= s.entry_delay_s < s.entry_grace_s):
+            errs.append("strategy.entry_delay_s must be >= 0 and < entry_grace_s")
+        if not (1 <= s.roll_min_days <= 20):
+            errs.append("strategy.roll_min_days must be in [1, 20]")
+        if not (0 <= self.signal.max_source_gap_diff <= 0.01):
+            errs.append("signal.max_source_gap_diff must be in [0, 0.01]")
         if g.core_policy not in ("warn", "block", "ignore"):
             errs.append("guardrails.core_policy must be warn|block|ignore")
         if not (0 <= g.disaster_stop_pct_equity < 1):
@@ -150,9 +163,15 @@ def _merge(dc, data: dict, path=""):
 
 def load_config(path: str | os.PathLike | None, require_account: bool = True) -> Config:
     cfg = Config()
+    base = Path(".")
     if path:
         with open(path) as f:
             _merge(cfg, yaml.safe_load(f) or {})
+        base = Path(path).resolve().parent
+    m = cfg.monitoring                     # relative dirs resolve against the config file's folder
+    for k in ("state_dir", "report_dir", "log_dir"):
+        v = Path(getattr(m, k))
+        setattr(m, k, str(v if v.is_absolute() else (base / v).resolve()))
     env_acct = os.environ.get("MET_IB_ACCOUNT")
     if env_acct:
         cfg.ib.account = env_acct

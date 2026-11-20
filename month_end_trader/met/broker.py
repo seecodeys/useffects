@@ -105,6 +105,15 @@ class Broker(abc.ABC):
     def daily_adjusted_closes(self, symbol: str, days: int = 120):
         """pd.Series of dividend-adjusted daily closes indexed by date (completed sessions only)."""
 
+    @abc.abstractmethod
+    def contract_from(self, symbol: str, exchange: str, con_id: int, local_symbol: str, expiry: dt.date,
+                      multiplier: float) -> FutureContract:
+        """Rebuild a tradable contract from persisted fields without a lookup (exit path must not depend on one)."""
+
+    @abc.abstractmethod
+    def working_orders(self, ref_prefix: str = "MET-") -> int:
+        """Number of this bot's orders still working at the broker."""
+
     def future_position(self, contract: FutureContract) -> float:
         tot = 0.0
         for p in self.positions():

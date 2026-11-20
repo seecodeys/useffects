@@ -173,7 +173,7 @@ def test_recover_from_crash_after_entry_submit(env):
     ex2 = Executor(cfg, b, ex.alert, ex.fetchers, ex.reporter)
     run_until(ex2, clock, dt.datetime(2025, 9, 30, 19, 0))
     s = st(cfg)
-    assert s.phase == "FLAT" and s.get("entry_status") == "Recovered" and b.fut_pos == 0
+    assert s.phase == "FLAT" and s.get("entry_status").startswith("Resolved") and b.fut_pos == 0
 
 
 def test_disaster_stop(env):
@@ -223,7 +223,7 @@ def test_signal_source_disagreement_skips(env):
     ex.fetchers["yahoo"] = lambda s: b.daily_adjusted_closes(s) if s == "SPY" else bad
     run_until(ex, clock, dt.datetime(2025, 9, 30, 19, 0))
     s = st(cfg)
-    assert s.phase == "SKIPPED" and any("disagree" in x for x in s.get("blockers"))
+    assert s.phase == "SKIPPED" and any(("disagree" in x) or ("data error" in x) for x in s.get("blockers"))
 
 
 def test_price_unavailable_skips(env):

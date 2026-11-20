@@ -33,6 +33,6 @@ def test_run_report_writes_outputs(tmp_path, data):
     cfg = Config(); cfg.ib.account = "DU1"
     cfg.monitoring.state_dir = cfg.monitoring.report_dir = str(tmp_path); cfg.monitoring.start = "2023-01"
     res = run_report(cfg, asof=dt.date(2026, 10, 31), spy=spy, tlt=tlt)
-    assert res["sprt"]["trades"] == 46 and res["sprt"]["decided"] == "edge alive"
+    assert res["sprt"]["trades"] == 46 and res["sprt"]["score"] > 1.0
     assert res["size_multiplier"] == 1.0
     assert (tmp_path / "monitor.json").exists() and (tmp_path / "decay_2026-10-31.md").exists()

@@ -23,6 +23,7 @@ class Plan:
     qty: int
     contract_local_symbol: str
     contract_expiry: str
+    contract_con_id: int
     ref_price: float
     multiplier: float
     net_liq: float
@@ -51,15 +52,21 @@ def size_contracts(net_liq: float, price: float, multiplier: float, leverage: fl
     return max(qty, 0), qty * per / net_liq
 
 
-def read_derisk(cfg: Config) -> tuple[float, str]:
+def read_derisk(cfg: Config) -> tuple[float | None, str]:
+    """(multiplier in [0, 1], note). None = unreadable -> preflight blocks (fail closed)."""
     p = Path(cfg.monitoring.state_dir) / "monitor.json"
-    if not cfg.guardrails.auto_derisk or not p.exists():
-        return 1.0, "no monitor data" if cfg.guardrails.auto_derisk else "auto_derisk off"
+    if not cfg.guardrails.auto_derisk:
+        return 1.0, "auto_derisk off"
+    if not p.exists():
+        return 1.0, "no monitor data yet"
     try:
         m = json.loads(p.read_text())
-        return float(m.get("size_multiplier", 1.0)), m.get("status", "")
+        v = float(m.get("size_multiplier", 1.0))
+        if not (v == v):
+            return None, "monitor.json size_multiplier is NaN"
+        return min(max(v, 0.0), 1.0), m.get("status", "")
     except Exception as e:
-        return 1.0, f"monitor.json unreadable: {e}"
+        return None, f"monitor.json unreadable: {e}"
 
 
 def preflight(cfg: Config, broker: Broker, trade_date: dt.date, fetchers: dict) -> tuple[Plan | None, list, list]:
@@ -101,7 +108,7 @@ def preflight(cfg: Config, broker: Broker, trade_date: dt.date, fetchers: dict) 
             (blockers if g.core_policy == "block" else warnings).append(msg)
 
     sig, sig_problems, all_sigs = signals_from_sources(trade_date, fetchers, cfg.signal.equity, cfg.signal.bond,
-                                                       cfg.signal.require_agreement)
+                                                       cfg.signal.require_agreement, cfg.signal.max_source_gap_diff)
     if sig is None:
         blockers.extend(sig_problems)
     else:
@@ -112,9 +119,12 @@ def preflight(cfg: Config, broker: Broker, trade_date: dt.date, fetchers: dict) 
             blockers.append(f"|gap| {abs(sig.gap):.3%} below min_abs_gap {cfg.strategy.min_abs_gap:.3%}")
 
     derisk, derisk_note = read_derisk(cfg)
-    if derisk < 1.0:
+    if derisk is None:
+        blockers.append(f"decay monitor state unreadable ({derisk_note}); run `met report`")
+        derisk = 0.0
+    elif derisk < 1.0:
         warnings.append(f"decay monitor de-risk x{derisk:g} ({derisk_note})")
-    if derisk <= 0:
+    if derisk <= 0 and not any("unreadable" in b for b in blockers):
         blockers.append(f"decay monitor says stop trading ({derisk_note})")
 
     contract = price = None
@@ -136,7 +146,7 @@ def preflight(cfg: Config, broker: Broker, trade_date: dt.date, fetchers: dict) 
         if not (9.0 <= ratio <= 11.5):
             blockers.append(f"futures price {price} vs {cfg.signal.equity} close {float(spy.iloc[-1]):.2f}: ratio {ratio:.2f} implausible")
     except Exception as e:
-        warnings.append(f"price sanity check skipped: {e}")
+        blockers.append(f"futures-vs-{cfg.signal.equity} price sanity check failed: {e}")
 
     qty, eff = size_contracts(acct.net_liquidation, price, contract.multiplier, s.leverage, derisk,
                               g.max_leverage, g.max_contracts)
@@ -151,7 +161,7 @@ def preflight(cfg: Config, broker: Broker, trade_date: dt.date, fetchers: dict) 
     action = "BUY" if sig.direction > 0 else "SELL"
     try:
         m = broker.what_if(contract, action, qty)
-        if m.excess_after < g.margin_buffer_pct * acct.net_liquidation:
+        if not (m.excess_after >= g.margin_buffer_pct * acct.net_liquidation):      # NaN-safe
             blockers.append(f"margin: post-trade excess {m.excess_after:,.0f} < buffer "
                             f"{g.margin_buffer_pct:.0%} x net liq ({g.margin_buffer_pct * acct.net_liquidation:,.0f})")
     except Exception as e:
@@ -160,7 +170,8 @@ def preflight(cfg: Config, broker: Broker, trade_date: dt.date, fetchers: dict) 
         return None, blockers, warnings
 
     plan = Plan(trade_date=str(trade_date), direction=sig.direction, side=sig.side, action=action, qty=qty,
-                contract_local_symbol=contract.local_symbol, contract_expiry=str(contract.expiry), ref_price=price,
+                contract_local_symbol=contract.local_symbol, contract_expiry=str(contract.expiry),
+                contract_con_id=contract.con_id, ref_price=price,
                 multiplier=contract.multiplier, net_liq=acct.net_liquidation, target_leverage=s.leverage,
                 effective_leverage=eff, derisk_multiplier=derisk, gap=sig.gap, equity_mtd=sig.equity_mtd,
                 bond_mtd=sig.bond_mtd, signal_sources=[x.to_dict() for x in all_sigs], warnings=warnings)

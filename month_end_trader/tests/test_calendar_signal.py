@@ -80,8 +80,10 @@ def test_sources_disagree_blocks(data):
     f = {"ibkr": lambda s: spy["adjclose"] if s == "SPY" else tlt["adjclose"],
          "yahoo": lambda s: spy["adjclose"] if s == "SPY" else bad_tlt}
     sig, problems, sigs = signals_from_sources(d, f, "SPY", "TLT", require_agreement=True)
+    assert sig is None and any(("disagree" in p) or ("data error" in p) for p in problems)
+    sig, problems, _ = signals_from_sources(d, f, "SPY", "TLT", require_agreement=True, max_gap_diff=1.0)
     assert sig is None and any("disagree" in p for p in problems)
-    sig, problems, _ = signals_from_sources(d, f, "SPY", "TLT", require_agreement=False)
+    sig, problems, _ = signals_from_sources(d, f, "SPY", "TLT", require_agreement=False, max_gap_diff=1.0)
     assert sig is not None
 
 
