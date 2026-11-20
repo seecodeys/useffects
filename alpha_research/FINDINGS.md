@@ -22,3 +22,7 @@
 
 - 2026-11-20 (309): 013 passes the delayed-entry test that killed 004/006 — entering at 09:35/09:45/10:00 keeps
   +15.8/+15.4/+14.2bp of the +17.1bp (SPX CFD 2010-22, t 2.4-2.8); same on the Nasdaq-100 CFD.
+
+- 2026-11-20 (315): the month-end bond bid replicates on never-used FRED yield data back to 1962: absent 1962-82 (before
+  bond indexing), present at ~2-3bp of yield decline per month-end in 1983-92, 1993-2001 and 2002-22 (pre-2002 permutation
+  p = 0.006-0.03 across 2y/10y/30y). Timeline matches the index-extension mechanism.

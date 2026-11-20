@@ -271,3 +271,4 @@ is an opening-print artifact (015). New tests use prior-close information only.
 - [x] 312 FINRA short-volume (DIX-style) — dead.
 - [x] 313 TLT LETF rebalancing reversal — dead.
 - [x] 314 Put/call hedging spikes — weak to 2019, faded 2019-22 (314b) → dead.
+- [x] 315 Bond-bid back-cast to 1962 (FRED yields) — absent pre-1983, present every decade since. Strong support.

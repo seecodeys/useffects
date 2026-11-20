@@ -1013,3 +1013,14 @@ Spliced cdn.cboe.com market-statistics JSON (tools/cboe_pc_daily.py) onto the CS
 lower (0.58 vs 0.68 around the splice — different product scope), which only affects the 60-day z for ~3 months.
 Same rule as 314A: timing value t 2007-14 +1.36 | 2015-Sep 2019 +1.86 | **Oct 2019-2022 −0.30**; valid 2015-22 overall
 t=+1.23 (was +2.18 to 2019). The lead fades in the new data → downgrade 314A from weak-consistent to dead. Registry: 427.
+
+## 315 — Back-cast of the month-end bond bid to 1962 (FRED constant-maturity yields; never-used data)  ·  2026-11-20
+Yield decline over the last 3 sessions of each month (bp, t):
+DGS10 1962-72 −0.1 (−0.2) | 1973-82 −0.1 (−0.1) | 1983-92 +1.8 (1.6) | 1993-01 +1.9 (1.8) | 2002-22 +2.5 (4.3)
+DGS2  1973-82 +2.1 (0.8) | 1983-92 +3.0 (2.7) | 1993-01 +2.3 (2.0) | 2002-22 +2.8 (5.7)
+DGS30 1973-82 −0.9 (−0.4) | 1983-92 +1.7 (1.6) | 1993-01 +2.3 (2.3) | 2002-22 +2.4 (4.5)
+Permutation vs random 3-day windows, pre-2002 only: p = 0.03 (10y), 0.006 (2y), 0.03 (30y).
+**The bid is absent before bond indexing (1962-82) and appears from 1983 on, at a stable ~2-3bp of yield per month-end,
+in every decade since** — exactly the timeline the index-extension / benchmarked-manager mechanism predicts (Lehman
+indices launched 1973; index-tracked bond assets grew from the mid-1980s). Unlike 013's equity trade (weak pre-2002, 040),
+the bond bid replicates on ~20 years of never-used data. Strongest robustness evidence for finding 2 so far. Not registered.
