@@ -675,3 +675,9 @@ Direction from train: SPY −0.1 / +1.6; QQQ −0.1 / +0.1. Dead. Registry: 333.
 a) quarter-end, −sign(SPY QTD − TLT QTD): +1.2 / +0.5 (+13 / +7bp/trade). b) year-end, YTD gap: −0.6 / +1.3 (20 events).
 Weaker than the MTD version even at quarter-ends — the flow keys on month-to-date drift (monthly rebalancing schedules
 dominate), consistent with 116/206. Dead. Registry: 335.
+
+## 252 — Month-end flow in a high-minus-low-beta large-cap spread  ·  2026-11-20
+d × (top-quintile beta − bottom-quintile beta), last day, open→close: train +0.4 (gross +12bp/trade), valid **+2.1**
+(+30bp). Right direction in both periods (high-beta names move more with the month-end flow) but fails train t; costs
+of a 4-leg book (8bp/day) eat much of it. Weak, consistent with the index-level effect; not a separate edge.
+Registry: 336.
