@@ -831,3 +831,9 @@ Last-3-session bp per month (mean, t): IEF 17.6 (1.3) / 22.5 (2.2) / 25.5 (3.4) 
 2002-04 / 05-09 / 10-14 / 15-19 / 20-22; TLT 23.8 / 37.7 / 54.7 / 43.0 / 25.4; SHY 7.0 / 10.4 / 5.3 / 6.0 / 6.8 (t 2.4-5.7).
 Positive in every block for every maturity, no decay in IEF/SHY (TLT smaller recently) — unlike most anomalies tested,
 this one hasn't been arbitraged away (consistent with its mechanical, size-driven nature).
+
+## 279b — Month-end flow book scaled to 10% volatility (construction, 2003-22)  ·  2026-11-20
+Raw legs run at ~2-3% vol (active only a few days a month). Scaled to 10% annual vol (≈4-4.6× notional on trade days,
+e.g. via ES/ZN futures): SPY month-end leg ≈ +8.4% / +8.2% per year (2003-14 / 2015-22), IEF bond-bid leg ≈ +8.7% /
++11.4%, equal-risk combo ≈ +11.4% / +13.8% — before financing, slippage on larger size, and with the caveat that only
+the SPY leg is solidly holdout-confirmed (IEF holdout Sharpe 0.83). Not advice; illustrates the economic size.
