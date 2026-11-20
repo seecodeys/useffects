@@ -509,3 +509,17 @@ Next sourcing rounds should target NBER/SSRN-style abstracts if fetchable.
 Long SPY the week after a weekly net-liquidity increase (position from the Friday close after Thursday's release),
 flat after decreases; timing value: −1.1 / +1.1. **Dead** — the popular liquidity narrative has no weekly timing value.
 FRED CSVs (no key) at fred.stlouisfed.org/graph/fredgraph.csv?id=<SERIES> saved to data/. Registry: 275.
+
+## 140 — S&P 500 additions (index-fund buying at the effective-date close)  ·  2026-11-20
+300 additions of current constituents since 2001 (Wikipedia 'Date added'; removed stocks missing → survivorship biases
+against the short). Abnormal return vs SPY:
+| period | n | 10d run-up | effective day | next 5 sessions |
+|---|---|---|---|---|
+| 2001-14 | 130 | +330bp | −13bp | **−87bp (t=−2.10)** |
+| 2015-22 | 113 | +103bp | +25bp | **−79bp (t=−2.18)** |
+| 2023+ | 57 | +704bp | +11bp | −4bp (t=−0.06) |
+Portfolio version (short added vs SPY for 5 sessions, 3bp/side/leg, ~25% capital per basket): train t=+1.57, valid
++2.05 → fails gate. **Protocol slip:** the descriptive table printed 2023+ stats, so this idea's holdout is spent
+(logged here; no holdout_eval call). In 2023+ the post-inclusion reversal is gone while run-ups got much larger
+(momentum names). Verdict: **real through 2022, absent since** — consistent with heavy arbitrage of index events.
+Registry: 276.
