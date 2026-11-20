@@ -43,6 +43,9 @@
 - [ ] 028 Japan fiscal-year-end (Mar 31) and China/HK holiday closures: EWJ/FXI open→close around those dates (repatriation flows) — few events.
 - [ ] 014 (parked: no reliable free historical earnings calendar) — revisit if a source turns up.
 
+- [x] 031 Treasury month-end index extension (TLT/IEF long last day) — weak-consistent, fails gate narrowly.
+- [x] 032 VIX-expiry Wednesday short SPY — dead.
+
 ## Ideas parking lot
 - 004 follow-up: verify ADR opening-auction fills (paper MOO/MOC orders, or tick/quote data); same idea for European ADRs once 9:30 Europe levels exist (005).
 - OPEX-week structure follow-up to 001 (Mon-Thu before OPEX, Monday after, quarterly-only, VIX-expiry Wednesdays). Lower priority: each new test raises N.

@@ -223,3 +223,10 @@ Registry: 163.
 ## 026 — Holiday-adjacent sessions (SPY long)  ·  2026-11-20
 4 variants, 15-27 events each: day after Thanksgiving, Dec 24, last and first trading day of the year — all |t| < 1.
 **Dead** (and underpowered). Registry: 167.
+
+## 031 — Treasury month-end index extension; 032 — VIX-expiry Wednesday  ·  2026-11-20
+031 long TLT / IEF open→close on the last trading day: TLT train t=+2.07, valid +1.62 (+9bp/trade); IEF +1.87/+1.81.
+Consistent right sign in both periods (index-extension buying is a documented effect) but just short of the gate →
+**weak-but-consistent**, not holdout-tested. Note it complements 013 (bonds bid at month-end while the bond-leg rebalance
+also pushes equities).
+032 short SPY on VIX-expiration Wednesday (251 events): +0.4 / −1.0. **Dead.** Registry: 170.
