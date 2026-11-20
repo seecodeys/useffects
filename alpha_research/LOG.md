@@ -647,3 +647,9 @@ Mean excess bp by weekday 2006-22: WPUT Mon +2.6, Tue +6.5, Wed +3.4, Thu +0.9, 
 PUT Mon +2.9, Tue +8.0, Wed +1.1, Thu −0.4, Fri −0.1. Exposure only Fri+Mon: −2.2 / −2.2 (timing value). 220b post-hoc
 'WPUT except Fridays': +0.0 / −0.3, Sharpe 0.48 vs 0.45 always-on (2006-14), 0.04 vs 0.06 (2015-22). The Friday loss is
 visible on average but not a robust timing rule. Dead. Registry: 320.
+
+## 225 — LETF rebalancing where leveraged products are large (GDX, GDXJ, SMH, XBI, TLT)  ·  2026-11-20
+Fade |z|>2 days from the close to the next open, 2010+: GDX −0.1/−0.0, GDXJ −0.6/+0.5, SMH −0.4/+1.2, XBI −0.2/−0.0,
+TLT +0.5/+0.3; pooled −0.7/+0.4. Even where LETFs are big relative to the underlying, no overnight reversal — this
+undercuts the LETF-rebalancing reading of 112 (whose SPY result may be generic big-day overnight reversal, not LETF flow).
+Dead. Registry: 326.
