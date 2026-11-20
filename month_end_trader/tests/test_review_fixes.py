@@ -184,3 +184,12 @@ def test_paper_ledger_accepts_timestamp_index(data):
     s2.index = pd.to_datetime(s2.index); t2.index = pd.to_datetime(t2.index)
     led = paper_ledger(s2, t2, start="2025-01-01", until=dt.date(2025, 12, 31))
     assert len(led) == 12
+
+
+def test_weekly_status_once_per_monday(env):
+    cfg, clock, b, ex, alerts = env(dt.datetime(2025, 9, 22, 7, 0))      # Monday
+    run_until(ex, clock, dt.datetime(2025, 9, 23, 7, 0))
+    weekly = [t for l, t, body in alerts if t.startswith("Weekly status")]
+    assert len(weekly) == 1
+    body = [body for l, t, body in alerts if t.startswith("Weekly status")][0]
+    assert "next trade date 2025-09-30" in body and "provisional signal through 2025-09-19" in body

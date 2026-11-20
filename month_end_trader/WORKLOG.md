@@ -27,4 +27,5 @@ Branch: `claude/blissful-mccarthy-mt2shh`. Scheduled check-ins (4 hourly tasks, 
 - [x] Historical replay test (48 sampled month-ends; MET_SLOW=1 for all 291)
 - [ ] Hardening: IBKR adapter mock tests (ib_async objects), reconnect during hold, clock skew check vs IB server time
 - [ ] Hardening: ES+MES mix for large accounts; contract roll edge cases (Dec 31 after Dec expiry)
-- [ ] Monitoring: intraday timing indicators (60m bars), weekly heartbeat summary
+- [x] Weekly status alert (Mondays 08:00 ET)
+- [ ] Monitoring: intraday timing indicators (60m bars)

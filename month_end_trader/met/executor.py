@@ -337,6 +337,45 @@ class Executor:
                 self.alert.critical(f"{d}: trade still unfinished on {today}; flattening now")
             self.reconcile(dt.date.fromisoformat(d), st)
 
+    def weekly_status(self, now: dt.datetime, T: dt.date):
+        """Monday 08:00 ET: proof of life with the next trade date and the provisional signal."""
+        if now.weekday() != 0 or now.time() < dt.time(8, 0):
+            return
+        mark = Path(self.cfg.monitoring.state_dir) / "weekly_status.txt"
+        key = now.date().isoformat()
+        try:
+            if mark.exists() and mark.read_text().strip() == key:
+                return
+        except OSError:
+            pass
+        lines = [f"next trade date {T} (open 09:30 ET, exit {self.times(T)['exit']:%H:%M:%S} ET)",
+                 f"broker connected: {self.broker.is_connected()}",
+                 f"kill switch: {kill_switch_active(self.cfg.monitoring.state_dir)}"]
+        try:
+            base = cal.prior_month_last_session(T)
+            fetch = next(iter(self.fetchers.values()))
+            e, b = fetch(self.cfg.signal.equity), fetch(self.cfg.signal.bond)
+            import pandas as pd
+            e.index = [pd.Timestamp(i).date() for i in e.index]; b.index = [pd.Timestamp(i).date() for i in b.index]
+            last = min(e.index[-1], b.index[-1])
+            if last > base:
+                gap = (e.loc[last] / e.loc[base] - 1) - (b.loc[last] / b.loc[base] - 1)
+                lines.append(f"provisional signal through {last}: {'SHORT' if gap > 0 else 'LONG'}, gap {gap:+.2%}")
+        except Exception as ex:
+            lines.append(f"provisional signal unavailable ({ex.__class__.__name__})")
+        mp = Path(self.cfg.monitoring.state_dir) / "monitor.json"
+        if mp.exists():
+            try:
+                import json
+                lines.append("decay monitor: " + json.loads(mp.read_text()).get("status", "?"))
+            except Exception:
+                pass
+        self.alert.info("Weekly status: bot running", "\n".join(lines))
+        try:
+            mark.write_text(key)
+        except OSError:
+            pass
+
     def overnight_guard(self, d: dt.date):
         if d in self._overnight_checked:
             return
@@ -369,6 +408,7 @@ class Executor:
 
         if self.broker.is_connected():
             self.drive_unfinished(today)
+        self.weekly_status(now, T)
 
         prev = cal.previous_session(T)
         _, prev_close = cal.session_open_close(prev)
