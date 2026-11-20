@@ -596,3 +596,8 @@ Registry: 304.
 ## 186/189 — VIX-futures flow timing (VIXY, timing value over always-short)  ·  2026-11-20
 186 short VIXY the week after monthly OPEX (vol sellers re-strike): +1.4 / +0.1. 189 short VIXY first 3 sessions of the
 month: +0.9 / +0.2. Dead (train only 2011-14). Registry: 306.
+
+## 190 — Month-end signal via the CBOE PUT index (real option prices)  ·  2026-11-20
+Exposure ±1 to PUT-index excess return on the last trading day by the 013 signal: +9.2bp/trade (train, 96 obs — CBOE file
+gaps) / +9.7bp (valid, 96), t=+1.2 / +1.5. About half the SPY edge, consistent with the index's ~0.5 delta: real option
+prices confirm the direction; no extra edge from expressing it via written puts at monthly strikes. Registry: 307.
