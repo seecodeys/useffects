@@ -3,7 +3,7 @@
 An autonomous research loop that searched for signals to **buy or short US-listed ETFs/stocks at the open and exit at
 the close**. It started from one question: do the rest of the world's markets since the last US close predict the US
 trading day? Every idea was tested under fixed, pre-registered rules (`PROTOCOL.md`), and every variant was logged
-(`results/registry.csv`, ~370 tests so far). Later rounds widened the scope to overnight/multi-day holds, behavioral
+(`results/registry.csv`, ~420 tests so far). Later rounds widened the scope to overnight/multi-day holds, behavioral
 signals, participant flows and options.
 
 ## Bottom line
@@ -20,6 +20,7 @@ signals, participant flows and options.
 | Behavioral / psychology round (050-095) | 30+ variants (over-reaction, attention, streaks, fear, anchoring, lottery, mood, weather, DST, lunar…): none survive in liquid US assets after ~2010. |
 | Flow round (110-134) and paper-sourced ideas (120-123) | Turn-of-month, buyback blackout, futures roll, Ponzi-fund flows, LETF pre-positioning, vol-control, LETF trend: dead or risk overlays only. |
 | Everything else (calendar, VIX regime, credit, relative gaps, vol-target, Russell, FOMC, jobs days…) | Dead or too weak. |
+| New-data round (298-312): CFTC futures positioning (equity, Treasury, VIX, commodities), Fed net liquidity, tax-date reserve drains, FINRA short volume (DIX-style), weekend crypto, weekly-expiry Fridays | All dead or weak (best: net-liquidity long/flat overlay, timing t=1.2). Mechanism checks on the two findings: the bond bid doesn't scale with issuance or futures positioning, is uniform across month types and absent in bond-proxy equities; the equity month-end trade survives delayed entry (309). |
 
 ## The month-end rebalancing signal
 
