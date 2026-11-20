@@ -50,6 +50,7 @@
 - [x] 186/189 VIX-futures flow timing — dead.
 - [x] 190 Month-end rebalancing in options terms (flows into index puts at month-end?): CBOE PUT index daily returns on
       month-end days by stock-bond gap — does put-writing do better on month-ends when stocks lagged (flow buys equity)?
+- [x] 197 FX month-end hedge rebalancing — dead/wrong-signed.
 - [ ] 183 Retry OpenAlex/Semantic Scholar later (rate limits) for flow papers; Crossref with targeted titles.: web-fetch NBER working-paper search pages (nber.org/papers?q=...) for 'rebalancing',
       'price pressure', 'flows' — empirical asset-pricing papers with daily-testable rules.
 - [x] 179 Month-end rule applied to QQQ-vs-TLT and IWM-vs-TLT pairs with the vol filter (168) — robustness only if cheap.

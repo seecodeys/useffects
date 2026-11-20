@@ -601,3 +601,9 @@ month: +0.9 / +0.2. Dead (train only 2011-14). Registry: 306.
 Exposure ±1 to PUT-index excess return on the last trading day by the 013 signal: +9.2bp/trade (train, 96 obs — CBOE file
 gaps) / +9.7bp (valid, 96), t=+1.2 / +1.5. About half the SPY edge, consistent with the index's ~0.5 delta: real option
 prices confirm the direction; no extra edge from expressing it via written puts at monthly strikes. Registry: 307.
+
+## 197 — Month-end FX hedge rebalancing (WM/Reuters 4pm fix)  ·  2026-11-20
+Signal: short USD on the last day if SPY beat EFA month-to-date (foreign holders re-hedge grown USD exposure).
+a) UUP open→close: −2.5 / −2.9 net — wrong-signed (USD tends to *rise*), but gross is only ~−4.7bp/trade, so the flipped
+rule would barely clear 2bp/side costs. b) USDJPY 09:29→11:05 NY across the fix (HistData 1-min, 2001-25): −0.6 / −0.7,
+~0bp. Dead as specified; no clean FX month-end hedge flow in daily data. Registry: 309.
