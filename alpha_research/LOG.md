@@ -736,3 +736,8 @@ registrations; those rows are marked DUPLICATE in the registry.) Registry: 353 r
 Short on local monthly expiry, open→close: Eurex 3rd Fri (EXS1.DE) +0.5 / +0.6; Japan SQ 2nd Fri (1306.T) −0.3 / −2.2
 (Japanese ETF *rises* on SQ days); Canada 3rd Fri (XIU.TO) −0.5 / +0.1. No international support for the OPEX-short tilt
 — 001 looks US-specific (or noise). Registry: 356 rows (351 unique).
+
+## 268 — Settlement-lag rebalancing day (T+3 / T+2 / T+1 eras)  ·  2026-11-20
+013 signal on the session that is the settlement lag before month-end: T+3 era (pre-Sep-2017) day −3: +23.0bp/trade
+(train t=+2.78); T+2 era (Sep-2017..2022) day −2: +3.2bp (valid t=+0.4). Partial support in the old regime only; under
+T+2 the flow concentrates on the last day itself (013), not the settlement-lag day. Not a rule. Registry: 357 rows.
