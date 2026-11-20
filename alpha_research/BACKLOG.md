@@ -1,5 +1,21 @@
 # Backlog (top = next). Mark `[x]` when done, `[~]` in progress.
 
+## PARTICIPANT BEHAVIOR / FLOWS (user focus 2026-11-20, revised: behavior not psychology) — do these first
+- [ ] 110 Turn-of-month fund inflows (401k/payroll contributions), close→close: long SPY from the close of the 2nd-last
+      trading day through the 3rd trading day of the new month (classic TOM window) vs rest; timing value.
+- [ ] 111 Overnight vs intraday return split (who trades when): always-long SPY close→open vs open→close, by era; and
+      a long-overnight / flat-intraday strategy with realistic costs.
+- [ ] 112 Leveraged-ETF rebalancing: on |day return| > 2% days LETFs buy/sell into the close → overshoot → reversal
+      overnight (close→open) and next day. Pre-specified reversal.
+- [ ] 113 Corporate buyback blackout windows: buybacks pause ~2 weeks before earnings until results; calendar proxy
+      (approx. weeks 2-6 after quarter-end = peak blackout) → SPY close→close weaker in blackout vs open window.
+- [ ] 114 Dividend reinvestment flows (Hartzmark-Solomon): days with large aggregate dividend payments see price
+      pressure up; proxy with SPY/large-cap pay-date clustering (quarter's last-business-day pay dates) close→close.
+- [ ] 115 Equity index futures quarterly roll week (week before 3rd-Friday of Mar/Jun/Sep/Dec): calendar-spread arbitrage
+      flows → SPY/IWM returns in roll week.
+- [ ] 116 Quarter-end vs month-end rebalancing size: does 013's edge scale with fund size proxies (e.g. calendar
+      quarter-ends, year-end) — interaction test.
+
 ## OPTIONS (user request 2026-11-20) — behavioral angle: people overpay for insurance after fear spikes
 - [x] 080 Data: pull CBOE strategy-index CSVs (PUT, BXM, CNDR, BFLY, WPUT, PPUT) into data/cboe/; sanity-check vs ^PUT.
 - [x] 081 Fear-premium timing of put-writing: PUT/WPUT index returns when VIX−RV fear premium is high vs low
@@ -15,7 +31,7 @@
       monthly returns, to bound how wrong the model-pricing in 083/085 could be.
 - [ ] 084 VIX1D (2023+, short sample): 0DTE implied vs realized — descriptive only (no train/valid possible).
 
-## BEHAVIORAL FOCUS (user request 2026-11-20) — do these first
+## BEHAVIORAL (psychology) — DEPRIORITISED per user 2026-11-20 (focus is participant behavior/flows, not mood)
 Already known: index-level fades (gap fade, prior-day reversal) work only in crises (009/011); single-stock gap fade
 is an opening-print artifact (015). New tests use prior-close information only.
 - [x] 050 Over-reaction vs news (volume split): yesterday's extreme stock moves vs SPY — low-volume moves (no news,

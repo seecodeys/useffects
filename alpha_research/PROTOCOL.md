@@ -17,8 +17,9 @@ us_indices/daily_prices/<NAME>_History.csv — PUT, BXM, CNDR, BFLY, WPUT, PPUT 
 (^VIX, ^VIX9D, ^VIX1D 2023+, ^VVIX, ^SKEW), VIX ETPs (VIXY/SVXY 2011+, VXX 2018+; watch SVXY's 2018 leverage change),
 and model-priced SPY options (Black-Scholes with VIX/VIX9D as implied vol — no skew, no real spreads: haircut premium
 ≥5% per side and label results 'model-priced').
-**Current focus (user, 2026-11-20): behavioral / psychological effects — people over-reacting, attention, fear,
-extrapolation, anchoring.** Lesson from 004/006/015: build signals from information known at the PRIOR CLOSE (returns,
+**Current focus (user, 2026-11-20, revised): participant BEHAVIOR — flows and mechanical/constrained trading
+(rebalancing, index & fund flows, hedging, leveraged-ETF rebalancing, buybacks, dividend reinvestment, roll/expiry
+mechanics). NOT psychology/mood.** The month-end stock-bond rebalancing result (013) is the template. Lesson from 004/006/015: build signals from information known at the PRIOR CLOSE (returns,
 volume, streaks), never from the opening print itself, which carries bid/ask-bounce artifacts.
 
 ## Data periods (never change these)
