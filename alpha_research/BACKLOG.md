@@ -1,14 +1,16 @@
 # Backlog (top = next). Mark `[x]` when done, `[~]` in progress.
 
 ## PARTICIPANT BEHAVIOR / FLOWS (user focus 2026-11-20, revised: behavior not psychology) — do these first
-- [ ] 110 Turn-of-month fund inflows (401k/payroll contributions), close→close: long SPY from the close of the 2nd-last
+- [x] 110 Turn-of-month fund inflows (401k/payroll contributions), close→close: long SPY from the close of the 2nd-last
       trading day through the 3rd trading day of the new month (classic TOM window) vs rest; timing value.
-- [ ] 111 Overnight vs intraday return split (who trades when): always-long SPY close→open vs open→close, by era; and
+- [x] 111 Overnight vs intraday return split (who trades when): always-long SPY close→open vs open→close, by era; and
       a long-overnight / flat-intraday strategy with realistic costs.
-- [ ] 112 Leveraged-ETF rebalancing: on |day return| > 2% days LETFs buy/sell into the close → overshoot → reversal
+- [x] 112 Leveraged-ETF rebalancing: on |day return| > 2% days LETFs buy/sell into the close → overshoot → reversal
       overnight (close→open) and next day. Pre-specified reversal.
-- [ ] 113 Corporate buyback blackout windows: buybacks pause ~2 weeks before earnings until results; calendar proxy
+- [x] 113 Corporate buyback blackout windows: buybacks pause ~2 weeks before earnings until results; calendar proxy
       (approx. weeks 2-6 after quarter-end = peak blackout) → SPY close→close weaker in blackout vs open window.
+- [ ] 117 LETF rebalancing, sharper: scale the signal by estimated LETF rebalancing demand = (sum of 2x/3x
+      SPY/QQQ ETF AUM proxies × leverage×(leverage−1) × day return); test close→open and next-day; 2009+.
 - [ ] 114 Dividend reinvestment flows (Hartzmark-Solomon): days with large aggregate dividend payments see price
       pressure up; proxy with SPY/large-cap pay-date clustering (quarter's last-business-day pay dates) close→close.
 - [ ] 115 Equity index futures quarterly roll week (week before 3rd-Friday of Mar/Jun/Sep/Dec): calendar-spread arbitrage

@@ -420,3 +420,14 @@ below / long just above): −0.2 / −0.4. **All dead.** Registry: 245 (luck t �
 090 Sell-in-May (long Nov-Apr only, timing value): +0.9 / −0.0. 091 short SPY open→close after ≥4 positive overnight
 returns: −2.0 / +0.5 (sign flips). 095 reversal of |z|>2 days in retail-heavy ETFs (ARKK/TQQQ/SMH, pooled, lag-1):
 +0.1 / −1.2; SPY control +0.5 / −0.3 — no extra over-reaction where retail concentrates. **All dead.** Registry: 249.
+
+## 110-113 — Participant-behavior / flow tests (SPY)  ·  2026-11-20
+110 turn-of-month inflow window (last day + first 3), close→close timing value: +1.0 / +0.1. Dead.
+111 overnight vs intraday: mean bp/day overnight vs intraday by 5-yr block 2000: 0.6/−1.2, 2005: 2.0/−1.6,
+2010: 2.7/2.6, 2015: 2.6/1.3, 2020: 3.2/2.4, 2025: 3.8/1.1 — overnight consistently ≥ intraday, but long-overnight-only
+(t=+0.7/+0.8) and long-overnight/short-intraday (−0.1/−0.4) aren't significant after costs. Dead as a strategy.
+**112 leveraged-ETF rebalancing reversal** (fade |day|>2% from the close to the next open): train −0.1, valid **+2.02**
+(+2.2bp/day, 523 events). Mechanism predicts it should only exist once LETFs were large (2009+): 112b (post-hoc sample
+start 2009, logged as such): 2009-14 t=+0.8 (+7bp/trade), valid +2.0 (+32bp/trade) → fails gate. **Weak lead**, growing
+over time; revisit with intraday data or a cleaner LETF-AUM-weighted signal.
+113 buyback-blackout proxy (flat days 14-45 after quarter-end): −0.3 / −0.9. Dead. Registry: 255.
