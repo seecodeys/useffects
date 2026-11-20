@@ -867,3 +867,10 @@ Gross bp/day 2010-14 / 2015-22; net t (0.5bp/side) train / valid:
   +0.7 / +0.8 net. Small and below significance after 1bp round-trip costs — the documented effect exists but is tiny.
 - 290 end-of-day reversal (09:30→15:30 reversed in the last half-hour): +0.3 / −0.3 gross; dead.
 Registry: 385 rows.
+
+## 291/292 — FOMC post-announcement drift; OPEX-Friday intraday timing (SPX CFD 1-min)  ·  2026-11-20
+291 FOMC days 2010-25: fade the 14:00→14:30 reaction until the close (direction from train): +0.3 / +0.7. Dead.
+292 (descriptive 2010-22, 153 OPEX Fridays) short-signed bp: 09:30-10:30 −1.2 (t=−0.5), 10:30-12:00 **+8.7 (t=2.5)**,
+12:00-15:00 +5.9 (t=1.5), 15:00-16:00 −0.8. The OPEX-Friday weakness happens mid-session (after the AM settlement hour,
+10:30-15:00) — consistent with dealer hedge unwinds once the SOQ is fixed. Not a new rule (it's 001's edge, located).
+Registry: 386 rows.
