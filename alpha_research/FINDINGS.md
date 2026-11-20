@@ -9,3 +9,4 @@
 | 013c | Same month-end rule on IWM / QQQ / DIA (1bp/side) | t=+2.38 / +2.07 / +2.03 | t=+2.77 / +3.55 / +2.39; +38 / +48 / +26bp/trade | Confirms 013 across equity ETFs; last hour 81% hit (MOC flows) |
 | 040 | 013 rule back-cast to 1993-2002 (TYX bond proxy, never-seen data) | — | t=+0.60, Sharpe 0.20, +6.6bp/trade (114 trades) | **Caveat:** weak before 2002 → era-dependent flow effect |
 | **083** | **Month-end signal via options: sell a same-day ATM SPX/SPY option against the signal (put if long, call if short)** — model-priced, calibrated | t=+2.71, +11bp/trade | **t=+3.53, Sharpe 1.80, +15.7bp/trade, 80% hit, worst −78bp (46 trades)** | Survived holdout (model-priced; 087 shows the model overstates seller edge ~35% → treat as upper bound, ~+10bp/trade realistic) |
+| 013g | Month-end rebalancing as a SPY−TLT pair (both sides of the flow) | t=+2.17, +25bp/trade | t=+2.67, Sharpe 1.36, +39bp/trade, 76% hit | Survived; similar to SPY-only with higher hit rate |

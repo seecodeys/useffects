@@ -536,3 +536,13 @@ Long TLT over the pre-holiday session: −2.1 / +0.2. SPY: +0.8 / +0.9. Dead. Re
 gap = SPY MTD − AGG MTD: train t=+2.9, valid +1.4 (+12bp/trade); 82% sign agreement with the TLT version. Weaker than
 TLT (consistent with 027/013d: the long-duration bond move carries the signal). Robustness: same direction, smaller.
 Registry: 285.
+
+## 013g — Month-end rebalancing as a SPY−TLT pair  ·  2026-11-20
+Last trading day, pos = −sign(SPY MTD − TLT MTD) in the SPY−TLT spread (both sides of the rebalancing flow), open→close,
+0.5bp SPY + 1bp TLT per side: train t=+3.37 (+35.5bp/trade), valid +2.17 (+25.0bp) → gate passed (per-trade).
+**Holdout: Sharpe 1.36, t=+2.67, +39.0bp/trade, 76% hit (46 trades), max DD −2.4%.** Survived — same edge as SPY-only
+(t=3.3, +37.5bp, 67% hit) with a higher hit rate; TLT leg adds little in 2023+ (consistent with 096's TLT weakness).
+
+## Strategy-catalog sourcing (Quantpedia free pages; Alpha Architect 403)  ·  2026-11-20
+Usable new flow candidates: mid-month payday (16th; 401k contributions) → 165; option-expiration Monday (already 021B,
+dead). Others need non-free data (13F holdings, fund returns, commodity futures curves) or aren't flows (Ramadan).
