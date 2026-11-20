@@ -923,3 +923,8 @@ Terciles of asset managers' net long in 10y futures (share of OI, z vs 3 years; 
 IEF +18.5 / +32.2 / +17.6bp, TLT +38.3 / +57.8 / +26.6bp; correlation ≈ +0.05. No dose-response. Together with 298
 (no link to new issuance), the bid looks like a broad month-end benchmark/cash-deployment effect that can't be pinned
 on one measurable flow with free data. Doesn't change the trade (flat, every month). Not registered (descriptive).
+
+## 301 — Crowded short-vol positioning (CFTC TFF, VIX futures)  ·  2026-11-20
+Same timing as 299. A SPY sign of leveraged-fund VIX z (|z|>1): −1.5 / −0.6 (wrong sign); B asset-manager VIX z: +0.1 / +0.8;
+C long SPY but flat when lev funds are unusually short VIX: Sharpe 0.64 / 0.38 vs buy-and-hold, timing value t=−1.2.
+Dead — crowded short-vol positioning didn't foreshadow sell-offs at a weekly horizon. Registry: 401 rows.

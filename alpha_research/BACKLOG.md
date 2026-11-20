@@ -257,3 +257,4 @@ is an opening-print artifact (015). New tests use prior-close information only.
 - [x] 298 Bond-bid dose-response on coupon issuance — none; keep flat leg.
 - [x] 299 CFTC TFF positioning (lev funds / asset mgrs / dealers; ES, TY, US) — dead (C weakly consistent).
 - [x] 300 Bond bid vs asset-manager futures length — no dose-response (descriptive).
+- [x] 301 VIX futures positioning — dead.
