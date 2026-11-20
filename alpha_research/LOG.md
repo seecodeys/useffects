@@ -415,3 +415,8 @@ Registry: 240.
 *gains*, not attention fades); first ATH in >126 sessions (6 events): untestable. 077 12-1 momentum: countries
 top4/bottom4 −0.2 / −0.9, sectors +0.1 / +0.3, gross ≈ 0 in every 5-year block. 073 S&P near round 100s (short just
 below / long just above): −0.2 / −0.4. **All dead.** Registry: 245 (luck t ≈ 3.3).
+
+## 090/091/095 — Seasonal mood, tug-of-war, retail-heavy over-reaction  ·  2026-11-20
+090 Sell-in-May (long Nov-Apr only, timing value): +0.9 / −0.0. 091 short SPY open→close after ≥4 positive overnight
+returns: −2.0 / +0.5 (sign flips). 095 reversal of |z|>2 days in retail-heavy ETFs (ARKK/TQQQ/SMH, pooled, lag-1):
++0.1 / −1.2; SPY control +0.5 / −0.3 — no extra over-reaction where retail concentrates. **All dead.** Registry: 249.

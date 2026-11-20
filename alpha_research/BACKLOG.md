@@ -94,11 +94,11 @@ is an opening-print artifact (015). New tests use prior-close information only.
 - [x] 073 Round-number anchoring: S&P 500 (^GSPC) closing within 0.5% below a multiple of 100 / 500 → next-day
       open→close (resistance) vs just above (breakout).
 
-- [ ] 090 Seasonal mood ('Sell in May' / SAD, Kamstra): SPY Nov-Apr vs May-Oct timing value (excess over
+- [x] 090 Seasonal mood ('Sell in May' / SAD, Kamstra): SPY Nov-Apr vs May-Oct timing value (excess over
       exposure-matched B&H), and the autumn-equinox SAD window; few independent obs → strict.
-- [ ] 091 Tug-of-war (Lou-Polk-Skouras) at index level: after ≥4 consecutive positive OVERNIGHT returns (retail/attention
+- [x] 091 Tug-of-war (Lou-Polk-Skouras) at index level: after ≥4 consecutive positive OVERNIGHT returns (retail/attention
       buying) → SPY open→close (institutions lean against) — pre-specified short.
-- [ ] 095 Retail-heavy ETF over-reaction: ARKK / TQQQ / SMH big prior-day moves (|z|>2) → next-day close→close reversal
+- [x] 095 Retail-heavy ETF over-reaction: ARKK / TQQQ / SMH big prior-day moves (|z|>2) → next-day close→close reversal
       (lag-1) vs the same rule on SPY (institutional) — does over-reaction concentrate where retail is?
 
 ## Flow-driven ideas (the 013 theme is the only robust winner so far)
