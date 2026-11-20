@@ -572,3 +572,7 @@ Registry: 291.
 ## 178 — MSCI index-review effective days (EEM/EFA vs SPY)  ·  2026-11-20
 4 variants (direction from train): EEM open→close +1.5/−0.4; EEM close→next open +0.6/+1.3; EFA open→close +0.4/+1.0;
 EFA close→next open +0.4/−0.4. Dead (78 events each). Registry: 296.
+
+## 180 — Quad-witching / S&P quarterly rebalance close → next open  ·  2026-11-20
+Fade the quad-witching day's move from the close to the next open: SPY +0.4 / −1.2, IWM +0.1 / −0.3. Dead.
+Registry: 298 (luck t ≈ 3.4).
