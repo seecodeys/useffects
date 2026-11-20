@@ -699,3 +699,9 @@ Registry: 339.
 ## 256 — Bond side of the month-end rebalance in curve terms (TLT−IEF)  ·  2026-11-20
 +sign(stock-bond MTD gap) in TLT−IEF on the last day: +6.9bp/trade gross in both periods, t=+0.9 / +0.8. Right sign,
 small. Weak. Registry: 340.
+
+## Paper scan (arXiv API direct, https)  ·  2026-11-20
+Note: arXiv API works over https from this container (http returns empty). Queries: seasonality (q-fin.TR), order flow +
+ETF, predictable + flows, end of month, institutional trading + returns. ~45 new abstracts: mostly microstructure/LOB,
+crypto, ML alpha-mining, electricity — no new daily-testable flow mechanisms for US ETFs. OpenAlex still 429.
+Flow-idea sources look close to exhausted for free daily data; remaining avenues need intraday/auction or holdings data.
