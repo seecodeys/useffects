@@ -150,3 +150,10 @@ independent evidence.) Timing on SPY (Yahoo 1h, 32 month-ends 2023-26): signed b
 consistent with MOC rebalancing flows. Registry: 135 tests.
 Verdict: **013 confirmed as the project's main finding.** Ideas: higher-beta/small-cap ETF for larger moves, gap-size
 sizing, combining with the 001 OPEX tilt when month-end and OPEX don't coincide (they rarely do).
+
+## 013d — Month-end extensions (SPY)  ·  2026-11-20
+4 variants. E1 first-day-of-month unwind (follow prior month's gap): train t=+1.3, valid t=−0.8 — no reversal. E3
+second-to-last day alone: train t=−1.1 — effect is a last-day phenomenon. E4 IEF instead of TLT: train t=+3.2 but valid
++1.0 — TLT (long duration, what balanced funds' bond sleeves move most) is the better proxy.
+E2 sizing by |gap| (clip at 2× train median): passed gate (valid t=+2.21); **holdout t=+2.52, Sharpe 1.28 — lower than
+the plain sign rule (t=3.30)**, so sizing adds nothing out-of-sample; keep the binary rule. Registry: 139.
