@@ -75,13 +75,38 @@ class TradeState:
         finally:
             os.close(dfd)
 
+    def merge_fills(self, execs: list[dict]) -> bool:
+        """Merge broker executions (deduplicated by exec_id). Returns True if anything new arrived.
+        Derived fields entry_filled/entry_price/exit_filled/exit_price are recomputed from the fills."""
+        fills = self.data.setdefault("fills", {})
+        new = False
+        for e in execs:
+            if e["exec_id"] not in fills:
+                fills[e["exec_id"]] = {k: e[k] for k in ("ref", "side", "qty", "price", "time")}
+                new = True
+        if new:
+            self._derive()
+        return new
+
+    def _derive(self):
+        fills = self.data.get("fills", {})
+        ent = [f for f in fills.values() if f["ref"].endswith("-entry")]
+        ext = [f for f in fills.values() if not f["ref"].endswith("-entry")]
+        q = lambda fs: sum(f["qty"] for f in fs)
+        vw = lambda fs: (sum(f["qty"] * f["price"] for f in fs) / q(fs)) if q(fs) else None
+        self.data.update(entry_filled=int(q(ent)), entry_price=vw(ent), exit_filled=int(q(ext)), exit_price=vw(ext))
+
     @property
     def owned(self) -> int:
-        """Signed quantity the bot owns: its entry fills minus its exit fills (0 once FLAT)."""
-        if self.phase in ("ENTERED", "EXIT_SUBMITTED"):
-            d = int(self.data.get("direction", 0))
-            return d * max(int(self.data.get("entry_filled", 0)) - int(self.data.get("exit_filled", 0) or 0), 0)
-        return 0
+        """Signed quantity the bot owns = signed sum of ITS OWN executions (orderRef MET-<date>-...).
+        Authoritative: independent of position snapshots and of any other positions on the account."""
+        fills = self.data.get("fills")
+        if fills is None:      # legacy state written before execution tracking
+            if self.phase in ("ENTERED", "EXIT_SUBMITTED"):
+                d = int(self.data.get("direction", 0))
+                return d * max(int(self.data.get("entry_filled", 0)) - int(self.data.get("exit_filled", 0) or 0), 0)
+            return 0
+        return int(round(sum(f["qty"] if f["side"] == "BUY" else -f["qty"] for f in fills.values())))
 
     @property
     def open_quantity(self) -> int:

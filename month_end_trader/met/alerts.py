@@ -24,7 +24,7 @@ class Alerter:
         self.mode = mode
         self.sink = sink            # tests capture alerts here
         self._last_hb = 0.0
-        self._recent = {}            # title -> last sent time (dedupe repeats within 120s)
+        self._recent = {}            # title -> last sent time (identical titles at most every 30 min)
 
     def send(self, level: str, title: str, body: str = ""):
         text = f"[MET {self.mode.upper()}] {level}: {title}" + (f"\n{body}" if body else "")
@@ -33,7 +33,7 @@ class Alerter:
             self.sink.append((level, title, body))
             return
         now = time.time()
-        if now - self._recent.get(title, 0) < 120:
+        if now - self._recent.get(title, 0) < 1800:
             return
         self._recent[title] = now
         # network delivery never blocks the trading loop

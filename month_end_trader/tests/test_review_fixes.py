@@ -39,7 +39,7 @@ def test_entry_timeout_that_fills_is_adopted_and_exited(env):
     b.late_fill_next = 1
     run_until(ex, clock, dt.datetime(2025, 9, 30, 19, 0))
     s = st(cfg)
-    assert s.phase == "FLAT" and s.get("entry_status").startswith("Resolved") and b.fut_pos == 0
+    assert s.phase == "FLAT" and s.get("entry_filled") == s.get("qty_planned") and b.fut_pos == 0
 
 
 def test_position_survives_midnight(env):
@@ -49,7 +49,7 @@ def test_position_survives_midnight(env):
     run_until(ex, clock, dt.datetime(2025, 10, 1, 0, 30))
     assert b.fut_pos != 0
     b.reject_next = 0
-    run_until(ex, clock, dt.datetime(2025, 10, 1, 1, 0))
+    run_until(ex, clock, dt.datetime(2025, 10, 1, 2, 30))         # hourly retries after the round cap
     assert b.fut_pos == 0 and st(cfg).phase == "FLAT" and st(cfg).get("reconciled")
     assert any("still open after its trade day" in t for t in crit(alerts))
 
@@ -261,7 +261,7 @@ def test_entry_order_still_working_stays_submitted(env):
     cfg, clock, b, ex, alerts = env()
     b.late_fill_next = 1; b.stuck_working = 1; b.cancel_clears_stuck = False
     run_until(ex, clock, dt.datetime(2025, 9, 30, 9, 33))
-    assert st(cfg).phase == "ENTRY_SUBMITTED"
+    assert st(cfg).phase in ("ENTRY_SUBMITTED", "ENTERED")       # executions show the fill
     b.stuck_working = 0
     run_until(ex, clock, dt.datetime(2025, 9, 30, 19, 0))
     assert st(cfg).phase == "FLAT" and b.fut_pos == 0
@@ -319,7 +319,7 @@ def test_crash_in_entry_submitted_resolved_next_week(env):
     s = st(cfg, FRI); assert s.phase == "PLANNED"
     clock.advance(35)
     c = b.front_future("MES", "CME", FRI + dt.timedelta(days=3))
-    b.connect(); b.market_order(c, s.get("plan")["action"], s.get("qty_planned"), "x", 5)
+    b.connect(); b.market_order(c, s.get("plan")["action"], s.get("qty_planned"), f"MET-{FRI}-entry", 5)
     s.update(clock.now().isoformat(), "ENTRY_SUBMITTED", note="crash")
     clock.t = dt.datetime(2025, 11, 3, 9, 0, tzinfo=cal.ET)              # daemon back on Monday
     b.disconnect()
@@ -407,7 +407,7 @@ def test_missed_entry_fill_adopted_intraday_and_guarded(env):
     assert s.get("exit_reason") == "disaster stop", s.get("exit_reason")   # guards applied after adoption
     exit_t = [x["t"] for x in b.orders if x["action"] == "SELL"][0]
     assert exit_t.time() < dt.time(11, 45)
-    assert s.get("pnl_estimated")
+    assert not s.get("pnl_estimated") and s.get("net_pnl") < 0        # exact from executions
 
 
 def test_rejected_entry_never_adopts_user_position(env):
@@ -479,3 +479,74 @@ def test_cme_full_closures():
     assert not futures_open(dt.datetime(2025, 12, 24, 19, 0, tzinfo=E))     # evening before Christmas
     assert not futures_open(dt.datetime(2026, 4, 3, 10, 0, tzinfo=E))       # Good Friday 2026
     assert futures_open(dt.datetime(2025, 12, 26, 10, 0, tzinfo=E))
+
+
+# ---------------------------------------------------------------- review round 5 (adversarial) -> execution ownership
+def _sells(b):
+    return sum(o.get("filled", 0) or 0 for o in b.orders if o["action"] == "SELL")
+
+
+def test_positions_hidden_at_exit_still_exits(env):
+    cfg, clock, b, ex, alerts = env()
+    run_until(ex, clock, dt.datetime(2025, 9, 30, 15, 59, 57))
+    b.pos_glitch_reads = 5
+    run_until(ex, clock, dt.datetime(2025, 9, 30, 16, 30))
+    assert b.fut_pos == 0 and st(cfg).phase == "FLAT"
+
+
+def test_late_exit_fill_plus_stale_read_no_reversal(env):
+    cfg, clock, b, ex, alerts = env()
+    run_until(ex, clock, dt.datetime(2025, 9, 30, 15, 59))
+    b.late_fill_next = 1; b.stale_after_fill = 1
+    run_until(ex, clock, dt.datetime(2025, 9, 30, 19, 0))
+    assert b.fut_pos == 0 and _sells(b) == 7
+
+
+def test_exit_fill_arriving_30min_later_is_caught(env):
+    cfg, clock, b, ex, alerts = env()
+    run_until(ex, clock, dt.datetime(2025, 9, 30, 15, 59))
+    b.fill_delay_next = (1800, False)          # exit1 'dies' but fills at ~16:30
+    run_until(ex, clock, dt.datetime(2025, 9, 30, 18, 30))
+    assert b.fut_pos == 0, b.fut_pos
+    assert any("LATE FILL" in t or "REVERSED" in t for t in crit(alerts))
+
+
+def test_entry_reported_dead_then_fills_is_managed(env):
+    cfg, clock, b, ex, alerts = env()
+    b.fill_delay_next = (20, False)
+    run_until(ex, clock, dt.datetime(2025, 9, 30, 19, 0))
+    s = st(cfg)
+    assert b.fut_pos == 0 and s.phase == "FLAT"
+    exit_t = [o["t"] for o in b.orders if o["action"] == "SELL"][0]
+    assert dt.time(15, 59, 58) <= exit_t.time() < dt.time(16, 0, 5)
+
+
+def test_user_position_after_failed_entry_untouched(env):
+    cfg, clock, b, ex, alerts = env()
+    b.fill_delay_next = (10**7, False)         # entry never fills
+    run_until(ex, clock, dt.datetime(2025, 9, 30, 11, 0))
+    c = b.front_future("MES", "CME", T + dt.timedelta(days=3))
+    b._pending = []
+    b.market_order(c, "BUY", 7, "user", 5)
+    run_until(ex, clock, dt.datetime(2025, 10, 1, 12, 0))
+    assert b.fut_pos == 7
+
+
+def test_rejections_for_two_days_bounded(env):
+    cfg, clock, b, ex, alerts = env()
+    run_until(ex, clock, dt.datetime(2025, 9, 30, 15, 0))
+    b.reject_next = 10**6
+    run_until(ex, clock, dt.datetime(2025, 10, 2, 16, 0))
+    assert len(b.orders) <= 60, len(b.orders)
+    assert sum("MANUAL INTERVENTION" in t for t in crit(alerts)) == 1
+
+
+def test_executions_unavailable_means_no_orders(env):
+    cfg, clock, b, ex, alerts = env()
+    run_until(ex, clock, dt.datetime(2025, 9, 30, 15, 59))
+    b.executions_fail = 30
+    n = len(b.orders)
+    run_until(ex, clock, dt.datetime(2025, 9, 30, 16, 0, 30))
+    assert len(b.orders) == n                  # never trades blind
+    run_until(ex, clock, dt.datetime(2025, 9, 30, 19, 0))
+    assert b.fut_pos == 0

@@ -62,6 +62,11 @@ class FakeBroker(Broker):
         self.cancel_clears_stuck = True
         self.stale_after_fill = 0         # after the next fill, N positions() reads still show the pre-fill qty
         self._stale_left, self._stale_pos = 0, 0
+        self.execs = []                   # list of execution dicts
+        self.exec_hide_reads = 0          # next N executions() calls miss the newest fill
+        self.fill_delay_next = None       # (seconds, visible_working): next order reports Timeout/0 and fills later
+        self.executions_fail = 0          # next N executions() calls raise
+        self._pending = []                # (fill_time, action, qty, ref, visible)
         self.expiries = [_third_friday(y, m) for y in range(1993, 2041) for m in (3, 6, 9, 12)]
         self.commission = 0.62
         self._ids = itertools.count(1)
@@ -127,6 +132,7 @@ class FakeBroker(Broker):
 
     def positions(self):
         self._need()
+        self._process_pending()
         out = []
         glitch = self.pos_glitch_reads > 0
         if glitch:
@@ -156,8 +162,43 @@ class FakeBroker(Broker):
     def contract_from(self, symbol, exchange, con_id, local_symbol, expiry, multiplier):
         return FutureContract(symbol, expiry, multiplier, local_symbol, con_id)
 
+    def _process_pending(self):
+        now = self.clock.t
+        due = [p for p in self._pending if p[0] <= now]
+        self._pending = [p for p in self._pending if p[0] > now]
+        for _, action, qty, ref, _vis in due:
+            self._apply_fill(action, qty, ref)
+
+    def _apply_fill(self, action, qty, ref):
+        sgn = 1 if action == "BUY" else -1
+        px = self.fut_price_now() + sgn * 0.25 * self.slippage_ticks
+        if self.stale_after_fill:
+            self._stale_pos, self._stale_left, self.stale_after_fill = self.fut_pos, self.stale_after_fill, 0
+        self.fut_pos += sgn * qty
+        self.fut_cost += sgn * qty * px
+        self.cash -= self.commission * qty
+        if self.fut_pos == 0:
+            self.cash -= self.fut_cost * self.multiplier
+            self.fut_cost = 0.0
+        self.execs.append(dict(exec_id=f"E{len(self.execs) + 1}", ref=ref, side=action, qty=float(qty), price=px,
+                               time=str(self.clock.t), local_symbol=self._local(self._front(self.clock.t.date()))))
+        return px
+
+    def executions(self, ref_prefix):
+        self._need()
+        self._process_pending()
+        if self.executions_fail > 0:
+            self.executions_fail -= 1
+            raise BrokerError("executions unavailable (simulated)")
+        ex = [e for e in self.execs if e["ref"].startswith(ref_prefix)]
+        if self.exec_hide_reads > 0 and ex:
+            self.exec_hide_reads -= 1
+            ex = ex[:-1]
+        return [dict(e) for e in ex]
+
     def working_orders(self, ref_prefix="MET-"):
-        return self.stuck_working
+        self._process_pending()
+        return self.stuck_working + sum(1 for p in self._pending if p[4])
 
     def cancel_working(self, ref_prefix="MET-"):
         n = self.stuck_working
@@ -187,18 +228,16 @@ class FakeBroker(Broker):
             self.reject_next -= 1
             self.orders.append(dict(id=oid, ref=ref, action=action, qty=qty, status="Rejected", t=self.clock.now()))
             return OrderResult(oid, "Rejected", qty, 0, 0.0, "simulated rejection")
+        if self.fill_delay_next is not None:
+            secs, visible = self.fill_delay_next
+            self.fill_delay_next = None
+            self._pending.append((self.clock.t + dt.timedelta(seconds=secs), action, qty, ref, visible))
+            self.clock.advance(0.3)
+            self.orders.append(dict(id=oid, ref=ref, action=action, qty=qty, filled=0, status="Pending", t=self.clock.now()))
+            return OrderResult(oid, "Unknown" if visible else "Timeout", qty, 0, 0.0, "simulated: fills later")
         fill = qty if self.partial_next is None else min(self.partial_next, qty)
         self.partial_next = None
-        sgn = 1 if action == "BUY" else -1
-        if self.stale_after_fill:
-            self._stale_pos, self._stale_left, self.stale_after_fill = self.fut_pos, self.stale_after_fill, 0
-        px = self.fut_price_now() + sgn * 0.25 * self.slippage_ticks
-        self.fut_pos += sgn * fill
-        self.fut_cost += sgn * fill * px
-        self.cash -= self.commission * fill
-        if self.fut_pos == 0:
-            self.cash -= self.fut_cost * self.multiplier   # realise
-            self.fut_cost = 0.0
+        px = self._apply_fill(action, fill, ref)
         self.clock.advance(0.3)
         status = "Filled" if fill == qty else "PartiallyFilled"
         if self.late_fill_next > 0:

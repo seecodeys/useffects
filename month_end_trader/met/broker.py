@@ -114,6 +114,12 @@ class Broker(abc.ABC):
     def working_orders(self, ref_prefix: str = "MET-") -> int:
         """Number of this bot's orders still working at the broker."""
 
+    @abc.abstractmethod
+    def executions(self, ref_prefix: str) -> list[dict]:
+        """This account's fills whose orderRef starts with ref_prefix (today's session at least):
+        dicts with exec_id (stable across IB corrections), ref, side ('BUY'/'SELL'), qty, price, time, local_symbol.
+        Raises BrokerError if they cannot be retrieved."""
+
     def cancel_working(self, ref_prefix: str = "MET-") -> int:
         """Cancel this bot's working orders; returns how many cancels were sent."""
         return 0

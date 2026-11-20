@@ -19,15 +19,17 @@ an **MES futures overlay of 2x net liquidation** from the open to the close.
 | 09:30:01 | Market order for N MES; no late entries after open + 90 s | `ENTRY_SUBMITTED` → `ENTERED` |
 | While holding | Every 15 s, until 45 s before the exit: disaster stop, kill switch, broker-vs-state position check (alert only) | |
 | Close − 2 s | Opposite market order for the quantity the bot owns, retried with backoff until flat | `EXIT_SUBMITTED` → `FLAT` |
-| Close + 10 min | Reconcile. The bot must own nothing; after an uncertain order outcome it adopts and closes a position in its own contract, same direction, no larger than its order. Anything else is CRITICAL-alerted and left alone | reconciled |
+| Close + 10 min | Reconcile. The bot's executions must net to zero. Any other position in the contract is CRITICAL-alerted and left alone | reconciled |
 | Close + 2 h | Decay monitor report (SPRT and the other indicators) | reported |
 | Every tick | Earlier-dated unfinished trades are resolved and exited, including after midnight or a weekend | |
 | Every session close + 15 min | Overnight guard: alert if any MES position is open | |
 
 The daemon is a single loop of idempotent `tick()`s over the state saved in `state/trade_<date>.json`. You can kill and restart it at any moment, including mid-trade, and it starts even while IB is unreachable; it alerts and keeps reconnecting.
 - It never enters twice in one month.
-- After a crash between sending and confirming an order, it resolves the outcome from the broker's position, on any later day too.
-- **Don't trade MES in the bot's contract yourself on a trade day.** After an uncertain order outcome (timeout, unconfirmed cancel, crash), and only until the next session opens, a same-direction position up to the bot's order size is treated as the bot's. After a clear rejection, nothing is ever adopted.
+- After a crash between sending and confirming an order, it resolves the outcome from its own executions, on any later day too.
+- **Ownership comes from IBKR execution reports.** The bot owns exactly the signed sum of the fills of its own orders (orderRef `MET-<date>-…`), persisted in the trade state. Late fills, timeouts, cancel races, crashes and reversals are all visible there. Fill prices, and so the P&L, are exact. Positions you open yourself never appear in the bot's executions and are never touched.
+- Position snapshots are only a cross-check. An exit order is sent only when the bot's executions and the broker's position agree there is something to close, sized to the smaller of the two. If they disagree, no order is sent and a CRITICAL alert fires.
+- The bot keeps reading its own executions until midnight after the close. An order IB reported as dead that fills later is caught and closed.
 - No new trade starts while an older trade state is unfinished (`met status` lists them).
 
 ## Guardrails
@@ -58,7 +60,7 @@ The daemon is a single loop of idempotent `tick()`s over the state saved in `sta
 - Exit retries:
   - With backoff from 5 s up to 5 min.
   - No orders while CME equity futures are closed: weekends, the daily 17:00–18:00 halt, after the early halt on NYSE half days and holidays, and the full closures on 25 Dec, 1 Jan and Good Friday.
-  - One MANUAL INTERVENTION alert after 8 failed rounds.
+  - One MANUAL INTERVENTION alert after 10 failed rounds, then one round per hour. Identical alerts are sent at most every 30 minutes.
 - Disaster stop: flatten early if the overlay loses 6% of equity, about a 3% SPY move at 2x. Set it to 0 to trade exactly like the backtest.
 - Kill switch during the trade flattens immediately.
 - Position mismatch alerts while holding. The bot never concludes "closed outside the bot" from a position read.

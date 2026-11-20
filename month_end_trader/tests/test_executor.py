@@ -115,14 +115,14 @@ def test_exit_rejections_are_retried(env):
     s = st(cfg)
     assert s.phase == "FLAT" and b.fut_pos == 0
     assert sum(o["status"] == "Rejected" for o in b.orders) == 2
-    assert len(levels(alerts, "CRITICAL")) == 2
+    assert 1 <= len(levels(alerts, "CRITICAL")) <= 2          # repeated 'exit incomplete' alerts are throttled
 
 
 def test_exit_keeps_retrying_until_flat(env):
     cfg, clock, b, ex, alerts = env()
     run_until(ex, clock, dt.datetime(2025, 9, 30, 15, 0))
-    b.reject_next = 9          # more rounds than the manual-intervention threshold
-    run_until(ex, clock, dt.datetime(2025, 9, 30, 19, 0))
+    b.reject_next = 11         # more rounds than the manual-intervention threshold
+    run_until(ex, clock, dt.datetime(2025, 9, 30, 23, 0))
     assert st(cfg).phase == "FLAT" and b.fut_pos == 0
     assert any("MANUAL INTERVENTION" in t for t in levels(alerts, "CRITICAL"))
 
@@ -168,12 +168,12 @@ def test_recover_from_crash_after_entry_submit(env):
     # simulate: order went out and filled, process died before recording it
     clock.advance(65)
     c = b.front_future("MES", "CME", T + dt.timedelta(days=3))
-    b.market_order(c, "BUY", s.get("qty_planned"), "manual", 5)
+    b.market_order(c, "BUY", s.get("qty_planned"), f"MET-{T}-entry", 5)    # the bot's own order
     s.update(clock.now().isoformat(), "ENTRY_SUBMITTED", note="crash")
     ex2 = Executor(cfg, b, ex.alert, ex.fetchers, ex.reporter)
     run_until(ex2, clock, dt.datetime(2025, 9, 30, 19, 0))
     s = st(cfg)
-    assert s.phase == "FLAT" and s.get("entry_status").startswith("Resolved") and b.fut_pos == 0
+    assert s.phase == "FLAT" and s.get("entry_filled") == s.get("qty_planned") and b.fut_pos == 0
 
 
 def test_disaster_stop(env):

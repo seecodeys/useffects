@@ -40,6 +40,10 @@ Branch: `claude/blissful-mccarthy-mt2shh`. Scheduled check-ins (4 hourly tasks, 
       preflight blocked by unfinished older trades; no false criticals during preflight retries; blocker prefixes; EXIT_SUBMITTED
       finalised on reconcile; CME full closures (25 Dec, 1 Jan, Good Friday); half-day reconcile at close+2m; announce/signal
       apply the same source rules; FakeBroker rejects orders while CME is closed. 168 tests
-- [ ] Review round 5: fresh agent, whole package, adversarial (try to make it hold overnight / reverse / over-size)
+- [x] Review round 5 (adversarial, 8 reproduced breaks) -> REDESIGN: ownership from IBKR executions (orderRef MET-<date>-*,
+      dedup by execId incl. corrections), persisted fills; exits only when executions AND position agree; exact P&L from
+      fills; adoption heuristics removed; evening execution watch until midnight; late/dead-then-filled orders and
+      reversals closed; exit rounds capped (10, then hourly); 30-min alert dedupe; no orders while executions unreadable. 176 tests
+- [ ] Review round 6: fresh agent on the execution-ownership redesign (IBKR reqExecutions semantics: 24h window? after Gateway restart? execId correction format; partial fills; commission reports)
 - [x] End-to-end 'paper rehearsal' script (met rehearse): replays 27-30 Nov 2026 with a synthetic path and prints the exact alert timeline
 - [ ] Sizing: floor rounding gives 1.78x on ~$120k (6 MES); consider nearest-contract rounding capped by max_leverage (ask user before changing behaviour)

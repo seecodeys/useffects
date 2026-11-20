@@ -32,7 +32,7 @@ class FakeIB:
         self.RequestTimeout = 0; self.RaiseRequestErrors = False
         self.connected = True
         self.summary = []; self.values = []; self.pos = []; self.port = []
-        self.trade = None; self.cancelled = 0; self.whatif = None; self.ticker = None
+        self.trade = None; self.cancelled = 0; self.whatif = None; self.ticker = None; self.execs = []
 
     def isConnected(self): return self.connected
     def sleep(self, s): pass
@@ -51,6 +51,7 @@ class FakeIB:
     def cancelMktData(self, c): pass
     def openTrades(self): return []
     def reqAllOpenOrders(self): return []
+    def reqExecutions(self): return self.execs
 
 
 @pytest.fixture
@@ -190,3 +191,16 @@ def test_competing_session_block_expires(br, monkeypatch):
 def test_connect_keeps_live_socket(br):
     br.ib.connect = lambda *a, **k: (_ for _ in ()).throw(AssertionError("must not reconnect"))
     br.connect()     # socket is up -> no-op
+
+
+def test_executions_filter_and_corrections(br):
+    mk = lambda eid, ref, side, q, px, acct="DU123": NS(execution=NS(execId=eid, orderRef=ref, side=side, shares=q, price=px,
+                                                                    acctNumber=acct), time="t", contract=NS(localSymbol="MESZ6"))
+    br.ib.execs = [mk("0001.aa.01.01", "MET-2026-11-30-entry", "BOT", 4, 7000.0),
+                   mk("0001.aa.01.02", "MET-2026-11-30-entry", "BOT", 4, 7000.25),    # IB correction of the same fill
+                   mk("0002.aa.01.01", "MET-2026-11-30-entry", "BOT", 3, 7001.0),
+                   mk("0003.aa.01.01", "user", "BOT", 2, 7002.0),
+                   mk("0004.aa.01.01", "MET-2026-11-30-entry", "BOT", 9, 7000.0, acct="DU999")]
+    ex = br.executions("MET-2026-11-30-")
+    assert sorted((e["qty"], e["side"]) for e in ex) == [(3.0, "BUY"), (4.0, "BUY")]
+    assert next(e for e in ex if e["qty"] == 4.0)["price"] == 7000.25

@@ -231,6 +231,19 @@ class IBKRBroker(Broker):
         raw = Future(conId=int(con_id), exchange=exchange)       # conId alone identifies it; extra fields risk 200/478
         return FutureContract(symbol, expiry, float(multiplier), local_symbol, int(con_id), raw=raw)
 
+    def executions(self, ref_prefix):
+        self._need()
+        fills = self._call("reqExecutions", self.ib.reqExecutions)
+        out = {}
+        for f in fills:
+            e = f.execution
+            if (e.orderRef or "").startswith(ref_prefix) and e.acctNumber == self.cfg.ib.account:
+                key = e.execId.rsplit(".", 1)[0]          # IB corrections replace the last segment
+                out[key] = dict(exec_id=key, ref=e.orderRef, side="BUY" if e.side in ("BOT", "BUY") else "SELL",
+                                qty=float(e.shares), price=float(e.price), time=str(f.time),
+                                local_symbol=f.contract.localSymbol)
+        return list(out.values())
+
     def cancel_working(self, ref_prefix="MET-"):
         n = 0
         for t in self.open_orders(ref_prefix):
