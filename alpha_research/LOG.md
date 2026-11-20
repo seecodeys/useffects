@@ -928,3 +928,8 @@ on one measurable flow with free data. Doesn't change the trade (flat, every mon
 Same timing as 299. A SPY sign of leveraged-fund VIX z (|z|>1): −1.5 / −0.6 (wrong sign); B asset-manager VIX z: +0.1 / +0.8;
 C long SPY but flat when lev funds are unusually short VIX: Sharpe 0.64 / 0.38 vs buy-and-hold, timing value t=−1.2.
 Dead — crowded short-vol positioning didn't foreshadow sell-offs at a weekly horizon. Registry: 401 rows.
+
+## 302 — Month-end bond bid by month type (descriptive, 2002-22)  ·  2026-11-20
+Last-3-session bp, ordinary / Mar-Jun-Sep / December months: IEF +22.0 (t=4.1) / +25.4 (3.1) / +25.5 (1.6);
+TLT +37.5 / +45.0 / +41.1; SHY +6.6 / +7.6 / +9.9. Slightly larger at quarter- and year-ends but essentially uniform —
+unlike the equity rebalancing trade (116: concentrated in ordinary months). No quarter-end filter needed. Not registered.
