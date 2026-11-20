@@ -18,3 +18,4 @@
 | 277/278 | Month-end bond bid in LQD, HYG, Canada, UK, euro govt bonds (consistency) | right sign in all 10 train/valid pairs; LQD +2.67, XBB +2.64 valid t | (not looked) | Broad month-end bond-index-extension effect |
 | 280 | Month-end bond bid in MBB / TIP / MUB (consistency) | MBB t=+3.23, TIP t=+2.91, MUB t=+0.98 | (not looked) | Present in index-tracked taxable bonds, weak in munis → consistent with index extension |
 | 285 | Controls: same last-3-session rule on GLD / SPY / UUP | t ≤ +0.2 in train, negative in valid | — | Bid is bond-specific → supports index-extension mechanism |
+| 276e | Permutation test of the bond bid (2002-22) | IEF +23bp vs random-window +2.7bp; TLT +40 vs +2.6bp; p<0.0002 | — | Month-end window is extreme vs any other 3-day window |

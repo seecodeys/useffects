@@ -809,3 +809,8 @@ effect is specific to index-tracked bonds, as the index-extension mechanism pred
 ## 028 — Japanese fiscal year/half-year end (EWJ)  ·  2026-11-20
 Long EWJ on the last day of Mar/Sep: +0.5 / +1.1 (+14.5bp/trade valid, 46 events); short first 3 sessions of Apr/Oct:
 −0.1 / +0.3. Right-signed but underpowered. Dead/weak. Registry: 380 rows.
+
+## 276e — Permutation test of the month-end bond bid (2002-22, descriptive)  ·  2026-11-20
+Mean return over the last 3 sessions vs a random 3-session window in each month (5,000 draws): IEF +23.2bp vs +2.7bp
+(99th pct +12.2; p<0.0002); TLT +39.7bp vs +2.6bp (99th pct +23.4; p<0.0002). The month-end window is extreme relative
+to any other 3-day window — strong non-parametric support.
