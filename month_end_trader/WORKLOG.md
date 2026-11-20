@@ -61,4 +61,5 @@ Branch: `claude/blissful-mccarthy-mt2shh`. Scheduled check-ins (4 hourly tasks, 
 - [x] Review round 8 (5 findings, no P&L/ownership bugs) fixed: disagreement flag resets when sources agree, bot waits
       while the user's MET-<date>-manual order is working (no double close), Unknown/Timeout entries wait for executions,
       guard re-read only for new mismatches, mismatch flag clears. 189 tests
-- [ ] Next: idle unless the user answers the sizing question (floor vs nearest contract); otherwise periodic full-suite + replay (MET_SLOW=1) run
+- [x] Full replay of all 291 TLT-era month-ends (MET_SLOW=1) after round 8: 291/291 match the paper ledger
+- [ ] Waiting on user: sizing (floor vs nearest contract); whether to pause the 15-min check-ins until after the 30 Nov paper run
