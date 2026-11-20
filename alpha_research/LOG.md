@@ -720,3 +720,9 @@ Canada passed the gate → **holdout (2023+): −2.1bp/trade net (+1.9 gross), 3
 Pooled missed the gate on train (short histories) → no holdout look. Verdict: the month-end rebalancing effect is
 international in 2015-22, but its 2023+ persistence is shown only for the US so far — a caution against over-trusting
 the US holdout. Registry: 345.
+
+## 258/263 — Japan: month-end stock-bond rule; BOJ ETF purchase support  ·  2026-11-20
+258 1306.T vs 2510.T month-end rule (2018-22 only): +12.7bp/trade, t=+0.5 (60 trades) — right sign, like the other
+markets in 257; too short to judge. 263 long 1306.T open→close after a >0.5% gap-down open: mean +2.9bp (2009-12),
++7.7bp (2013-20, heavy BOJ buying), −7.6bp (2021-22, BOJ scaled back) — the pattern tracks BOJ activity, but net of
+3bp/side it's −0.3 / −0.5 t. Dead as a trade; interesting as evidence of central-bank flow support. Registry: 347.
