@@ -129,11 +129,11 @@ is an opening-print artifact (015). New tests use prior-close information only.
       (lag-1) vs the same rule on SPY (institutional) — does over-reaction concentrate where retail is?
 
 - [ ] 107 Update README.md: behavioral round (050-095) and options round (080-087) results, revised 'edges found' table.
-- [ ] 096 Portfolio of survivors: 013 (SPY month-end) + 031 (TLT month-end long) + 062b (monthly country reversal) —
+- [x] 096 Portfolio of survivors: 013 (SPY month-end) + 031 (TLT month-end long) + 062b (monthly country reversal) —
       combined daily P&L, correlation, Sharpe, drawdown by period (construction only; no new signal search).
-- [ ] 103 Micro-cap over-reaction at ETF level (IWC 2005+, IJR): reverse |z|>2 prior-day moves, lag-1 close→close;
+- [x] 103 Micro-cap over-reaction at ETF level (IWC 2005+, IJR): reverse |z|>2 prior-day moves, lag-1 close→close;
       micro-caps are where retail over-reaction should be strongest and IWC has no survivorship issue.
-- [ ] 100 Is month-end volatility under-priced? Compare realized |open→close| on month-end days vs other days relative
+- [x] 100 Is month-end volatility under-priced? Compare realized |open→close| on month-end days vs other days relative
       to prior-close VIX9D (descriptive; informs whether buying options on month-ends could work despite 083c).
 
 ## Flow-driven ideas (the 013 theme is the only robust winner so far)

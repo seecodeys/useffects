@@ -457,3 +457,13 @@ rest, monthly: −0.1 / +0.8; gross ≈ 0 in every 5-year block. Dead.
 last half-hour does NOT continue the move (SPY −0.6bp, QQQ −5.1bp); next-open reversal SPY +11.4bp (64% hit, t=1.0),
 QQQ +6.8bp (t=0.9) — same direction as our weak 112 lead (overnight reversal after big days), not significant.
 No pre-positioning signature in US ETFs. Registry: 259.
+
+## 100/103/096 — Month-end option pricing, micro-cap reversal, portfolio of survivors  ·  2026-11-20
+100 realized/implied |open→close| ratio (VIX9D|VIX-implied 6.5h move): month-ends 1.35 (median 1.03) vs other days 1.46
+(1.15) — month-end volatility is NOT under-priced; no case for buying options on month-ends (agrees with 083c).
+103 reverse |z|>2 days in IWC/IJR (micro/small-cap ETFs), lag-1: +0.2 / **−2.3** — small caps *continue* after big days
+if anything. Dead.
+096 (construction, not registered): 013 SPY month-end, 031 TLT month-end long, 062b monthly country reversal are
+uncorrelated (|ρ| ≤ 0.11). Sharpe train/valid/holdout: 013 0.91/0.71/1.68; 031 0.57/0.57/**−0.72**; 062b 0.30/0.52/0.30;
+combined 0.81/0.89/0.64. The TLT month-end leg failed in 2023+ (rate regime), so adding it hurt the holdout; 013 alone
+remains best. Registry: 260.
