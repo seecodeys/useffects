@@ -34,9 +34,10 @@ from .state import ACTIVE, DaemonLock, StateCorrupt, TradeState, kill_switch_act
 
 log = logging.getLogger("met.executor")
 
-PERMANENT_BLOCKERS = ("kill switch", "not the last NYSE session", "MET_LIVE_CONFIRM", "connected account",
-                      "does not match mode", "below minimum", "existing ", "core ", "decay monitor says stop",
-                      "below min_abs_gap", "exactly zero", "unreadable")
+PERMANENT_PREFIXES = ("kill switch", "live mode requires", "connected account", "account ", "net liquidation ",
+                      "existing ", "decay monitor says stop", "|gap|", "signal gap is exactly zero",
+                      "unfinished older trade", "contract multiplier", "position size rounds")
+UNCERTAIN_STATUSES = ("Timeout", "Unknown", "Recovered")     # entry outcomes that can hide a late fill
 COST_PER_CONTRACT_SIDE = {"MES": 0.62, "ES": 2.25}   # IBKR commission + exchange + regulatory (estimate)
 GUARD_QUIET_S = 45          # no guard work this close to the exit time
 PRICE_FAIL_ALERT = 4        # consecutive missing prices before a CRITICAL alert
@@ -44,10 +45,21 @@ EXIT_BACKOFF_S = (5, 15, 30, 60, 120, 300)   # between failed exit rounds
 MANUAL_ALERT_AFTER = 8      # failed exit rounds before the 'manual intervention' alert
 
 
+def _cme_full_closure(d: dt.date) -> bool:
+    """Days CME equity futures do not trade at all: 25 Dec, 1 Jan, Good Friday (NYSE holiday in April/March
+    that falls on a Friday two days before Easter)."""
+    if (d.month, d.day) in ((12, 25), (1, 1)):
+        return True
+    from dateutil.easter import easter
+    return d == easter(d.year) - dt.timedelta(days=2)
+
+
 def futures_open(now: dt.datetime) -> bool:
     """CME equity futures: Sun 18:00 - Fri 17:00 ET, daily halt 17:00-18:00. On NYSE half days and NYSE
     weekday holidays the CME equity session halts early (13:15 ET half days, ~13:00 holidays) until 18:00."""
     t, wd, d = now.time(), now.weekday(), now.date()
+    if _cme_full_closure(d) or (t >= dt.time(17) and _cme_full_closure(d + dt.timedelta(days=1))):
+        return False
     if wd == 5 or (wd == 4 and t >= dt.time(17)) or (wd == 6 and t < dt.time(18)):
         return False
     if dt.time(17) <= t < dt.time(18):
@@ -89,7 +101,7 @@ class Executor:
                     entry=o + dt.timedelta(seconds=s.entry_delay_s),
                     entry_deadline=o + dt.timedelta(seconds=s.entry_grace_s),
                     exit=c - dt.timedelta(seconds=s.exit_lead_s),
-                    reconcile=c + dt.timedelta(minutes=10),
+                    reconcile=c + dt.timedelta(minutes=2 if cal.is_early_close(d) else 10),
                     report=c + dt.timedelta(hours=2))
 
     def contract_for(self, st: TradeState) -> FutureContract:
@@ -152,7 +164,8 @@ class Executor:
         self._refresh_monitor_if_stale()
         sig, problems, sigs = signals_from_sources(trade_date, self.fetchers, self.cfg.signal.equity,
                                                    self.cfg.signal.bond, self.cfg.signal.require_agreement,
-                                                   self.cfg.signal.max_source_gap_diff)
+                                                   self.cfg.signal.max_source_gap_diff,
+                                                   len(self.fetchers) if self.cfg.signal.require_all_sources else 1)
         if sig is None:
             n = st.get("announce_attempts", 0) + 1
             if n == 6:
@@ -184,13 +197,18 @@ class Executor:
                 self.alert.warn("decay monitor could not be refreshed", repr(e))
 
     def do_preflight(self, trade_date: dt.date, st: TradeState):
+        older = [d for d in unfinished(self.cfg.monitoring.state_dir) if d < str(trade_date)]
         try:
             plan, blockers, warnings = preflight(self.cfg, self.broker, trade_date, self.fetchers)
         except Exception as e:
             plan, blockers, warnings = None, [f"preflight crashed: {e!r}"], []
             log.error(traceback.format_exc())
+        if older:
+            plan = None
+            blockers = blockers + [f"unfinished older trade state(s) {', '.join(older)}: resolve them first (met status)"]
         o, _ = cal.session_open_close(trade_date)
-        transient = plan is None and blockers and all(not any(k in b for k in PERMANENT_BLOCKERS) for b in blockers)
+        transient = plan is None and blockers and not any(b.startswith(PERMANENT_PREFIXES) or "not the last NYSE session" in b
+                                                          for b in blockers)
         if transient and self.broker.now() < o - dt.timedelta(minutes=3):
             n = st.get("preflight_attempts", 0) + 1
             st.update(self.ts(), note="preflight retry: " + "; ".join(blockers), preflight_attempts=n,
@@ -261,13 +279,16 @@ class Executor:
         if pos == 0 and reported > 0:                 # broker reported a fill: trust it over a stale position
             pos = d * reported
         if pos != 0 and (pos > 0) == (d > 0):
-            q = int(min(abs(pos), st.get("qty_planned") or abs(pos)))
+            q = int(min(max(abs(pos), reported), st.get("qty_planned") or abs(pos)))
+            est = avg is None
             if avg is None:
                 avg = self._try_price(c) or st.get("plan")["ref_price"]
             self.alert.warn(f"{trade_date}: entry resolved from broker position {pos:+g} ({status})")
             self._record_entry(trade_date, st, q, avg, f"Resolved-{status}", msg)
+            st.update(self.ts(), note="entry outcome was uncertain", uncertain=True, entry_price_estimated=est)
         elif pos == 0:
-            st.update(self.ts(), "ERROR", note=f"entry not filled: {status} {msg}", entry_status=status)
+            unc = status in UNCERTAIN_STATUSES or str(status).startswith("Resolved")
+            st.update(self.ts(), "ERROR", note=f"entry not filled: {status} {msg}", entry_status=status, uncertain=unc)
             self.alert.critical(f"{trade_date}: ENTRY FAILED ({status})",
                                 msg + "\nThe bot re-checks the broker at reconcile and adopts a late fill if one appears.")
         else:
@@ -404,34 +425,81 @@ class Executor:
             extra = dict(gross_pnl=round(gross, 2), est_costs=round(costs, 2), net_pnl=round(gross - costs, 2),
                          pnl_pct_equity=100 * (gross - costs) / eq, trade_bp=1e4 * d * (xp / ep - 1))
         st.update(self.ts(), "FLAT", note="flat", next_exit_try=None, **extra)
+        if extra and st.get("entry_price_estimated"):
+            st.update(self.ts(), note="P&L estimated (entry price inferred)", pnl_estimated=True)
+            extra["net_pnl_label"] = "ESTIMATED "
         if extra:
-            self.alert.info(f"{trade_date}: FLAT. Net P&L {extra['net_pnl']:+,.0f} ({extra['pnl_pct_equity']:+.2f}% of equity)",
+            self.alert.info(f"{trade_date}: FLAT. {extra.pop('net_pnl_label', '')}Net P&L {extra['net_pnl']:+,.0f} ({extra['pnl_pct_equity']:+.2f}% of equity)",
                             f"entry {ep:.2f} exit {xp:.2f}, {q} contracts, {extra['trade_bp']:+.1f}bp on the underlying, "
                             f"reason: {st.get('exit_reason')}")
         elif q:
             self.alert.warn(f"{trade_date}: FLAT, but P&L could not be computed (missing fill prices)")
 
-    def adoptable(self, st) -> int:
-        """Signed quantity in the bot's own contract that can be attributed to the bot: same direction as its
-        trade and no larger than what it ordered. Two reads a few seconds apart (both must agree)."""
+    def adoption_open(self, st) -> bool:
+        """Adoption is only allowed after an uncertain outcome, and only until the next session opens."""
+        if not (st.get("uncertain") or st.get("inferred_flat")) or int(st.get("adopt_count", 0)) >= 2:
+            return False
+        d = dt.date.fromisoformat(st.trade_date)
+        o_next, _ = cal.session_open_close(cal.next_session(d))
+        return self.broker.now() < o_next
+
+    def adoptable(self, st):
+        """Signed quantity in the bot's own contract attributable to the bot (same direction, within what it
+        ordered and has not recorded). Returns None when it cannot tell yet (orders working, reads disagree)."""
         if not st.get("contract_con_id") or not st.get("direction"):
             return 0
         c = self.contract_for(st)
         if not self.settle(15):
-            return 0
+            return None
         p1 = self.broker_pos(c)
         self.broker.sleep(3)
         p2 = self.broker_pos(c)
-        d, cap = st.get("direction"), int(st.get("entry_filled") or st.get("qty_planned") or 0)
-        pos = p1 if p1 == p2 else 0
-        if pos != 0 and (pos > 0) == (d > 0) and abs(pos) <= cap:
-            return int(pos)
+        if p1 != p2:
+            return None
+        d = st.get("direction")
+        planned, filled = int(st.get("qty_planned") or 0), int(st.get("entry_filled") or 0)
+        if st.get("inferred_flat"):
+            cap = filled                       # exit fill assumed but maybe not done
+        elif st.phase == "ERROR":
+            cap = planned
+        else:                                  # FLAT after an uncertain (possibly partial) entry record
+            cap = max(planned - filled, 0)
+        if p1 != 0 and (p1 > 0) == (d > 0) and abs(p1) <= cap:
+            return int(p1)
         return 0
 
+    def adopt(self, trade_date, st, q):
+        filled = int(st.get("entry_filled") or 0)
+        ep = st.get("entry_price") or (st.get("plan") or {}).get("ref_price")      # never a post-close price
+        if st.phase == "ERROR" or not filled:
+            fields = dict(entry_filled=abs(q), exit_filled=0, entry_price=ep, entry_price_estimated=True)
+        elif st.get("inferred_flat"):
+            fields = dict(exit_filled=filled - abs(q))
+        else:
+            fields = dict(entry_filled=filled + abs(q), entry_price_estimated=True)
+        phase = "ENTERED" if self.broker.now() < self.times(dt.date.fromisoformat(st.trade_date))["exit"] else "EXIT_SUBMITTED"
+        st.update(self.ts(), phase, note=f"adopted {q:+d} after uncertain outcome", exit_reason=None if phase == "ENTERED" else "adopted",
+                  inferred_flat=False, next_exit_try=None, reconciled=False,
+                  adopt_count=int(st.get("adopt_count", 0)) + 1, **fields)
+        self.alert.critical(f"{trade_date}: ADOPTED {q:+d} {st.get('contract_local_symbol')} after an uncertain order outcome",
+                            "managed like the bot's own position from now on" + ("" if phase == "ENTERED" else "; closing it now"))
+
+    def try_adopt(self, trade_date, st) -> bool | None:
+        """True adopted, False nothing to adopt, None undecided (retry later)."""
+        if not self.adoption_open(st):
+            return False
+        q = self.adoptable(st)
+        if q is None:
+            return None
+        if q:
+            self.adopt(trade_date, st, q)
+            return True
+        return False
+
     def reconcile(self, trade_date, st):
-        """After the close: the bot must own nothing. A position in the bot's contract, in the bot's direction
-        and no larger than its order, after an uncertain entry/exit, is adopted and exited. Anything else is
-        reported, never touched."""
+        """After the close: the bot must own nothing. A late/unreported fill in the bot's own contract after an
+        uncertain outcome (before the next session opens) is adopted and exited; anything else is reported,
+        never touched."""
         if st.get("reconciled"):
             return
         if st.phase == "ENTRY_SUBMITTED":
@@ -443,21 +511,14 @@ class Executor:
                 st.update(self.ts(), "EXIT_SUBMITTED", note="reconcile: still owned", exit_reason=st.get("exit_reason") or "reconcile")
             self.alert.critical(f"{trade_date}: RECONCILE: bot still owns {st.owned:+d}", "exit retries continue")
             return
-        uncertain = st.phase == "ERROR" or (st.phase == "FLAT" and st.get("inferred_flat"))
-        if uncertain:
-            q = self.adoptable(st)
-            if q:
-                filled = int(st.get("entry_filled") or 0)
-                if st.phase == "ERROR" or not filled:
-                    fields = dict(entry_filled=abs(q), exit_filled=0,
-                                  entry_price=st.get("entry_price") or self._try_price(self.contract_for(st)))
-                else:
-                    fields = dict(exit_filled=filled - abs(q))
-                st.update(self.ts(), "EXIT_SUBMITTED", note=f"adopted {q:+d} after uncertain outcome",
-                          exit_reason="adopted", inferred_flat=False, next_exit_try=None, **fields)
-                self.alert.critical(f"{trade_date}: ADOPTED {q:+d} {st.get('contract_local_symbol')} after an uncertain "
-                                    f"order outcome", "closing it now")
-                return
+        if st.phase == "EXIT_SUBMITTED":                 # crash after the last exit fill, before finalising
+            self._finalise(trade_date, st)
+        r = self.try_adopt(trade_date, st)
+        if r is None:
+            if self.adoption_open(st):
+                return                                   # can't tell yet: re-check next tick
+        elif r:
+            return
         if st.get("contract_con_id") and st.phase in ("FLAT", "ERROR"):
             c = self.contract_for(st)
             pos = self.broker_pos(c)
@@ -616,8 +677,9 @@ class Executor:
                     elif self.ensure_connected():
                         self.do_preflight(T, st)
                         return self.broker.now()              # re-evaluate with a fresh clock
-                    self.alert.critical(f"{T}: cannot connect for preflight; will retry")
-                    nxt.append(now + dt.timedelta(seconds=20))
+                    else:
+                        self.alert.critical(f"{T}: cannot connect for preflight; will retry")
+                        nxt.append(now + dt.timedelta(seconds=20))
                 else:
                     nxt.append(tm["preflight"])
             if st.phase == "PLANNED":
@@ -633,6 +695,11 @@ class Executor:
                     nxt.append(tm["entry"])
             if st.phase == "ENTRY_SUBMITTED" and self.ensure_connected():
                 self._resolve_entry(T, st, None, "Recovered")
+            if st.phase in ("ERROR", "FLAT") and st.get("uncertain") and not st.get("reconciled") and now < tm["exit"] \
+                    and self.ensure_connected():
+                self.try_adopt(T, st)                      # a late entry fill gets the guards and the scheduled exit
+                if st.phase in ("ERROR", "FLAT"):
+                    nxt.append(now + dt.timedelta(seconds=self.cfg.guardrails.disaster_poll_s))
             if st.phase in ("ENTERED", "EXIT_SUBMITTED"):
                 if now >= tm["exit"] or st.phase == "EXIT_SUBMITTED":
                     if self.ensure_connected():

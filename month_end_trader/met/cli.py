@@ -94,8 +94,10 @@ def main(argv=None):
             broker.connect()
         except Exception as e:
             print(f"(IBKR unavailable: {e}; Yahoo only)"); broker = None
-        sig, problems, sigs = signals_from_sources(T, make_fetchers(cfg, broker, now), cfg.signal.equity, cfg.signal.bond,
-                                                   cfg.signal.require_agreement)
+        fx = make_fetchers(cfg, broker, now)
+        sig, problems, sigs = signals_from_sources(T, fx, cfg.signal.equity, cfg.signal.bond,
+                                                   cfg.signal.require_agreement, cfg.signal.max_source_gap_diff,
+                                                   len(fx) if cfg.signal.require_all_sources else 1)
         print(f"Next trade date: {T} (early close: {cal.is_early_close(T)})")
         for s in sigs:
             print(f"  {s.source:<6} through {s.signal_through}: {cfg.signal.equity} {s.equity_mtd:+.2%}  "

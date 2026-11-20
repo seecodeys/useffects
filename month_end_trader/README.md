@@ -27,7 +27,8 @@ an **MES futures overlay of 2x net liquidation** from the open to the close.
 The daemon is a single loop of idempotent `tick()`s over the state saved in `state/trade_<date>.json`. You can kill and restart it at any moment, including mid-trade, and it starts even while IB is unreachable; it alerts and keeps reconnecting.
 - It never enters twice in one month.
 - After a crash between sending and confirming an order, it resolves the outcome from the broker's position, on any later day too.
-- **Don't trade MES in the bot's contract yourself on a trade day.** After an uncertain order outcome, a same-direction position up to the bot's order size is treated as the bot's.
+- **Don't trade MES in the bot's contract yourself on a trade day.** After an uncertain order outcome (timeout, unconfirmed cancel, crash), and only until the next session opens, a same-direction position up to the bot's order size is treated as the bot's. After a clear rejection, nothing is ever adopted.
+- No new trade starts while an older trade state is unfinished (`met status` lists them).
 
 ## Guardrails
 
@@ -56,7 +57,7 @@ The daemon is a single loop of idempotent `tick()`s over the state saved in `sta
 - Exits close only the quantity the bot owns (its entry fills minus its exit fills), and never more than the broker shows in that direction, so a stale position read cannot reverse the position.
 - Exit retries:
   - With backoff from 5 s up to 5 min.
-  - No orders while CME equity futures are closed: weekends, the daily 17:00–18:00 halt, and after the early halt on NYSE half days and holidays. Other CME holiday schedules are not modelled.
+  - No orders while CME equity futures are closed: weekends, the daily 17:00–18:00 halt, after the early halt on NYSE half days and holidays, and the full closures on 25 Dec, 1 Jan and Good Friday.
   - One MANUAL INTERVENTION alert after 8 failed rounds.
 - Disaster stop: flatten early if the overlay loses 6% of equity, about a 3% SPY move at 2x. Set it to 0 to trade exactly like the backtest.
 - Kill switch during the trade flattens immediately.

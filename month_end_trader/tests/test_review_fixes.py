@@ -393,3 +393,89 @@ def test_rehearsal_next_trade():
     assert any("Tomorrow (2026-11-30)" in t for t in titles)
     ann = next(ts for ts, _, t, _ in stamped if "Tomorrow" in t)
     assert ann.date() == dt.date(2026, 11, 27) and ann.time() == dt.time(13, 25)     # half-day T-1
+
+
+# ---------------------------------------------------------------- review round 4 (adoption)
+def test_missed_entry_fill_adopted_intraday_and_guarded(env):
+    cfg, clock, b, ex, alerts = env()
+    o = b.day_path[T][0]
+    b.day_path[T] = (o, o * 0.95, [(7200, o * 0.95)])          # -5% two hours in
+    b.late_fill_next = 1; b.pos_glitch_reads = 4               # fill hidden from the bot's first reads
+    run_until(ex, clock, dt.datetime(2025, 9, 30, 19, 0))
+    s = st(cfg)
+    assert b.fut_pos == 0 and s.phase == "FLAT"
+    assert s.get("exit_reason") == "disaster stop", s.get("exit_reason")   # guards applied after adoption
+    exit_t = [x["t"] for x in b.orders if x["action"] == "SELL"][0]
+    assert exit_t.time() < dt.time(11, 45)
+    assert s.get("pnl_estimated")
+
+
+def test_rejected_entry_never_adopts_user_position(env):
+    cfg, clock, b, ex, alerts = env()
+    b.reject_next = 1
+    run_until(ex, clock, dt.datetime(2025, 9, 30, 10, 0))
+    c = b.front_future("MES", "CME", T + dt.timedelta(days=3))
+    b.market_order(c, "BUY", 3, "user", 5)                     # same direction as the bot's plan
+    run_until(ex, clock, dt.datetime(2025, 10, 1, 12, 0))
+    assert b.fut_pos == 3
+
+
+def test_adoption_window_closes_next_session(env):
+    cfg, clock, b, ex, alerts = env()
+    run_until(ex, clock, dt.datetime(2025, 9, 30, 9, 29, 30))
+    s = st(cfg)
+    s.update(clock.now().isoformat(), "ERROR", note="test", uncertain=True, entry_status="Timeout")
+    b.disconnect()
+    clock.t = dt.datetime(2025, 10, 6, 10, 0, tzinfo=cal.ET)
+    b.connect()
+    c = b.front_future("MES", "CME", T + dt.timedelta(days=3))
+    b.market_order(c, "BUY", 2, "user", 5)
+    ex2 = Executor(cfg, b, ex.alert, ex.fetchers, None)
+    run_until(ex2, clock, dt.datetime(2025, 10, 6, 12, 0))
+    assert b.fut_pos == 2 and st(cfg).get("reconciled")
+
+
+def test_preflight_blocked_by_unfinished_older_trade(env):
+    cfg, clock, b, ex, alerts = env(dt.datetime(2025, 10, 31, 9, 0))
+    old = TradeState(cfg.monitoring.state_dir, "2025-09-30")
+    old.update("t", "ERROR", note="x", uncertain=True)          # unreconciled, no contract id
+    ex._unfinished_last["2025-09-30"] = clock.now() + dt.timedelta(days=1)   # keep drive_unfinished away
+    run_until(ex, clock, dt.datetime(2025, 10, 31, 12, 0))
+    s = st(cfg, dt.date(2025, 10, 31))
+    assert s.phase == "SKIPPED" and any("unfinished older" in x for x in s.get("blockers")) and b.orders == []
+
+
+def test_no_false_critical_during_preflight_retry(env):
+    cfg, clock, b, ex, alerts = env(dt.datetime(2025, 9, 30, 9, 0))
+    b.price_unavailable = True
+    run_until(ex, clock, dt.datetime(2025, 9, 30, 9, 26))
+    assert not [t for t in crit(alerts) if "cannot connect" in t]
+
+
+def test_permanent_blocker_classification():
+    from met.executor import PERMANENT_PREFIXES
+    perm = ["existing MES positions before entry: MESZ5 +1", "kill switch active", "decay monitor says stop (x)"]
+    trans = ["signal source ibkr failed: An existing connection was forcibly closed",
+             "contract/price unavailable: score 3", "decay monitor state unreadable (x); run `met report`"]
+    assert all(p.startswith(PERMANENT_PREFIXES) for p in perm)
+    assert not any(t.startswith(PERMANENT_PREFIXES) for t in trans)
+
+
+def test_exit_submitted_with_nothing_owned_is_finalised(env):
+    cfg, clock, b, ex, alerts = env()
+    run_until(ex, clock, dt.datetime(2025, 9, 30, 19, 0))
+    s = st(cfg)
+    s.update(clock.now().isoformat(), "EXIT_SUBMITTED", note="crash after exit fill", reconciled=False)
+    clock.t = dt.datetime(2025, 10, 1, 10, 0, tzinfo=cal.ET)
+    ex2 = Executor(cfg, b, ex.alert, ex.fetchers, None)
+    run_until(ex2, clock, dt.datetime(2025, 10, 1, 10, 10))
+    assert st(cfg).phase == "FLAT" and st(cfg).get("reconciled")
+
+
+def test_cme_full_closures():
+    from met.executor import futures_open
+    E = cal.ET
+    assert not futures_open(dt.datetime(2025, 12, 25, 10, 0, tzinfo=E))
+    assert not futures_open(dt.datetime(2025, 12, 24, 19, 0, tzinfo=E))     # evening before Christmas
+    assert not futures_open(dt.datetime(2026, 4, 3, 10, 0, tzinfo=E))       # Good Friday 2026
+    assert futures_open(dt.datetime(2025, 12, 26, 10, 0, tzinfo=E))

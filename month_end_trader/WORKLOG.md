@@ -34,6 +34,12 @@ Branch: `claude/blissful-mccarthy-mt2shh`. Scheduled check-ins (4 hourly tasks, 
       resolved on later days, daemon starts with IB down and alerts (any day >10 min; T-1 evening), CLI flatten/test-order
       refuse while daemon runs, preflight retries transient blockers to 09:27, require_all_sources option, CME half-day /
       holiday halts, 45s guard quiet window, monitor refreshed if stale, config validation, README corrected. 159 tests
-- [ ] Review round 4: fresh agent on the round-3 diff (adoption logic is the riskiest new code)
+- [x] Review round 4 (adoption, 11 findings) fixed: adopt only after uncertain outcomes (never after Rejected), only until the
+      next session opens, at most twice; late entry fills adopted intraday so guards + scheduled exit apply; adoption price
+      never post-close (P&L flagged ESTIMATED); undecided adoption defers instead of closing the trade; reported fills count;
+      preflight blocked by unfinished older trades; no false criticals during preflight retries; blocker prefixes; EXIT_SUBMITTED
+      finalised on reconcile; CME full closures (25 Dec, 1 Jan, Good Friday); half-day reconcile at close+2m; announce/signal
+      apply the same source rules; FakeBroker rejects orders while CME is closed. 168 tests
+- [ ] Review round 5: fresh agent, whole package, adversarial (try to make it hold overnight / reverse / over-size)
 - [x] End-to-end 'paper rehearsal' script (met rehearse): replays 27-30 Nov 2026 with a synthetic path and prints the exact alert timeline
 - [ ] Sizing: floor rounding gives 1.78x on ~$120k (6 MES); consider nearest-contract rounding capped by max_leverage (ask user before changing behaviour)
