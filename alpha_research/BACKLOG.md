@@ -32,7 +32,11 @@
 - [x] 133 Treasury auction cycle (TLT) — gate passed but concentrated in 2009-10/2020; no holdout.
 - [x] 134 Auction cycle conditional on rate volatility: run 133c only when TLT 20d realized vol > its trailing 1y median
       (dealer stress regime) — pre-specified; also on IEF with 10y auctions only.
-- [ ] 135 Second paper-sourcing round: arXiv queries on 'Treasury auction', 'dealer inventory', 'closing auction',
+- [x] 135 Second paper-sourcing round (nothing new on arXiv)
+- [ ] 140 S&P 500 index additions (flow from index funds at the effective-date close): effective dates from Wikipedia's
+      'List of S&P 500 companies' changes table; short added stock vs SPY from the effective-date close for 5 sessions
+      (post-inclusion reversal); event study of the run-up into the effective date.
+- [x] 139 Quarter-end portfolio pumping — dead.: arXiv queries on 'Treasury auction', 'dealer inventory', 'closing auction',
       'index reconstitution', 'ETF creation redemption', 'month-end' for more flow ideas.
 
 ## OPTIONS (user request 2026-11-20) — behavioral angle: people overpay for insurance after fear spikes

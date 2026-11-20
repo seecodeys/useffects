@@ -492,3 +492,15 @@ volatility (MOVE-like proxy from TLT realized vol) — pre-specify before testin
 a) TLT cycle only in high rate-vol regimes: +0.7 / +1.6 (ex-2020 +0.8). b) IEF with 10y auctions: +1.0 / +1.6 (ex-2020
 +0.9). Right sign everywhere but weaker than 133c — the auction cycle is a real but small, episodic effect.
 **Weak-but-consistent; parked.** Registry: 270.
+
+## 139 — Quarter-end portfolio pumping (IWM−SPY)  ·  2026-11-20
+a) long IWM−SPY open→close on quarter-end day: −1.9 / +1.1. b) short IWM−SPY quarter-end close→next open (pumping
+reversal): **−3.2 / −1.5** — small caps keep outperforming overnight into the new quarter (gross +16bp/trade 2000s,
++7 2010s, +3 2020s, decaying). 139d (direction from train, long overnight): +1.9 / +0.05 — gone in valid. c) control at
+ordinary month-ends: −0.7 / −2.2. Dead. Registry: 274.
+
+## Paper sourcing round 2 (arXiv)  ·  2026-11-20
+Seven queries (Treasury auctions, closing auction, index reconstitution, month-end, dealer inventory, ETF creation/
+redemption, calendar anomalies): no new daily-testable ETF ideas — arXiv is thin on empirical asset pricing (mostly
+theory/microstructure). Partial fits: index-addition liquidity provision (2506.21775, single stocks) → spawned 140 below.
+Next sourcing rounds should target NBER/SSRN-style abstracts if fetchable.
