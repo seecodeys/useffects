@@ -49,6 +49,6 @@ Branch: `claude/blissful-mccarthy-mt2shh`. Scheduled check-ins (4 hourly tasks, 
       missing-execution warning, CLI flatten/test-order/resolve use the daemon's clientId (lock-protected), fills merged
       straight from order results, execId corrections by suffix, two agreeing reads before an exit when sources differ,
       30s post-reconnect grace, strict BOT/SLD, FA accounts refused; FakeBroker executions expire at midnight ET. 181 tests
-- [ ] Paper-test checklist for the user (exact commands for 30 Nov: check, validate-data, test-order, verify reqExecutions after a Gateway restart, MET-manual ref test)
+- [x] Paper-test checklist for the user (PAPER_TEST.md) (exact commands for 30 Nov: check, validate-data, test-order, verify reqExecutions after a Gateway restart, MET-manual ref test)
 - [x] End-to-end 'paper rehearsal' script (met rehearse): replays 27-30 Nov 2026 with a synthetic path and prints the exact alert timeline
 - [ ] Sizing: floor rounding gives 1.78x on ~$120k (6 MES); consider nearest-contract rounding capped by max_leverage (ask user before changing behaviour)
