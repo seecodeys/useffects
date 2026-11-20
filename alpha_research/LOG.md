@@ -580,3 +580,10 @@ Registry: 298 (luck t ≈ 3.4).
 ## 179 — Robustness: month-end pair + vol filter on QQQ-TLT and IWM-TLT (train/valid only, no holdout look)  ·  2026-11-20
 QQQ−TLT: train t=+2.14 (+42bp/trade), valid +2.51 (+58bp). IWM−TLT: +3.02 (+65bp), +2.74 (+59bp). The high-vol
 month-end rebalancing effect is consistent across equity sleeves; higher-beta sleeves move more. Registry: 300.
+
+## Paper sourcing round 3 + 182 — Earnings extrapolation (RFS 2025)  ·  2026-11-20
+NBER search is JS-rendered (unreadable); Semantic Scholar and OpenAlex APIs rate-limited (429) from this proxy;
+Crossref API works (api.crossref.org/works?query.bibliographic=…) but abstracts are sparse. One usable hit:
+"Earnings Extrapolation and Predictable Stock Market Returns" (RFS 2025): month-1-of-quarter market return predicts
+months 2-3 positively and next quarter's month 1 negatively. 182a (follow month-1 sign in months 2-3): +1.1 / +0.3;
+182b (fade it in next quarter's month 1): −0.3 / −0.3. Doesn't replicate in SPY 2000-2022. Dead. Registry: 302.
