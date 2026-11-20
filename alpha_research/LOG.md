@@ -641,3 +641,9 @@ rebalancing footprint is on the month's LAST day (013), not the first days after
 Spot ^VIX mean change by weekday 2000-22: Mon +2.10%, Tue +0.13, Wed −0.28, Thu +0.18, Fri −0.72 — strong calendar
 mechanics in the (non-tradable) index. Tradable VIXY: short Fridays +1.2 / +0.4; long Mondays −0.7 / −0.7. Futures
 already price the weekend pattern. Dead. Registry: 318.
+
+## 220 — Put-writing returns by weekday (real CBOE prices)  ·  2026-11-20
+Mean excess bp by weekday 2006-22: WPUT Mon +2.6, Tue +6.5, Wed +3.4, Thu +0.9, **Fri −6.9** (weekly expiry/roll day);
+PUT Mon +2.9, Tue +8.0, Wed +1.1, Thu −0.4, Fri −0.1. Exposure only Fri+Mon: −2.2 / −2.2 (timing value). 220b post-hoc
+'WPUT except Fridays': +0.0 / −0.3, Sharpe 0.48 vs 0.45 always-on (2006-14), 0.04 vs 0.06 (2015-22). The Friday loss is
+visible on average but not a robust timing rule. Dead. Registry: 320.
