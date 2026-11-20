@@ -788,3 +788,8 @@ rebalancing (which is why the two legs are uncorrelated in 279).
 ## 276d — Bond bid in refunding vs other months (descriptive, 2002-22)  ·  2026-11-20
 Mean last-3-session sum: IEF +23.4bp (refunding months Feb/May/Aug/Nov, t=3.0, n=82) vs +23.1bp (others, t=4.4, n=163);
 TLT +43.7 vs +37.7bp. No meaningful difference — the bid is present every month, so no refunding filter.
+
+## 280 — Month-end bond bid in other index segments (consistency, no holdout looks)  ·  2026-11-20
+Long over the last 3 sessions: MBB (agency MBS) +2.61 / +3.23; TIP (TIPS) +3.31 / +2.91; MUB (munis) +0.87 / +0.98.
+Strong in index-tracked taxable bonds (Treasuries, TIPS, MBS, IG credit), weak in munis (not in the main taxable bond
+indices' monthly extension) — a nice cross-check of the index-extension mechanism. Registry: 371 rows.

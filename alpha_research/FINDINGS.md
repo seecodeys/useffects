@@ -16,3 +16,4 @@
 | 275 | Long TLT over the last 3 sessions of each month (bond index extension / month-end bond buying) | t=+2.32, Sharpe 0.82; 21/21 positive years 2002-22 | t=+0.60, Sharpe 0.31; +2.2/+4.8/+3.8/−5.3% by year | Weak-but-alive; long-running, smaller recently |
 | 276 | Same month-end Treasury bid on IEF and SHY | IEF t=+3.24, SHY t=+3.21 (Sharpe ~1.1) | IEF (276b, 2nd family look): Sharpe 0.83, t=+1.63, +1.9%/yr, 3/4 years up | Effect across the curve; IEF weak-but-alive in 2023+ |
 | 277/278 | Month-end bond bid in LQD, HYG, Canada, UK, euro govt bonds (consistency) | right sign in all 10 train/valid pairs; LQD +2.67, XBB +2.64 valid t | (not looked) | Broad month-end bond-index-extension effect |
+| 280 | Month-end bond bid in MBB / TIP / MUB (consistency) | MBB t=+3.23, TIP t=+2.91, MUB t=+0.98 | (not looked) | Present in index-tracked taxable bonds, weak in munis → consistent with index extension |
