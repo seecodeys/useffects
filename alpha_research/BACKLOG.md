@@ -266,3 +266,4 @@ is an opening-print artifact (015). New tests use prior-close information only.
 - [x] 307 Bond-proxy control (XLU/VNQ/IYR) — no bid; bond-index specific.  - [~] S&P deletions: no free changes list.
 - [x] 308 Commodity hedging pressure / MM crowding (COT) — dead.
 - [x] 309 013 delayed-entry check — robust (not an opening-print artifact).
+- [x] 310 Bond bid overnight/intraday split — enter at the 4th-last close (MOC).

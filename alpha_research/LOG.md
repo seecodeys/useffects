@@ -976,3 +976,9 @@ hedging-pressure premium doesn't show up at a weekly horizon in liquid commodity
 Signed bp to 16:00 by entry time, S&P: 09:30 +17.1 (t=2.8) | 09:35 +15.8 (2.7) | 09:45 +15.4 (2.7) | 10:00 +14.2 (2.4);
 Nasdaq-100: +22.1 | +20.0 | +17.9 | +16.5. Entering 5-30 minutes late keeps ~85-90% of the edge — **not an opening-print
 artifact** (unlike 004/006, which vanished at 09:35). Execution needn't rely on the opening auction. Not registered.
+
+## 310 — Month-end bond bid: overnight vs intraday (IEF/TLT daily opens, 2002-22, descriptive)  ·  2026-11-20
+IEF bp (t): 3rd-last session overnight +5.3 (2.9) / intraday −0.1; 2nd-last +1.6 / +5.2 (3.3); last +4.3 (2.6) / +6.9 (3.6)
+(all-day averages +0.7 / +0.8). TLT same shape (+9.4 / −0.8; +1.6 / +9.0; +7.7 / +12.7). The first chunk of the bid
+arrives overnight into the 3rd-last session, so **enter at the close of the 4th-last session (MOC), not the next open**
+— waiting for the open gives up ~20% of the window. Exit at the last day's close. Not registered.
