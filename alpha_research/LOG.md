@@ -636,3 +636,8 @@ QQQ −0.4bp — the documented intraday momentum is absent recently (consistent
 finding and our 121).
 213 −sign(prior month SPY − AGG) over the first 3 sessions of the new month: −1.7 / +1.7 (sign flips). Dead — the
 rebalancing footprint is on the month's LAST day (013), not the first days after. Registry: 316.
+
+## 219 — Weekend option-decay mechanics in VIX  ·  2026-11-20
+Spot ^VIX mean change by weekday 2000-22: Mon +2.10%, Tue +0.13, Wed −0.28, Thu +0.18, Fri −0.72 — strong calendar
+mechanics in the (non-tradable) index. Tradable VIXY: short Fridays +1.2 / +0.4; long Mondays −0.7 / −0.7. Futures
+already price the weekend pattern. Dead. Registry: 318.

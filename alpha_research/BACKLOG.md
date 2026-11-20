@@ -63,6 +63,9 @@
 - [x] 213 Target-date-fund contrarian flows (Parker-Schoar-Sun, JF 2023): TDFs rebalance after equity moves; monthly signal =
       −sign(SPY 1-month return − AGG 1-month return) applied over the first 3 sessions of the next month (TDF rebalancing
       lag) — distinct from 013's last-day window.
+- [x] 219 VIX weekend mechanics — spot only, not tradable via VIXY.
+- [ ] 220 Options weekend theta via real prices: CBOE PUT/WPUT index daily returns by weekday — do put-writers earn the
+      weekend decay on Fridays (close Thu->close Fri) or Mondays? Weekday-of-exposure timing value vs always-on.
 - [ ] 183 Retry OpenAlex/Semantic Scholar later (rate limits) for flow papers; Crossref with targeted titles.: web-fetch NBER working-paper search pages (nber.org/papers?q=...) for 'rebalancing',
       'price pressure', 'flows' — empirical asset-pricing papers with daily-testable rules.
 - [x] 179 Month-end rule applied to QQQ-vs-TLT and IWM-vs-TLT pairs with the vol filter (168) — robustness only if cheap.
