@@ -146,6 +146,28 @@ class Config:
         return self.mode == "live" and os.environ.get("MET_LIVE_CONFIRM", "") == self.ib.account
 
 
+def _coerce(cur, v, name):
+    if isinstance(cur, bool):
+        if not isinstance(v, bool):
+            raise ConfigError(f"{name} must be true/false, got {v!r}")
+        return v
+    if isinstance(cur, int):
+        if isinstance(v, bool) or not (isinstance(v, int) or (isinstance(v, float) and v.is_integer())):
+            raise ConfigError(f"{name} must be an integer, got {v!r}")
+        return int(v)
+    if isinstance(cur, float):
+        if isinstance(v, bool) or not isinstance(v, (int, float)):
+            raise ConfigError(f"{name} must be a number, got {v!r}")
+        return float(v)
+    if isinstance(cur, list):
+        if not isinstance(v, list):
+            raise ConfigError(f"{name} must be a list")
+        return v
+    if isinstance(cur, str):
+        return str(v)
+    return v
+
+
 def _merge(dc, data: dict, path=""):
     for k, v in (data or {}).items():
         names = {f.name: f for f in fields(dc)}
@@ -157,7 +179,7 @@ def _merge(dc, data: dict, path=""):
                 raise ConfigError(f"{path}{k} must be a mapping")
             _merge(cur, v, f"{path}{k}.")
         else:
-            setattr(dc, k, type(cur)(v) if cur is not None and not isinstance(cur, list) else v)
+            setattr(dc, k, _coerce(cur, v, f"{path}{k}"))
     return dc
 
 
@@ -170,7 +192,7 @@ def load_config(path: str | os.PathLike | None, require_account: bool = True) ->
         base = Path(path).resolve().parent
     m = cfg.monitoring                     # relative dirs resolve against the config file's folder
     for k in ("state_dir", "report_dir", "log_dir"):
-        v = Path(getattr(m, k))
+        v = Path(getattr(m, k)).expanduser()
         setattr(m, k, str(v if v.is_absolute() else (base / v).resolve()))
     if os.environ.get("MET_IB_HOST"):
         cfg.ib.host = os.environ["MET_IB_HOST"]

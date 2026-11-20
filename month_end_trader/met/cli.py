@@ -186,7 +186,15 @@ def main(argv=None):
                 continue
             if not a.yes and input(f"flatten {pos:+g} {c.local_symbol}? [y/N] ") != "y":
                 return 1
-            ex.flatten(dt.date.fromisoformat(d), st, reason="manual flatten")
+            if st.owned == 0:
+                print("  the bot does not own this position; close it yourself in TWS if intended"); continue
+            if st.phase != "EXIT_SUBMITTED":
+                st.update(ex.ts(), "EXIT_SUBMITTED", note="manual flatten", exit_reason="manual flatten")
+            for _ in range(6):
+                st.data.pop("next_exit_try", None)
+                if ex.flatten(dt.date.fromisoformat(d), st, reason="manual flatten"):
+                    break
+                broker.sleep(5)
         print("done. Broker futures positions:", broker.all_future_positions(cfg.strategy.instrument)); return 0
 
     ap.error(f"unknown command {a.cmd}")

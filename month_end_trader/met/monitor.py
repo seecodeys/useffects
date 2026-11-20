@@ -81,9 +81,9 @@ def sprt(x_bp, h1_bp, sd_bp, alpha, beta, winsor_sd=2.0):
     return L, path, A, B, decided
 
 
-def size_multiplier(L, A, B, decided):
-    if decided == "edge dead" or L <= B:
-        return 0.0, "edge dead (SPRT lower boundary): stop"
+def size_multiplier(L, A, B, decided, was_dead=False):
+    if decided == "edge dead" or L <= B or (was_dead and L <= B / 2):
+        return 0.0, "edge dead (SPRT lower boundary; stays stopped until the score recovers above half the bound)"
     if L <= B / 2:
         return 0.5, "weakening (SPRT past half the lower boundary): half size"
     if decided == "edge alive" or L >= A:
@@ -172,7 +172,14 @@ def run_report(cfg: Config, asof: dt.date | None = None, spy=None, tlt=None, wri
     start = pd.Timestamp(m.start + "-01").date()
     live_start = led[led.index >= start]
     L, path, A, B, decided = sprt(live_start["paper_bp"].values, m.edge_h1_bp, m.sd_bp, m.sprt_alpha, m.sprt_beta)
-    mult, status = size_multiplier(L, A, B, decided)
+    prev = Path(m.state_dir) / "monitor.json"
+    was_dead = False
+    if prev.exists():
+        try:
+            was_dead = json.loads(prev.read_text()).get("size_multiplier", 1.0) == 0.0
+        except Exception:
+            was_dead = True
+    mult, status = size_multiplier(L, A, B, decided, was_dead)
     L23, *_ = sprt(led.loc[led.index >= dt.date(2023, 1, 1), "paper_bp"].values, m.edge_h1_bp, m.sd_bp, m.sprt_alpha, m.sprt_beta)
     b_all, t_all = slope(led)
     b_36, t_36 = slope(led.tail(36))

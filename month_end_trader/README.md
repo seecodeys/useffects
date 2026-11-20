@@ -49,7 +49,8 @@ The daemon is a single loop of idempotent `tick()`s over the state saved in `sta
 **During and after the trade:**
 - No entry later than open + 90 s.
 - Partial fills: only the filled quantity is exited.
-- Exit retried until flat.
+- Exits close only the quantity the bot owns (its entry fills minus its exit fills), and never more than the broker shows in that direction, so a stale position read cannot reverse the position.
+- Exit retried until flat with backoff (5 s up to 5 min), no orders while CME is closed, and one MANUAL INTERVENTION alert after 8 failed rounds.
 - Disaster stop: flatten early if the overlay loses 6% of equity, about a 3% SPY move at 2x. Set it to 0 to trade exactly like the backtest.
 - Kill switch during the trade flattens immediately.
 - Position mismatch alerts.

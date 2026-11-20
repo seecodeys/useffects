@@ -58,6 +58,10 @@ class FakeBroker(Broker):
         self.late_fill_next = 0           # next N orders report Timeout/0 filled but DO fill (IB cancel race)
         self.pos_glitch_reads = 0         # next N positions() calls omit the futures position (stale cache)
         self.account_reported = None      # account id the broker reports (default: self.account)
+        self.stuck_working = 0            # working_orders() result (orders stuck at the broker)
+        self.cancel_clears_stuck = True
+        self.stale_after_fill = 0         # after the next fill, N positions() reads still show the pre-fill qty
+        self._stale_left, self._stale_pos = 0, 0
         self.expiries = [_third_friday(y, m) for y in range(1993, 2041) for m in (3, 6, 9, 12)]
         self.commission = 0.62
         self._ids = itertools.count(1)
@@ -129,9 +133,12 @@ class FakeBroker(Broker):
             self.pos_glitch_reads -= 1
         if self.core_shares:
             out.append(Position("SPY", "STK", self.core_shares, "SPY", self.core_shares * self.spy_price))
-        if self.fut_pos and not glitch:
-            out.append(Position("MES", "FUT", self.fut_pos, self._local(self._front(self.clock.now().date())),
-                                self.fut_pos * self.fut_price_now() * self.multiplier))
+        shown = self.fut_pos
+        if self._stale_left > 0:
+            self._stale_left -= 1; shown = self._stale_pos
+        if shown and not glitch:
+            out.append(Position("MES", "FUT", shown, self._local(self._front(self.clock.now().date())),
+                                shown * self.fut_price_now() * self.multiplier))
         return out
 
     def _front(self, min_expiry):
@@ -150,7 +157,13 @@ class FakeBroker(Broker):
         return FutureContract(symbol, expiry, multiplier, local_symbol, con_id)
 
     def working_orders(self, ref_prefix="MET-"):
-        return 0
+        return self.stuck_working
+
+    def cancel_working(self, ref_prefix="MET-"):
+        n = self.stuck_working
+        if self.cancel_clears_stuck:
+            self.stuck_working = 0
+        return n
 
     def what_if(self, contract, action, qty):
         self._need()
@@ -173,6 +186,8 @@ class FakeBroker(Broker):
         fill = qty if self.partial_next is None else min(self.partial_next, qty)
         self.partial_next = None
         sgn = 1 if action == "BUY" else -1
+        if self.stale_after_fill:
+            self._stale_pos, self._stale_left, self.stale_after_fill = self.fut_pos, self.stale_after_fill, 0
         px = self.fut_price_now() + sgn * 0.25 * self.slippage_ticks
         self.fut_pos += sgn * fill
         self.fut_cost += sgn * fill * px

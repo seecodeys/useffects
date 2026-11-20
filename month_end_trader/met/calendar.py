@@ -21,7 +21,7 @@ def _cal():
     if _CAL["day"] != today:
         import os
         extra = [d for d in os.environ.get("MET_EXTRA_CLOSURES", "").split(",") if d.strip()]
-        c = xc.get_calendar("XNYS", start="1990-01-01", end=str(today.replace(year=today.year + 5)))
+        c = xc.get_calendar("XNYS", start="1990-01-01", end=str(dt.date(today.year + 5, 12, 31)))
         if extra:
             c = _with_closures(c, extra)
         _CAL.update(day=today, cal=c)

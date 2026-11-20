@@ -231,6 +231,17 @@ class IBKRBroker(Broker):
         raw = Future(conId=int(con_id), exchange=exchange)       # conId alone identifies it; extra fields risk 200/478
         return FutureContract(symbol, expiry, float(multiplier), local_symbol, int(con_id), raw=raw)
 
+    def cancel_working(self, ref_prefix="MET-"):
+        n = 0
+        for t in self.open_orders(ref_prefix):
+            try:
+                self.ib.cancelOrder(t.order); n += 1
+            except Exception as e:
+                log.error("cancel %s failed: %r", t.order.orderRef, e)
+        if n:
+            self.ib.sleep(1)
+        return n
+
     def working_orders(self, ref_prefix="MET-"):
         if not self.ib.isConnected():
             return 0

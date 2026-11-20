@@ -51,7 +51,7 @@ def test_position_survives_midnight(env):
     b.reject_next = 0
     run_until(ex, clock, dt.datetime(2025, 10, 1, 1, 0))
     assert b.fut_pos == 0 and st(cfg).phase == "FLAT" and st(cfg).get("reconciled")
-    assert any("unfinished" in t for t in crit(alerts))
+    assert any("still open after its trade day" in t for t in crit(alerts))
 
 
 def test_slow_preflight_no_late_entry(env):
@@ -193,3 +193,101 @@ def test_weekly_status_once_per_monday(env):
     assert len(weekly) == 1
     body = [body for l, t, body in alerts if t.startswith("Weekly status")][0]
     assert "next trade date 2025-09-30" in body and "provisional signal through 2025-09-19" in body
+
+
+
+# ---------------------------------------------------------------- review round 2 (executor/state)
+def test_stale_position_after_exit_fill_does_not_reverse(env):
+    cfg, clock, b, ex, alerts = env()
+    run_until(ex, clock, dt.datetime(2025, 9, 30, 15, 0))
+    b.stale_after_fill = 5
+    run_until(ex, clock, dt.datetime(2025, 9, 30, 19, 0))
+    assert b.fut_pos == 0 and [o["action"] for o in b.orders] == ["BUY", "SELL"]
+
+
+def test_rejected_exits_are_rate_limited(env):
+    cfg, clock, b, ex, alerts = env()
+    run_until(ex, clock, dt.datetime(2025, 9, 30, 15, 0))
+    b.reject_next = 10_000
+    run_until(ex, clock, dt.datetime(2025, 9, 30, 19, 59))
+    sells = sum(o["action"] == "SELL" for o in b.orders)
+    assert sells <= 70, sells                       # ~4h at <=1 per 5 min after backoff, not thousands
+    assert sum("MANUAL INTERVENTION" in t for t in crit(alerts)) == 1
+
+
+def test_no_orders_while_futures_closed(env):
+    cfg, clock, b, ex, alerts = env(dt.datetime(2025, 10, 30, 8, 0))     # T = Fri 31 Oct 2025
+    run_until(ex, clock, dt.datetime(2025, 10, 31, 15, 0))
+    b.reject_next = 10_000
+    run_until(ex, clock, dt.datetime(2025, 11, 1, 12, 0))               # Saturday
+    n = len(b.orders)
+    run_until(ex, clock, dt.datetime(2025, 11, 2, 17, 0))               # still Sunday before 18:00
+    assert len(b.orders) == n
+    b.reject_next = 0
+    run_until(ex, clock, dt.datetime(2025, 11, 2, 19, 0))               # CME reopens 18:00 Sunday
+    assert b.fut_pos == 0
+
+
+def test_reconcile_leaves_user_position_alone_after_flat(env):
+    cfg, clock, b, ex, alerts = env()
+    run_until(ex, clock, dt.datetime(2025, 9, 30, 16, 2))
+    assert st(cfg).phase == "FLAT"
+    c = b.front_future("MES", "CME", T + dt.timedelta(days=3))
+    b.market_order(c, "BUY", 2, "user", 5)                               # the user's own trade
+    run_until(ex, clock, dt.datetime(2025, 10, 2, 12, 0))
+    assert b.fut_pos == 2 and st(cfg).get("reconciled")
+
+
+def test_error_state_does_not_flatten_user_position(env):
+    cfg, clock, b, ex, alerts = env()
+    b.reject_next = 1
+    run_until(ex, clock, dt.datetime(2025, 9, 30, 11, 0))
+    assert st(cfg).phase == "ERROR"
+    c = b.front_future("MES", "CME", T + dt.timedelta(days=3))
+    b.market_order(c, "SELL", 3, "user", 5)
+    run_until(ex, clock, dt.datetime(2025, 10, 1, 12, 0))
+    assert b.fut_pos == -3
+
+
+def test_stuck_working_orders_cancelled_then_exit(env):
+    cfg, clock, b, ex, alerts = env()
+    run_until(ex, clock, dt.datetime(2025, 9, 30, 15, 0))
+    b.stuck_working = 1
+    run_until(ex, clock, dt.datetime(2025, 9, 30, 19, 0))
+    assert b.fut_pos == 0 and st(cfg).phase == "FLAT"
+
+
+def test_entry_order_still_working_stays_submitted(env):
+    cfg, clock, b, ex, alerts = env()
+    b.late_fill_next = 1; b.stuck_working = 1; b.cancel_clears_stuck = False
+    run_until(ex, clock, dt.datetime(2025, 9, 30, 9, 33))
+    assert st(cfg).phase == "ENTRY_SUBMITTED"
+    b.stuck_working = 0
+    run_until(ex, clock, dt.datetime(2025, 9, 30, 19, 0))
+    assert st(cfg).phase == "FLAT" and b.fut_pos == 0
+
+
+def test_feb29_calendar():
+    import met.calendar as c
+    assert c.last_session_of_month(2028, 2) == dt.date(2028, 2, 29)
+    assert c.next_trade_date(dt.date(2028, 2, 29)) == dt.date(2028, 2, 29)
+
+
+def test_config_strict_types(tmp_path):
+    from met.config import load_config, ConfigError
+    p = tmp_path / "c.yaml"
+    p.write_text("ib: {account: DU1}\nguardrails: {auto_derisk: 'false'}\n")
+    with pytest.raises(ConfigError):
+        load_config(p)
+    p.write_text("ib: {account: DU1}\nguardrails: {max_contracts: 40.5}\n")
+    with pytest.raises(ConfigError):
+        load_config(p)
+    p.write_text("ib: {account: DU1}\nmonitoring: {state_dir: ~/met_state_test}\n")
+    cfg = load_config(p)
+    assert "~" not in cfg.monitoring.state_dir
+
+
+def test_dead_is_sticky():
+    L, _, A, B, d = sprt([0.0] * 100 + [15.0], 20, 78, 0.1, 0.1)
+    assert L > B and size_multiplier(L, A, B, d, was_dead=True)[0] == 0.0
+    assert size_multiplier(L, A, B, d, was_dead=False)[0] == 0.5

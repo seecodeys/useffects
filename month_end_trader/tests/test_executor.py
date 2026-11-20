@@ -121,10 +121,10 @@ def test_exit_rejections_are_retried(env):
 def test_exit_keeps_retrying_until_flat(env):
     cfg, clock, b, ex, alerts = env()
     run_until(ex, clock, dt.datetime(2025, 9, 30, 15, 0))
-    b.reject_next = 7          # more than one exit round of 5 attempts
+    b.reject_next = 9          # more rounds than the manual-intervention threshold
     run_until(ex, clock, dt.datetime(2025, 9, 30, 19, 0))
     assert st(cfg).phase == "FLAT" and b.fut_pos == 0
-    assert any("STILL OPEN" in t for t in levels(alerts, "CRITICAL"))
+    assert any("MANUAL INTERVENTION" in t for t in levels(alerts, "CRITICAL"))
 
 
 def test_cannot_connect_means_no_late_entry(env):

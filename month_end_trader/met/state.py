@@ -51,6 +51,8 @@ class TradeState:
             self.data["phase"] = phase
         self.data.update(fields)
         self.data["events"].append({"ts": ts, "phase": self.data["phase"], "note": note})
+        if len(self.data["events"]) > 300:                       # keep the file small; the log has everything
+            self.data["events"] = self.data["events"][:50] + self.data["events"][-200:]
         self._write()
 
     def _write(self):
@@ -72,6 +74,14 @@ class TradeState:
             os.fsync(dfd)
         finally:
             os.close(dfd)
+
+    @property
+    def owned(self) -> int:
+        """Signed quantity the bot owns: its entry fills minus its exit fills (0 once FLAT)."""
+        if self.phase in ("ENTERED", "EXIT_SUBMITTED"):
+            d = int(self.data.get("direction", 0))
+            return d * max(int(self.data.get("entry_filled", 0)) - int(self.data.get("exit_filled", 0) or 0), 0)
+        return 0
 
     @property
     def open_quantity(self) -> int:

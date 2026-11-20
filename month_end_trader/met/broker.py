@@ -114,6 +114,10 @@ class Broker(abc.ABC):
     def working_orders(self, ref_prefix: str = "MET-") -> int:
         """Number of this bot's orders still working at the broker."""
 
+    def cancel_working(self, ref_prefix: str = "MET-") -> int:
+        """Cancel this bot's working orders; returns how many cancels were sent."""
+        return 0
+
     def future_position(self, contract: FutureContract) -> float:
         tot = 0.0
         for p in self.positions():

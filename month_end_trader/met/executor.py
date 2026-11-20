@@ -37,6 +37,16 @@ log = logging.getLogger("met.executor")
 COST_PER_CONTRACT_SIDE = {"MES": 0.62, "ES": 2.25}   # IBKR commission + exchange + regulatory (estimate)
 GUARD_QUIET_S = 20          # no guard work this close to the exit time
 PRICE_FAIL_ALERT = 4        # consecutive missing prices before a CRITICAL alert
+EXIT_BACKOFF_S = (5, 15, 30, 60, 120, 300)   # between failed exit rounds
+MANUAL_ALERT_AFTER = 8      # failed exit rounds before the 'manual intervention' alert
+
+
+def futures_open(now: dt.datetime) -> bool:
+    """CME equity futures: Sun 18:00 - Fri 17:00 ET, daily halt 17:00-18:00 (holiday schedules ignored)."""
+    t, wd = now.time(), now.weekday()
+    if wd == 5 or (wd == 4 and t >= dt.time(17)) or (wd == 6 and t < dt.time(18)):
+        return False
+    return not (dt.time(17) <= t < dt.time(18))
 
 
 class Executor:
@@ -49,6 +59,10 @@ class Executor:
         self._price_fail = 0
         self._last_mismatch_alert: dt.datetime | None = None
         self._kill_seen = False
+        self._unfinished_last: dict = {}
+        self._corrupt_alerted: set = set()
+        self._disc_alert: dt.datetime | None = None
+        self._today_corrupt_alert: dt.datetime | None = None
 
     # ------------------------------------------------------------------ helpers
     def ts(self) -> str:
@@ -75,10 +89,8 @@ class Executor:
             c = self.broker.contract_from(self.cfg.strategy.instrument, self.cfg.strategy.exchange, key,
                                           st.get("contract_local_symbol"), dt.date.fromisoformat(p["contract_expiry"]),
                                           p["multiplier"])
-        else:   # legacy state without con_id
-            d = dt.date.fromisoformat(st.trade_date)
-            c = self.broker.front_future(self.cfg.strategy.instrument, self.cfg.strategy.exchange,
-                                         d + dt.timedelta(days=self.cfg.strategy.roll_min_days))
+        else:
+            raise BrokerError(f"trade state {st.trade_date} has no contract id; refusing to guess a contract")
         self._contracts[key] = c
         return c
 
@@ -188,61 +200,65 @@ class Executor:
         lvl(f"{trade_date}: ENTERED {plan['action']} {filled}/{plan['qty']} {st.get('contract_local_symbol')} @ {avg:.2f}")
 
     def _resolve_entry(self, trade_date, st, avg, status, msg=""):
-        """Order outcome uncertain (timeout, cancel race, crash): the broker position decides."""
+        """Order outcome uncertain (timeout, cancel race, crash): the broker position decides, but only once
+        no entry order is still working (otherwise it could fill later and be orphaned)."""
         c = self.contract_for(st)
-        self.settle(30)
+        if not self.settle(30):
+            self.broker.cancel_working()
+            if not self.settle(15):
+                st.update(self.ts(), note="entry order still working; will re-check")
+                self.alert.critical(f"{trade_date}: entry order still working at the broker", "will re-check every tick")
+                return
         pos = self.broker_pos(c)
         d = st.get("direction")
         if pos != 0 and (pos > 0) == (d > 0):
+            q = int(min(abs(pos), st.get("qty_planned") or abs(pos)))
             if avg is None:
-                try:
-                    avg = self.broker.price(c)
-                except BrokerError:
-                    avg = st.get("plan")["ref_price"]
+                avg = self._try_price(c) or st.get("plan")["ref_price"]
             self.alert.warn(f"{trade_date}: entry resolved from broker position {pos:+g} ({status})")
-            self._record_entry(trade_date, st, int(abs(pos)), avg, f"Resolved-{status}", msg)
+            self._record_entry(trade_date, st, q, avg, f"Resolved-{status}", msg)
         elif pos == 0:
             st.update(self.ts(), "ERROR", note=f"entry not filled: {status} {msg}", entry_status=status)
             self.alert.critical(f"{trade_date}: ENTRY FAILED ({status})", msg)
         else:
             st.update(self.ts(), "ERROR", note=f"wrong-side position {pos} after entry", entry_status=status)
-            self.alert.critical(f"{trade_date}: position {pos:+g} has the wrong sign after entry; flattening")
-            self.flatten(trade_date, st, reason="wrong-side entry")
+            self.alert.critical(f"{trade_date}: unexpected wrong-side position after entry",
+                                f"broker {pos:+g}; the bot does not own it and will not touch it")
 
     def guard_while_holding(self, trade_date, st, exit_time):
         if (exit_time - self.broker.now()).total_seconds() <= GUARD_QUIET_S:
             return
         if kill_switch_active(self.cfg.monitoring.state_dir):
             self.alert.critical(f"{trade_date}: kill switch while holding -> flattening")
+            st.update(self.ts(), "EXIT_SUBMITTED", note="kill switch", exit_reason="kill switch")
             self.flatten(trade_date, st, reason="kill switch")
             return
         c = self.contract_for(st)
-        expected = st.open_quantity
+        owned = st.owned
         pos = self.broker_pos(c)
-        if pos != expected:
+        if pos != owned:
             if pos == 0 and self.confirmed_flat(c):
                 px = self._try_price(c)
                 st.update(self.ts(), "FLAT", note="position closed outside the bot", exit_reason="external",
-                          exit_filled=st.get("entry_filled"), exit_price=px)
+                          exit_filled=st.get("entry_filled"), exit_price=px, reconciled=True)
                 self.alert.critical(f"{trade_date}: position was closed outside the bot")
                 return
             now = self.broker.now()
             if pos != 0 and (not self._last_mismatch_alert or (now - self._last_mismatch_alert).total_seconds() > 600):
                 self._last_mismatch_alert = now
-                self.alert.critical(f"{trade_date}: broker position {pos:+g} differs from expected {expected:+d}; "
-                                    f"the exit will flatten the broker position")
+                self.alert.critical(f"{trade_date}: broker position differs from the bot's",
+                                    f"broker {pos:+g}, bot owns {owned:+d}; the exit closes only the bot's quantity")
         lim = self.cfg.guardrails.disaster_stop_pct_equity
-        if lim > 0 and pos != 0:
+        if lim > 0 and owned != 0:
             px = self._try_price(c)
-            if px is None:
-                return
             entry = st.get("entry_price") or 0
-            if entry <= 0:
+            if px is None or entry <= 0:
                 return
-            pnl = (px - entry) * c.multiplier * pos
+            pnl = (px - entry) * c.multiplier * owned
             eq = st.get("plan")["net_liq"]
             if pnl <= -lim * eq:
-                self.alert.critical(f"{trade_date}: DISASTER STOP: overlay P&L {pnl:,.0f} <= -{lim:.0%} of equity")
+                self.alert.critical(f"{trade_date}: DISASTER STOP", f"overlay P&L {pnl:,.0f} <= -{lim:.0%} of equity")
+                st.update(self.ts(), "EXIT_SUBMITTED", note="disaster stop", exit_reason="disaster stop")
                 self.flatten(trade_date, st, reason="disaster stop")
 
     def _try_price(self, c):
@@ -257,85 +273,143 @@ class Executor:
                 self.alert.critical("no market price for the open position: disaster stop is blind", str(e))
             return None
 
-    def flatten(self, trade_date, st, reason="scheduled"):
-        """Bring the broker position in the bot's contract to zero. Sized from the broker each attempt."""
+    def _backoff(self, st):
+        n = int(st.get("exit_failures", 0)) + 1
+        delay = EXIT_BACKOFF_S[min(n - 1, len(EXIT_BACKOFF_S) - 1)]
+        st.update(self.ts(), note=f"exit retry in {delay}s", exit_failures=n,
+                  next_exit_try=(self.broker.now() + dt.timedelta(seconds=delay)).isoformat())
+        if n == MANUAL_ALERT_AFTER:
+            self.alert.critical(f"{st.trade_date}: EXIT FAILING - MANUAL INTERVENTION NEEDED",
+                                f"{n} failed exit rounds; the bot keeps retrying every {EXIT_BACKOFF_S[-1]}s. "
+                                f"Close {st.get('contract_local_symbol')} {st.owned:+d} in TWS and then run `met status`.")
+
+    def flatten(self, trade_date, st, reason="scheduled") -> bool:
+        """One exit round: close the quantity the bot OWNS (never more than the broker shows in that direction).
+        Rounds are rate-limited with backoff; returns True when the bot owns nothing any more."""
         c = self.contract_for(st)
-        for attempt in range(1, 6):
-            if not self.settle():
-                self.alert.critical(f"{trade_date}: earlier orders still working; waiting before exit attempt {attempt}")
-                continue
-            pos = self.broker_pos(c)
-            if pos == 0:
-                if self.confirmed_flat(c):
-                    break
-                continue
-            action = "SELL" if pos > 0 else "BUY"
-            qty = int(abs(pos))
-            st.update(self.ts(), "EXIT_SUBMITTED", note=f"{reason}: {action} {qty} (attempt {attempt})",
-                      exit_reason=st.get("exit_reason") or reason)
-            r = self.broker.market_order(c, action, qty, ref=f"MET-{trade_date}-exit{attempt}",
-                                         timeout_s=self.cfg.strategy.fill_timeout_s)
-            if r.filled > 0 and r.avg_price > 0:
-                pf, pp = st.get("exit_filled", 0) or 0, st.get("exit_price") or 0.0
-                tot = pf + r.filled
-                st.update(self.ts(), note=f"exit fill {r.filled}@{r.avg_price}", exit_filled=tot,
-                          exit_price=(pp * pf + r.avg_price * r.filled) / tot)
-            if r.status != "Filled":
-                self.alert.critical(f"{trade_date}: exit attempt {attempt} {r.status} ({r.filled}/{qty})", r.message)
-                self.broker.sleep(3)
-        else:
-            pos = self.broker_pos(c) if self.broker.is_connected() else None
-            self.alert.critical(f"{trade_date}: STILL OPEN after 5 exit attempts (broker {pos}). Will keep retrying.")
+        now = self.broker.now()
+        nxt = st.get("next_exit_try")
+        if nxt and now < dt.datetime.fromisoformat(nxt):
             return False
-        self._finalise(trade_date, st)
-        return True
+        if not futures_open(now):
+            if not st.get("closed_market_alerted"):
+                self.alert.critical(f"{trade_date}: futures market closed with an open position",
+                                    "will exit when CME reopens")
+                st.update(self.ts(), note="market closed", closed_market_alerted=True)
+            return False
+        if not self.settle(10):
+            self.broker.cancel_working()
+            if not self.settle(10):
+                self.alert.critical(f"{trade_date}: bot orders stuck working at the broker", "cancel requested")
+                self._backoff(st)
+                return False
+        owned = st.owned
+        if owned == 0:
+            self._finalise(trade_date, st)
+            return True
+        pos = self.broker_pos(c)
+        if pos == 0 or (pos > 0) != (owned > 0):
+            if pos == 0 and self.confirmed_flat(c):
+                px = self._try_price(c)
+                st.update(self.ts(), note="broker flat: exit fill not reported (timeout/cancel race)",
+                          exit_filled=st.get("entry_filled"),
+                          exit_price=st.get("exit_price") or px)
+                self._finalise(trade_date, st)
+                return True
+            self.alert.critical(f"{trade_date}: broker position disagrees with the bot",
+                                f"broker {pos:+g}, bot owns {owned:+d}; not sending an order")
+            self._backoff(st)
+            return False
+        qty = int(min(abs(owned), abs(pos)))
+        action = "SELL" if owned > 0 else "BUY"
+        n = int(st.get("exit_orders", 0)) + 1
+        st.update(self.ts(), "EXIT_SUBMITTED", note=f"{reason}: {action} {qty}", exit_reason=st.get("exit_reason") or reason,
+                  exit_orders=n)
+        r = self.broker.market_order(c, action, qty, ref=f"MET-{trade_date}-exit{n}",
+                                     timeout_s=self.cfg.strategy.fill_timeout_s)
+        if r.filled > 0:
+            px = r.avg_price if r.avg_price > 0 else (self._try_price(c) or 0.0)
+            pf, pp = st.get("exit_filled", 0) or 0, st.get("exit_price") or 0.0
+            tot = pf + r.filled
+            st.update(self.ts(), note=f"exit fill {r.filled}@{px}", exit_filled=tot,
+                      exit_price=(pp * pf + px * r.filled) / tot if px else st.get("exit_price"))
+            # let the broker's position catch up before anything else reads it
+            target = pos - (r.filled if pos > 0 else -r.filled)
+            for _ in range(10):
+                if self.broker_pos(c) == target:
+                    break
+                self.broker.sleep(1)
+        if st.owned == 0:
+            self._finalise(trade_date, st)
+            return True
+        self.alert.critical(f"{trade_date}: exit incomplete", f"{r.status}: {r.filled}/{qty} filled. {r.message}")
+        self._backoff(st)
+        return False
 
     def _finalise(self, trade_date, st):
         c = self.contract_for(st)
         q, d = st.get("entry_filled") or 0, st.get("direction") or 0
         ep, xp = st.get("entry_price"), st.get("exit_price")
+        extra = {}
         if q and ep and xp and ep > 0 and xp > 0:
             gross = d * (xp - ep) * c.multiplier * q
             costs = 2 * q * COST_PER_CONTRACT_SIDE.get(self.cfg.strategy.instrument, 0.62)
             eq = st.get("plan")["net_liq"]
-            st.update(self.ts(), "FLAT", note="flat", gross_pnl=round(gross, 2), est_costs=round(costs, 2),
-                      net_pnl=round(gross - costs, 2), pnl_pct_equity=100 * (gross - costs) / eq,
-                      trade_bp=1e4 * d * (xp / ep - 1))
-            self.alert.info(f"{trade_date}: FLAT. Net P&L {gross - costs:+,.0f} ({100 * (gross - costs) / eq:+.2f}% of equity)",
-                            f"entry {ep:.2f} exit {xp:.2f}, {q} contracts, {st.get('trade_bp'):+.1f}bp on the underlying, "
+            extra = dict(gross_pnl=round(gross, 2), est_costs=round(costs, 2), net_pnl=round(gross - costs, 2),
+                         pnl_pct_equity=100 * (gross - costs) / eq, trade_bp=1e4 * d * (xp / ep - 1))
+        st.update(self.ts(), "FLAT", note="flat", next_exit_try=None, **extra)
+        if extra:
+            self.alert.info(f"{trade_date}: FLAT. Net P&L {extra['net_pnl']:+,.0f} ({extra['pnl_pct_equity']:+.2f}% of equity)",
+                            f"entry {ep:.2f} exit {xp:.2f}, {q} contracts, {extra['trade_bp']:+.1f}bp on the underlying, "
                             f"reason: {st.get('exit_reason')}")
-        else:
-            st.update(self.ts(), "FLAT", note="flat (P&L unknown: missing fill prices)")
+        elif q:
             self.alert.warn(f"{trade_date}: FLAT, but P&L could not be computed (missing fill prices)")
 
     def reconcile(self, trade_date, st):
+        """After the close: the bot must own nothing. It never closes anything beyond what it owns; a position
+        it does not own is only reported."""
         if st.get("reconciled"):
             return
-        if st.phase in ACTIVE or st.phase == "FLAT":
-            if st.get("contract_con_id") or st.get("plan"):
-                c = self.contract_for(st)
-                pos = self.broker_pos(c)
-                if pos != 0 or self.broker.working_orders() > 0:
-                    self.alert.critical(f"{trade_date}: RECONCILE: broker shows {pos:+g} {c.local_symbol} "
-                                        f"(state {st.phase}); flattening")
-                    if not self.flatten(trade_date, st, reason=st.get("exit_reason") or "reconcile"):
-                        return
+        if st.owned != 0:
+            if st.phase != "EXIT_SUBMITTED":
+                st.update(self.ts(), "EXIT_SUBMITTED", note="reconcile: still owned", exit_reason=st.get("exit_reason") or "reconcile")
+            self.alert.critical(f"{trade_date}: RECONCILE: bot still owns {st.owned:+d}", "exit retries continue")
+            return
+        if st.get("contract_con_id") and st.phase in ("FLAT", "ERROR", "EXIT_SUBMITTED"):
+            c = self.contract_for(st)
+            pos = self.broker_pos(c)
+            if pos != 0:
+                self.alert.warn(f"{trade_date}: {c.local_symbol} {pos:+g} open at the broker, not owned by the bot",
+                                "left untouched")
         st.update(self.ts(), note="reconciled", reconciled=True)
 
     def drive_unfinished(self, today: dt.date):
-        """Any trade state from an earlier date that may still own a position is flattened now."""
+        """Earlier-dated trades the bot may still own are driven to flat (rate-limited; never blocks today)."""
+        now = self.broker.now()
         for d in unfinished(self.cfg.monitoring.state_dir):
             if d >= str(today):
                 continue
+            last = self._unfinished_last.get(d)
+            if last and (now - last).total_seconds() < 300:
+                continue
+            self._unfinished_last[d] = now
             try:
                 st = TradeState(self.cfg.monitoring.state_dir, d)
+                if st.owned != 0:
+                    self.alert.critical(f"{d}: trade still open after its trade day", f"bot owns {st.owned:+d}; exiting")
+                    if st.phase != "EXIT_SUBMITTED":
+                        st.update(self.ts(), "EXIT_SUBMITTED", note="overnight", exit_reason=st.get("exit_reason") or "overnight")
+                    st.data.pop("next_exit_try", None)
+                    self.flatten(dt.date.fromisoformat(d), st, reason="overnight")
+                else:
+                    self.reconcile(dt.date.fromisoformat(d), st)
             except StateCorrupt as e:
-                self.alert.critical(f"state file for {d} is corrupt", f"{e}. Check the broker manually; "
-                                    f"MES positions: {self.broker.all_future_positions(self.cfg.strategy.instrument)}")
-                continue
-            if st.phase in ACTIVE:
-                self.alert.critical(f"{d}: trade still unfinished on {today}; flattening now")
-            self.reconcile(dt.date.fromisoformat(d), st)
+                key = (d, today)
+                if key not in self._corrupt_alerted:
+                    self._corrupt_alerted.add(key)
+                    self.alert.critical(f"state file for {d} is corrupt", f"{e}. Check the broker manually.")
+            except Exception as e:
+                log.error("drive_unfinished %s: %r", d, e)
 
     def weekly_status(self, now: dt.datetime, T: dt.date):
         """Monday 08:00 ET: proof of life with the next trade date and the provisional signal."""
@@ -406,9 +480,12 @@ class Executor:
             self.alert.warn("kill switch is ON (no new trades; open trades are flattened)")
         self._kill_seen = k
 
-        if self.broker.is_connected():
-            self.drive_unfinished(today)
         self.weekly_status(now, T)
+        if not self.broker.is_connected() and unfinished(self.cfg.monitoring.state_dir):
+            if not self._disc_alert or (now - self._disc_alert).total_seconds() > 1800:
+                self._disc_alert = now
+                self.alert.critical("disconnected while a trade may still be open",
+                                    ", ".join(unfinished(self.cfg.monitoring.state_dir)))
 
         prev = cal.previous_session(T)
         _, prev_close = cal.session_open_close(prev)
@@ -419,7 +496,13 @@ class Executor:
             nxt.append(ann_t)
 
         if today == T:
-            st = TradeState(self.cfg.monitoring.state_dir, str(T))
+            try:
+                st = TradeState(self.cfg.monitoring.state_dir, str(T))
+            except StateCorrupt as e:
+                if not self._today_corrupt_alert or (now - self._today_corrupt_alert).total_seconds() > 3600:
+                    self._today_corrupt_alert = now
+                    self.alert.critical(f"{T}: today's state file is corrupt", f"{e}. Check the broker manually.")
+                return now + dt.timedelta(seconds=60)
             if st.phase is None:
                 if now >= tm["entry_deadline"]:
                     st.update(self.ts(), "SKIPPED", note="started too late for preflight/entry")
@@ -450,12 +533,14 @@ class Executor:
                     if self.ensure_connected():
                         self.flatten(T, st, reason=st.get("exit_reason") or "scheduled close")
                     if st.phase != "FLAT":
-                        nxt.append(now + dt.timedelta(seconds=10))
+                        t_next = st.get("next_exit_try")
+                        nxt.append(dt.datetime.fromisoformat(t_next) if t_next else now + dt.timedelta(seconds=5))
                 else:
                     if self.ensure_connected():
                         self.guard_while_holding(T, st, tm["exit"])
                     nxt += [tm["exit"], now + dt.timedelta(seconds=self.cfg.guardrails.disaster_poll_s)]
-            if now >= tm["reconcile"] and st.phase not in (None, "PLANNED", "SKIPPED") and self.ensure_connected():
+            if now >= tm["reconcile"] and st.phase not in (None, "PLANNED", "SKIPPED", "EXIT_SUBMITTED") \
+                    and self.ensure_connected():
                 self.reconcile(T, st)
             elif now < tm["reconcile"]:
                 nxt.append(tm["reconcile"])
@@ -472,6 +557,9 @@ class Executor:
                     st.update(self.ts(), note=f"report failed {e!r}", reported=True)
             elif now < tm["report"]:
                 nxt.append(tm["report"])
+
+        if self.broker.is_connected():
+            self.drive_unfinished(today)           # after today's work, rate-limited, never raises
 
         if cal.is_session(today):
             _, c = cal.session_open_close(today)
