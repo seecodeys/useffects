@@ -206,3 +206,7 @@ experiments ran intraday and are unaffected).
 
 ## 022 — README.md write-up  ·  2026-11-20
 Summary of method, all verdicts, the 013 finding and caveats.
+
+## 025 — Jobs-report days (first Friday)  ·  2026-11-20
+4 variants. Gaps are ~20% larger on jobs days (news lands pre-open), but neither fading the gap (SPY t=−0.7/−0.3;
+QQQ −0.9/−1.6, i.e. slight continuation, not significant) nor a blanket long (−0.3/+1.3) works. **Dead.** Registry: 161.
