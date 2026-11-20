@@ -52,3 +52,5 @@ Branch: `claude/blissful-mccarthy-mt2shh`. Scheduled check-ins (4 hourly tasks, 
 - [x] Paper-test checklist for the user (PAPER_TEST.md) (exact commands for 30 Nov: check, validate-data, test-order, verify reqExecutions after a Gateway restart, MET-manual ref test)
 - [x] End-to-end 'paper rehearsal' script (met rehearse): replays 27-30 Nov 2026 with a synthetic path and prints the exact alert timeline
 - [ ] Sizing: floor rounding gives 1.78x on ~$120k (6 MES); consider nearest-contract rounding capped by max_leverage (ask user before changing behaviour)
+- [x] Test for `met resolve` CLI
+- [ ] Review round 7: fresh agent on rounds 5-6 code (executor flatten/resolve_entry/evening_watch, state.merge_fills, cli resolve) + PAPER_TEST.md accuracy

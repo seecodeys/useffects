@@ -591,3 +591,18 @@ def test_fa_master_account_rejected():
     c = Config(); c.ib.account = "F1234567"
     with pytest.raises(ConfigError):
         c.validate()
+
+
+def test_cli_resolve_records_manual_close(env, monkeypatch, tmp_path):
+    from met import cli
+    cfg, clock, b, ex, alerts = env()
+    run_until(ex, clock, dt.datetime(2025, 9, 30, 12, 0))
+    c = b.front_future("MES", "CME", T + dt.timedelta(days=3))
+    b.market_order(c, "SELL", 7, "TWS-manual", 5)              # closed outside the bot, no MET ref
+    (tmp_path / "c.yaml").write_text(f"ib: {{account: DU1234567}}\nmonitoring: {{state_dir: {cfg.monitoring.state_dir}, start: '2025-09'}}\n")
+    monkeypatch.setattr(cli, "_broker", lambda *a, **k: b)
+    rc = cli.main(["resolve", str(T), "--config", str(tmp_path / "c.yaml"), "--yes", "--price", "6640"])
+    s = st(cfg)
+    assert rc == 0 and s.phase == "FLAT" and s.get("reconciled") and s.get("pnl_estimated") and s.owned == 0
+    from met.state import unfinished
+    assert str(T) not in unfinished(cfg.monitoring.state_dir)
