@@ -784,3 +784,7 @@ IEF mean bp by session from month-end: last day +11.2, day −2 +6.8, day −3 +
 (all-day mean 1.5). Builds into the final session. Independent of the stock-bond gap: +6.7bp/session when stocks led vs
 +8.8 when they lagged — i.e. a mechanical index-extension / month-end portfolio bid, distinct from 013's equity
 rebalancing (which is why the two legs are uncorrelated in 279).
+
+## 276d — Bond bid in refunding vs other months (descriptive, 2002-22)  ·  2026-11-20
+Mean last-3-session sum: IEF +23.4bp (refunding months Feb/May/Aug/Nov, t=3.0, n=82) vs +23.1bp (others, t=4.4, n=163);
+TLT +43.7 vs +37.7bp. No meaningful difference — the bid is present every month, so no refunding filter.
