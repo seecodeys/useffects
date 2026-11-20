@@ -44,7 +44,7 @@ python -m met.cli test-order --config config.yaml
 - [ ] Both fills appear in TWS → Trades with Order Ref `TEST-buy` / `TEST-sell`.
 
 **Execution reports survive a Gateway restart.** This is what the bot's ownership depends on:
-- [ ] After the test order, restart IB Gateway (File → Restart, or `docker compose restart ib-gateway`).
+- [ ] After the test order, restart IB Gateway (File → Restart, or `docker compose -f deploy/docker-compose.yml restart ib-gateway`).
 - [ ] Run this; it should list the two TEST fills from today:
   ```bash
   python -c "from met.config import load_config; from met.ibkr import IBKRBroker; c=load_config('config.yaml'); b=IBKRBroker(c); b.connect(); print(b.executions('TEST-'))"
@@ -56,9 +56,13 @@ python -m met.cli test-order --config config.yaml
 ## B. Start the daemon (by Friday 27 Nov, 13:00 ET)
 
 ```bash
-sudo systemctl enable --now met   # or: docker compose -f deploy/docker-compose.yml up -d
+# systemd: the unit runs from /opt/month_end_trader as user `met` (see deploy/met.service). Install it first:
+sudo cp deploy/met.service /etc/systemd/system/ && sudo systemctl daemon-reload && sudo systemctl enable --now met
+# or Docker:
+docker compose -f deploy/docker-compose.yml up -d
 python -m met.cli status --config config.yaml
 ```
+**Important:** run every `met` command, especially `kill`, from the same folder and as the same user as the daemon (`/opt/month_end_trader`, user `met`), so they share the same `state/` folder. Otherwise the daemon won't see the kill switch.
 - [ ] The daemon is running.
 - [ ] `status` shows `next trade date 2026-11-30` and no unfinished trades.
 - [ ] The heartbeat ping (if configured) is green.
@@ -83,8 +87,9 @@ Verify in TWS after the close:
 
 - **Stop everything now:** `python -m met.cli kill`. The bot flattens what it owns and makes no new trades. Undo it with `unkill`.
 - **Close the bot's position yourself in TWS:** use Order Ref **`MET-2026-11-30-manual`**, so the bot sees the close.
-- **Closed it without the ref, or IB liquidated it:** stop the daemon, then run `python -m met.cli resolve 2026-11-30 --config config.yaml`.
-- **"Outcome UNKNOWN" / "cannot tell whether it is its own":** check TWS. If the bot's order filled, close it with the MET ref, or run `resolve`.
+- **Closed it without the ref, or IB liquidated it:** stop the daemon, then run `python -m met.cli resolve 2026-11-30 --price <your fill price> --config config.yaml`.
+- **"Outcome UNKNOWN" / "cannot tell whether it is its own":** check TWS. If the bot's order did fill, close it yourself in TWS. The bot will not touch a position it cannot prove is its own.
+- **"RESOLVE NEEDED" (the bot's fills say it holds something, the broker shows nothing):** do **not** place new orders. Stop the daemon and run `met resolve <date> --price <your fill price>`.
 - Logs are in `logs/met.log`, and the state is in `state/trade_2026-11-30.json`.
 
 ## Then

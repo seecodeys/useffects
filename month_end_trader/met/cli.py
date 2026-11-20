@@ -130,8 +130,8 @@ def main(argv=None):
         from .state import DaemonLock
         try:
             _lk = DaemonLock(cfg.monitoring.state_dir).acquire()
-        except RuntimeError:
-            print("the met daemon is running: stop it first (or use `met kill`, which makes the daemon flatten)")
+        except (RuntimeError, PermissionError):
+            print("the met daemon is running (or its state dir belongs to another user): stop it first (or use `met kill`, which makes the daemon flatten)")
             return 2
 
     # flatten/test-order/resolve hold the daemon lock, so they can use the daemon's clientId and see its orders
@@ -198,7 +198,8 @@ def main(argv=None):
         if st.get("fills") is None:
             print("no fills recorded for", a.date); return 2
         c = ex.contract_for(st)
-        ex.sync(st)
+        if not ex.sync(st):
+            print("cannot read executions from IB; refusing to record anything"); return 2
         pos = broker.future_position(c)
         print(f"{a.date}: state {st.phase}, bot's fills say {st.owned:+d}, broker shows {pos:+g} {c.local_symbol}")
         if st.owned == 0:
@@ -207,12 +208,14 @@ def main(argv=None):
         if pos != 0 and (pos > 0) == (st.owned > 0):
             print("the broker still shows a position in the bot's direction: use `met flatten` instead"); return 2
         px = a.price or (ex._try_price(c) or 0.0)
+        if not px or px <= 0:
+            print("no price available: pass --price <your actual close price>"); return 2
         if not a.yes and input(f"record a manual close of {-st.owned:+d} @ {px:.2f} (P&L ESTIMATED)? [y/N] ") != "y":
             return 1
         side = "SELL" if st.owned > 0 else "BUY"
         st.merge_fills([dict(exec_id=f"manual-{ex.ts()}", rev=0, ref=f"MET-{a.date}-manual", side=side,
                              qty=float(abs(st.owned)), price=float(px), time=ex.ts())])
-        st.update(ex.ts(), "EXIT_SUBMITTED", note="manual resolve", exit_reason="manual", entry_price_estimated=True)
+        st.update(ex.ts(), "EXIT_SUBMITTED", note="manual resolve", exit_reason="manual", exit_price_estimated=True)
         ex._finalise(dt.date.fromisoformat(a.date), st)
         st.update(ex.ts(), note="reconciled after manual resolve", reconciled=True, pnl_estimated=True)
         print("resolved:", st.phase, "net P&L (estimated)", st.get("net_pnl")); return 0
@@ -227,6 +230,8 @@ def main(argv=None):
         for d in sorted(dates):
             st = TradeState(cfg.monitoring.state_dir, d)
             c = ex.contract_for(st)
+            if not ex.sync(st):
+                print(f"{d}: cannot read executions from IB; not acting"); return 2
             pos = broker.future_position(c)
             print(f"{d}: state {st.phase}, broker {pos:+g} {c.local_symbol}")
             if pos == 0:

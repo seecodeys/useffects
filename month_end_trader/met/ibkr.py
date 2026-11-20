@@ -376,7 +376,8 @@ class IBKRBroker(Broker):
             trades = self._call("reqAllOpenOrders", self.ib.reqAllOpenOrders)
         except BrokerError:
             trades = self.ib.openTrades()
-        return [t for t in trades if not t.isDone() and (t.order.orderRef or "").startswith(ref_prefix)]
+        return [t for t in trades if not t.isDone() and (t.order.orderRef or "").startswith(ref_prefix)
+                and not (t.order.orderRef or "").endswith("-manual")]
 
     def daily_adjusted_closes(self, symbol, days=120):
         self._need()

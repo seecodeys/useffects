@@ -38,6 +38,9 @@ PERMANENT_PREFIXES = ("kill switch", "live mode requires", "connected account", 
                       "existing ", "decay monitor says stop", "|gap|", "signal gap is exactly zero",
                       "unfinished older trade", "contract multiplier", "position size rounds")
 COST_PER_CONTRACT_SIDE = {"MES": 0.62, "ES": 2.25}   # IBKR commission + exchange + regulatory (estimate)
+BOT_REF = "MET-"            # bot orders: MET-<date>-entry / -exitN (user '-manual' orders are excluded by the broker)
+RESET_EXIT = dict(next_exit_try=None, exit_failures=0, disagree_rounds=0, manual_alerted=False,
+                  closed_market_alerted=False, reversal_alerted=False)
 GUARD_QUIET_S = 45          # no guard work this close to the exit time
 PRICE_FAIL_ALERT = 4        # consecutive missing prices before a CRITICAL alert
 EXIT_BACKOFF_S = (5, 15, 30, 60, 120, 300)   # between failed exit rounds
@@ -140,9 +143,9 @@ class Executor:
     def settle(self, timeout_s=20):
         """Wait until none of the bot's orders are still working."""
         waited = 0
-        while self.broker.working_orders() > 0 and waited < timeout_s:
+        while self.broker.working_orders(BOT_REF) > 0 and waited < timeout_s:
             self.broker.sleep(1); waited += 1
-        return self.broker.working_orders() == 0
+        return self.broker.working_orders(BOT_REF) == 0
 
     def broker_pos(self, c) -> float:
         return self.broker.future_position(c)
@@ -256,6 +259,8 @@ class Executor:
         for i in range(tries):
             try:
                 ex = self.broker.executions(f"MET-{st.trade_date}-")
+                sym = st.get("contract_local_symbol")
+                ex = [e for e in ex if not sym or not e.get("local_symbol") or e["local_symbol"] == sym]
                 if st.trade_date == str(self.broker.now().date()) and st.get("fills"):
                     seen = {e["exec_id"] for e in ex}
                     missing = [k for k in st.get("fills") if k not in seen and not k.startswith("manual")]
@@ -280,7 +285,8 @@ class Executor:
     def resolve_entry(self, trade_date, st, final_status=None, msg=""):
         """Decide the entry outcome from executions. Stays ENTRY_SUBMITTED while undecided."""
         self.broker.sleep(1)
-        if self._last_reconnect and (self.broker.now() - self._last_reconnect).total_seconds() < 30:
+        final_status = final_status or st.get("entry_status")
+        if st.owned == 0 and self._last_reconnect and (self.broker.now() - self._last_reconnect).total_seconds() < 30:
             return                                        # executions may be incomplete right after a reconnect
         if not self.sync(st):
             return
@@ -296,7 +302,7 @@ class Executor:
             lvl(f"{trade_date}: ENTERED {plan['action']} {abs(owned)}/{plan['qty']} {st.get('contract_local_symbol')} "
                 f"@ {st.get('entry_price'):.2f}")
             return
-        if self.broker.working_orders() > 0:
+        if self.broker.working_orders(BOT_REF) > 0:
             sub = st.get("entry_submitted_at")
             if sub and (self.broker.now() - dt.datetime.fromisoformat(sub)).total_seconds() > 60:
                 self.broker.cancel_working()
@@ -304,8 +310,8 @@ class Executor:
         if expired and st.owned == 0:
             st.update(self.ts(), "ERROR", note="entry outcome unknown: executions expired", executions_expired=True)
             self.alert.critical(f"{trade_date}: entry outcome UNKNOWN (IB no longer reports that day's executions)",
-                                f"Check {st.get('contract_local_symbol')} in TWS. If the bot's entry filled, close it with "
-                                f"Order Ref MET-{trade_date}-manual, or run `met resolve {trade_date}`.")
+                                f"Check {st.get('contract_local_symbol')} in TWS. If the bot's entry filled, close it "
+                                f"yourself in TWS: the bot will not touch a position it cannot prove is its own.")
             return
         if final_status in (None, "Filled", "PartiallyFilled"):
             # broker said filled (or we restarted) but no executions yet: give the reports time
@@ -322,12 +328,14 @@ class Executor:
         if not self.sync(st):
             return
         if st.owned != 0:
-            past_exit = self.broker.now() >= exit_time
-            st.update(self.ts(), "EXIT_SUBMITTED" if past_exit else "ENTERED",
+            exited_before = bool(st.get("exit_orders")) or bool(st.get("exit_reason"))
+            reversed_ = (st.owned > 0) != (int(st.get("direction") or 0) > 0)
+            close_now = self.broker.now() >= exit_time or exited_before or reversed_
+            st.update(self.ts(), "EXIT_SUBMITTED" if close_now else "ENTERED",
                       note=f"late fill detected in executions: bot owns {st.owned:+d}", reconciled=False,
-                      exit_reason=("late fill" if past_exit else st.get("exit_reason")), next_exit_try=None)
+                      exit_reason=("late fill" if close_now else st.get("exit_reason")), **RESET_EXIT)
             self.alert.critical(f"{trade_date}: LATE FILL of the bot's own order: owns {st.owned:+d}",
-                                "closing it now" if past_exit else "guards and the scheduled exit now apply")
+                                "closing it now" if close_now else "guards and the scheduled exit now apply")
 
     def guard_while_holding(self, trade_date, st, exit_time):
         if (exit_time - self.broker.now()).total_seconds() <= GUARD_QUIET_S:
@@ -346,8 +354,13 @@ class Executor:
             return
         pos = self.broker_pos(c)
         if pos != owned:
+            self.broker.sleep(2)
+            pos = self.broker_pos(c)                      # a single stale read right after a fill is common
+        if pos != owned:
             now = self.broker.now()
-            if not self._last_mismatch_alert or (now - self._last_mismatch_alert).total_seconds() > 600:
+            gap = 3600 if st.get("mismatch_alerted") else 0
+            if not self._last_mismatch_alert or (now - self._last_mismatch_alert).total_seconds() > max(gap, 600):
+                st.update(self.ts(), note=f"mismatch broker {pos:+g} vs fills {owned:+d}", mismatch_alerted=True)
                 self._last_mismatch_alert = now
                 self.alert.critical(f"{trade_date}: broker position differs from the bot's fills",
                                     f"broker {pos:+g}, bot's executions {owned:+d}; the exit closes only the bot's quantity")
@@ -385,10 +398,16 @@ class Executor:
                   next_exit_try=(self.broker.now() + dt.timedelta(seconds=delay)).isoformat())
         if n == MAX_EXIT_ROUNDS and not st.get("manual_alerted"):
             st.update(self.ts(), note="manual alert", manual_alerted=True)
-            self.alert.critical(f"{st.trade_date}: EXIT FAILING - MANUAL INTERVENTION NEEDED",
-                                f"{n} failed exit rounds; retrying only once an hour now. Close "
-                                f"{st.get('contract_local_symbol')} {st.owned:+d} in TWS, or stop the daemon and run "
-                                f"`met flatten`.")
+            if st.get("disagree_rounds"):
+                self.alert.critical(f"{st.trade_date}: RESOLVE NEEDED - the bot's fills and the broker disagree",
+                                    f"bot's fills {st.owned:+d}, broker shows {st.get('last_broker_pos')}. Do NOT open new "
+                                    f"orders. If you closed it yourself, stop the daemon and run `met resolve {st.trade_date} "
+                                    f"--price <your fill price>`.")
+            else:
+                self.alert.critical(f"{st.trade_date}: EXIT FAILING - MANUAL INTERVENTION NEEDED",
+                                    f"{n} failed exit rounds; retrying only once an hour now. Close "
+                                    f"{st.get('contract_local_symbol')} {st.owned:+d} in TWS with Order Ref "
+                                    f"MET-{st.trade_date}-manual, or stop the daemon and run `met flatten`.")
 
     def flatten(self, trade_date, st, reason="scheduled") -> bool:
         """One exit round. Closes the quantity the bot's OWN EXECUTIONS say it holds, and only if the broker's
@@ -400,8 +419,8 @@ class Executor:
             return False
         if not futures_open(now):
             if not st.get("closed_market_alerted"):
-                self.alert.critical(f"{trade_date}: futures market closed with an open position",
-                                    "will exit when CME reopens")
+                what = "an unresolved trade (fills and broker disagree)" if st.get("disagree_rounds") else "an open position"
+                self.alert.critical(f"{trade_date}: futures market closed with {what}", "will retry when CME reopens")
                 st.update(self.ts(), note="market closed", closed_market_alerted=True)
             return False
         if not self.settle(10):
@@ -422,14 +441,17 @@ class Executor:
             self.alert.critical(f"{trade_date}: bot position REVERSED to {owned:+d} by a late fill", "closing it")
         pos = self.broker_pos(c)
         if pos != owned:                                  # disagreement: need two agreeing fresh reads
-            self.broker.sleep(3)
+            self.broker.sleep(1)
             pos2 = self.broker_pos(c)
-            if pos2 != pos:
+            if pos2 == owned:
+                pos = pos2                                # first read was stale
+            elif pos2 != pos:
                 self._backoff(st, quick=True)
                 return False
         if pos == 0 or (pos > 0) != (owned > 0):
             n_dis = int(st.get("disagree_rounds", 0)) + 1
-            st.update(self.ts(), note=f"fills {owned:+d} vs broker {pos:+g}", disagree_rounds=n_dis)
+            st.update(self.ts(), note=f"fills {owned:+d} vs broker {pos:+g}", disagree_rounds=n_dis,
+                      last_broker_pos=pos)
             if n_dis == 3:
                 self.alert.critical(f"{trade_date}: RESOLVE NEEDED - bot's fills say {owned:+d} but the broker shows {pos:+g}",
                                     f"If you closed it yourself (or IB liquidated it), run `met resolve {trade_date}` "
@@ -477,7 +499,8 @@ class Executor:
             ep, xp = st.get("entry_price"), st.get("exit_price")
             extra = dict(gross_pnl=round(gross, 2), est_costs=round(costs, 2), net_pnl=round(gross - costs, 2),
                          pnl_pct_equity=100 * (gross - costs) / eq,
-                         trade_bp=1e4 * d * (xp / ep - 1) if ep and xp else None)
+                         trade_bp=(1e4 * d * (xp / ep - 1) if ep and xp and not st.get("reversal_fills")
+                                   and int(st.get("exit_filled") or 0) == int(q) else None))
         st.update(self.ts(), "FLAT", note="flat", next_exit_try=None, **extra)
         if extra:
             self.alert.info(f"{trade_date}: FLAT. Net P&L {extra['net_pnl']:+,.0f} ({extra['pnl_pct_equity']:+.2f}% of equity)",
@@ -510,7 +533,7 @@ class Executor:
                 if st.get("executions_expired") or (st.phase == "ERROR" and self.broker.now().date() > dt.date.fromisoformat(st.trade_date)):
                     self.alert.critical(f"{trade_date}: {c.local_symbol} {pos:+g} open; the bot cannot tell whether it is its own",
                                         f"IB no longer reports that day's executions. Check TWS; if it is the bot's, close it "
-                                        f"(Order Ref MET-{trade_date}-manual) or run `met resolve {trade_date}`.")
+                                        f"yourself in TWS (the bot will not touch it).")
                 else:
                     self.alert.critical(f"{trade_date}: {c.local_symbol} {pos:+g} open at the broker, not from the bot's orders",
                                         "left untouched - check it")
@@ -527,7 +550,7 @@ class Executor:
         self._evening_last[st.trade_date] = now
         if self.sync(st) and st.owned != 0:
             st.update(self.ts(), "EXIT_SUBMITTED", note=f"late fill after reconcile: owns {st.owned:+d}",
-                      reconciled=False, exit_reason="late fill", next_exit_try=None)
+                      reconciled=False, exit_reason="late fill", **RESET_EXIT)
             self.alert.critical(f"{T}: LATE FILL after the close: bot owns {st.owned:+d}", "closing it")
 
     def drive_unfinished(self, today: dt.date):
@@ -550,7 +573,11 @@ class Executor:
                     la = self._unfinished_alert.get(d)
                     if not la or (now - la).total_seconds() > 3600:
                         self._unfinished_alert[d] = now
-                        self.alert.critical(f"{d}: trade still open after its trade day", f"bot owns {st.owned:+d}; exiting")
+                        if st.get("disagree_rounds"):
+                            self.alert.critical(f"{d}: unresolved trade (fills {st.owned:+d}, broker {st.get('last_broker_pos')})",
+                                                f"run `met resolve {d} --price <fill>` with the daemon stopped")
+                        else:
+                            self.alert.critical(f"{d}: trade still open after its trade day", f"bot owns {st.owned:+d}; exiting")
                     if st.phase != "EXIT_SUBMITTED":
                         st.update(self.ts(), "EXIT_SUBMITTED", note="overnight", exit_reason=st.get("exit_reason") or "overnight")
                     self.flatten(day, st, reason="overnight")

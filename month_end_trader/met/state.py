@@ -91,12 +91,18 @@ class TradeState:
         return new
 
     def _derive(self):
+        """entry = the bot's entry fills; exit = fills on the CLOSING side (reversal legs are excluded and flagged)."""
         fills = self.data.get("fills", {})
         ent = [f for f in fills.values() if f["ref"].endswith("-entry")]
-        ext = [f for f in fills.values() if not f["ref"].endswith("-entry")]
+        d = int(self.data.get("direction") or 0)
+        entry_side = "BUY" if d > 0 else "SELL" if d < 0 else (ent[0]["side"] if ent else "BUY")
+        others = [f for f in fills.values() if not f["ref"].endswith("-entry")]
+        ext = [f for f in others if f["side"] != entry_side]
+        rev = [f for f in others if f["side"] == entry_side]
         q = lambda fs: sum(f["qty"] for f in fs)
         vw = lambda fs: (sum(f["qty"] * f["price"] for f in fs) / q(fs)) if q(fs) else None
-        self.data.update(entry_filled=int(q(ent)), entry_price=vw(ent), exit_filled=int(q(ext)), exit_price=vw(ext))
+        self.data.update(entry_filled=int(q(ent)), entry_price=vw(ent), exit_filled=int(q(ext)), exit_price=vw(ext),
+                         reversal_fills=int(q(rev)))
 
     @property
     def owned(self) -> int:

@@ -606,3 +606,64 @@ def test_cli_resolve_records_manual_close(env, monkeypatch, tmp_path):
     assert rc == 0 and s.phase == "FLAT" and s.get("reconciled") and s.get("pnl_estimated") and s.owned == 0
     from met.state import unfinished
     assert str(T) not in unfinished(cfg.monitoring.state_dir)
+
+
+# ---------------------------------------------------------------- review round 7
+def test_reversal_after_flat_closed_immediately(env):
+    cfg, clock, b, ex, alerts = env()
+    run_until(ex, clock, dt.datetime(2025, 9, 30, 11, 0))
+    Path(cfg.monitoring.state_dir, "KILL").write_text("x")
+    b.fill_delay_next = (120, False)            # exit1 reported dead, fills 2 min later
+    run_until(ex, clock, dt.datetime(2025, 9, 30, 11, 1))
+    Path(cfg.monitoring.state_dir, "KILL").unlink()
+    run_until(ex, clock, dt.datetime(2025, 9, 30, 11, 15))
+    assert b.fut_pos == 0, b.fut_pos            # reversed -7 closed within minutes, not at 15:59:58
+    s = st(cfg)
+    assert s.get("trade_bp") is None            # reversal legs: not comparable with the paper result
+
+
+def test_single_stale_read_does_not_delay_exit_past_close(env):
+    cfg, clock, b, ex, alerts = env()
+    run_until(ex, clock, dt.datetime(2025, 9, 30, 15, 59, 57))
+    b.pos_glitch_reads = 1
+    run_until(ex, clock, dt.datetime(2025, 9, 30, 16, 5))
+    sell_t = [o["t"] for o in b.orders if o["action"] == "SELL"][0]
+    assert sell_t.time() < dt.time(16, 0, 0), sell_t
+
+
+def test_resolve_refuses_without_price_or_sync(env, monkeypatch, tmp_path):
+    from met import cli
+    cfg, clock, b, ex, alerts = env()
+    run_until(ex, clock, dt.datetime(2025, 9, 30, 12, 0))
+    c = b.front_future("MES", "CME", T + dt.timedelta(days=3))
+    b.market_order(c, "SELL", 7, "TWS-manual", 5)
+    (tmp_path / "c.yaml").write_text(f"ib: {{account: DU1234567}}\nmonitoring: {{state_dir: {cfg.monitoring.state_dir}, start: '2025-09'}}\n")
+    monkeypatch.setattr(cli, "_broker", lambda *a, **k: b)
+    b.price_unavailable = True
+    assert cli.main(["resolve", str(T), "--config", str(tmp_path / "c.yaml"), "--yes"]) == 2
+    b.price_unavailable = False
+    b.executions_fail = 10
+    assert cli.main(["resolve", str(T), "--config", str(tmp_path / "c.yaml"), "--yes", "--price", "6640"]) == 2
+    assert st(cfg).phase != "FLAT"
+
+
+def test_cli_flatten_syncs_before_ownership(env, monkeypatch, tmp_path):
+    from met import cli
+    cfg, clock, b, ex, alerts = env()
+    b.fill_delay_next = (20, False)            # entry reported dead, fills while the daemon is stopped
+    run_until(ex, clock, dt.datetime(2025, 9, 30, 9, 30, 10))
+    assert st(cfg).phase == "ERROR"
+    clock.advance(30)
+    (tmp_path / "c.yaml").write_text(f"ib: {{account: DU1234567}}\nmonitoring: {{state_dir: {cfg.monitoring.state_dir}, start: '2025-09'}}\n")
+    monkeypatch.setattr(cli, "_broker", lambda *a, **k: b)
+    cli.main(["flatten", "--config", str(tmp_path / "c.yaml"), "--yes"])
+    assert b.fut_pos == 0
+
+
+def test_reversal_fills_excluded_from_exit_vwap(tmp_path):
+    s = TradeState(str(tmp_path), "2025-09-30")
+    s.update("t", "ENTERED", direction=1)
+    s.merge_fills([dict(exec_id="1", rev=0, ref="MET-2025-09-30-entry", side="BUY", qty=7.0, price=100.0, time="t"),
+                   dict(exec_id="2", rev=0, ref="MET-2025-09-30-exit1", side="SELL", qty=14.0, price=101.0, time="t"),
+                   dict(exec_id="3", rev=0, ref="MET-2025-09-30-exit2", side="BUY", qty=7.0, price=99.0, time="t")])
+    assert s.get("exit_price") == 101.0 and s.get("exit_filled") == 14 and s.get("reversal_fills") == 7 and s.owned == 0

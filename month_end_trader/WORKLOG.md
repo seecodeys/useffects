@@ -53,4 +53,9 @@ Branch: `claude/blissful-mccarthy-mt2shh`. Scheduled check-ins (4 hourly tasks, 
 - [x] End-to-end 'paper rehearsal' script (met rehearse): replays 27-30 Nov 2026 with a synthetic path and prints the exact alert timeline
 - [ ] Sizing: floor rounding gives 1.78x on ~$120k (6 MES); consider nearest-contract rounding capped by max_leverage (ask user before changing behaviour)
 - [x] Test for `met resolve` CLI
-- [ ] Review round 7: fresh agent on rounds 5-6 code (executor flatten/resolve_entry/evening_watch, state.merge_fills, cli resolve) + PAPER_TEST.md accuracy
+- [x] Review round 7 (12 findings) fixed: reversal/after-exit late fills close immediately, CLI flatten/resolve sync first and
+      resolve requires a price, alert texts for fills-vs-broker disagreement (never 'close it in TWS' when broker is flat),
+      two-read check keeps a good second read (exit stays before 16:00), exit vwap from closing-side fills only + reversal
+      flag (trade_bp None), guard re-reads before mismatch alerts, exit counters reset on re-entry, entry status persisted,
+      user '-manual' orders not treated as bot orders, executions filtered by contract, PAPER_TEST/systemd notes. 187 tests
+- [ ] Review round 8: short focused pass on the round-7 diff only
