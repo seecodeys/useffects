@@ -33,6 +33,10 @@
 - [x] 134 Auction cycle conditional on rate volatility: run 133c only when TLT 20d realized vol > its trailing 1y median
       (dealer stress regime) — pre-specified; also on IEF with 10y auctions only.
 - [x] 135 Second paper-sourcing round (nothing new on arXiv)
+- [x] 151 CTA MA-cross flows — dead.
+- [x] 154 VIX-ETP rebalancing reversal — dead.
+- [ ] 155 Strategy-catalog sourcing: have a web-fetch agent read free strategy summaries (e.g. Quantpedia's free
+      strategy pages, Alpha Architect / CXO-style summaries) for flow-driven anomalies not yet tested; add to backlog.
 - [x] 142 Fed net-liquidity weekly timing — dead.
 - [x] 140 S&P 500 index additions (flow from index funds at the effective-date close): effective dates from Wikipedia's
       'List of S&P 500 companies' changes table; short added stock vs SPY from the effective-date close for 5 sessions

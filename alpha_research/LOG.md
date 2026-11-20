@@ -523,3 +523,8 @@ Portfolio version (short added vs SPY for 5 sessions, 3bp/side/leg, ~25% capital
 (logged here; no holdout_eval call). In 2023+ the post-inclusion reversal is gone while run-ups got much larger
 (momentum names). Verdict: **real through 2022, absent since** — consistent with heavy arbitrage of index events.
 Registry: 276.
+
+## 151/154 — CTA moving-average flows; VIX-ETP rebalancing  ·  2026-11-20
+151 follow SPY 50d / 200d moving-average crosses for 3 sessions: MA50 −0.5/−0.8 (lag0), +0.9/−0.8 (lag1); MA200
+−2.0/+0.6, −0.7/+0.1. No CTA-flow continuation. 154 fade |VIXY day| > 10% next day (106 events): −0.5/+0.6 (lag0),
+−1.0/+0.1 (lag1). Both **dead**. Protocol amended (rule 4b: descriptive tables stop at 2022). Registry: 282.

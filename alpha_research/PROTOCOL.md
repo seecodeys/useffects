@@ -44,6 +44,8 @@ existed, so the holdout is slightly contaminated for SPY + overseas-index signal
    valid ≥ 1bp per unit traded after costs. Also require: same sign train & valid, not
    driven by one year (check yearly P&L), and a plausible economic story.
    Gate passers get exactly one `lib.holdout_eval()` call; result logged and final.
+4b. **Descriptive tables must stop at 2022-12-31** (added after the 140 slip, where an event table printed 2023+ stats
+   and spent that idea's holdout). Only `lib.holdout_eval` may look at 2023+.
 5. As the test count grows, be stricter: with N registered tests, a t-stat of
    ~sqrt(2·ln N) is what pure luck produces for the best one. Mention it.
 6. Survivorship: the repo's old US/ folder only contains stocks listed in 2023 and its
