@@ -994,3 +994,8 @@ S&P 500 / SPY / QQQ aggregates). Ratio z vs 60 sessions, used from the next day'
 A long 5d after high S&P short ratio +0.1 / +0.3; B sign of z, 1-day +1.3 / −0.0; C long 5d after high SPY short ratio
 +0.4 / −1.2. Dead — the popular dark-pool/short-volume signal adds nothing beyond being long (2023+ left untouched).
 Registry: 420 rows.
+
+## 313 — Treasury leveraged-ETF rebalancing reversal (TLT after big days)  ·  2026-11-20
+Fade TLT after |close→close| > 1.5% / 2% (TMF/TMV rebalance in the move's direction into the close): next-day
+open→close +1.1 / −0.8 and +1.1 / −0.4; overnight close→open −0.4 / +0.9 (2bp/side). Dead — Treasury LETFs are too small
+relative to the bond market to leave a footprint. Registry: 423 rows.

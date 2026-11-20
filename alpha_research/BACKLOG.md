@@ -269,3 +269,4 @@ is an opening-print artifact (015). New tests use prior-close information only.
 - [x] 310 Bond bid overnight/intraday split — enter at the 4th-last close (MOC).
 - [x] 311 Weekly-expiry Fridays — no effect (OPEX tilt not generalised).
 - [x] 312 FINRA short-volume (DIX-style) — dead.
+- [x] 313 TLT LETF rebalancing reversal — dead.
