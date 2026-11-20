@@ -46,6 +46,7 @@
       close→next open (global index-fund rebalancing); direction from train.
 - [x] 180 Quad-witching close reversal — dead.
 - [x] 181 Third paper-sourcing round (NBER JS-only; S2/OpenAlex 429; Crossref works) → 182 dead.
+- [x] 184 Weekly stock-bond rebalancing — dead.
 - [ ] 183 Retry OpenAlex/Semantic Scholar later (rate limits) for flow papers; Crossref with targeted titles.: web-fetch NBER working-paper search pages (nber.org/papers?q=...) for 'rebalancing',
       'price pressure', 'flows' — empirical asset-pricing papers with daily-testable rules.
 - [x] 179 Month-end rule applied to QQQ-vs-TLT and IWM-vs-TLT pairs with the vol filter (168) — robustness only if cheap.

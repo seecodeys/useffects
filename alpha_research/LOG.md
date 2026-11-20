@@ -587,3 +587,8 @@ Crossref API works (api.crossref.org/works?query.bibliographic=…) but abstract
 "Earnings Extrapolation and Predictable Stock Market Returns" (RFS 2025): month-1-of-quarter market return predicts
 months 2-3 positively and next quarter's month 1 negatively. 182a (follow month-1 sign in months 2-3): +1.1 / +0.3;
 182b (fade it in next quarter's month 1): −0.3 / −0.3. Doesn't replicate in SPY 2000-2022. Dead. Registry: 302.
+
+## 184 — Weekly stock-bond rebalancing (Fridays)  ·  2026-11-20
+Week-end version of 013 (−sign(SPY WTD − TLT WTD) on the last session of the week): −1.3 / −0.1; high-vol weeks −0.7 /
++0.5. Dead — the rebalancing effect is specific to month-ends (where balanced/pension funds actually rebalance).
+Registry: 304.
