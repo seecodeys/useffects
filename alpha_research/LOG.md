@@ -442,3 +442,18 @@ not the biggest rebalancing dates — consistent with large quarter-end flows be
 
 ## 118 — Quarter-end rebalancing anticipation  ·  2026-11-20
 013 rule applied on days −3 and −2 of quarter-end months: −0.9 / +0.7. No front-running signature. Dead. Registry: 258.
+
+## Paper sourcing (arXiv, via web-fetch agent)  ·  2026-11-20
+Six arXiv API queries (price pressure, rebalancing, leveraged ETFs, overnight/intraday, gamma hedging, fund flows);
+~11 relevant papers screened from abstracts. Testable-with-free-data ideas added to BACKLOG as 120-123 (Ponzi-fund
+flow chasing; LETF pre-positioning/reversal; vol-controlled stock-bond-gold; LETF trend filters). Context notes: an
+end-of-day reversal paper (2611.09286) reports ~3bp/day in 2023-26 for large stocks, below costs; a futures intraday
+momentum study (2605.04004) found nothing beats friction — consistent with our open-print findings.
+
+## 120/121 — Paper-sourced flow tests  ·  2026-11-20
+120 [2405.12768 'Ponzi Funds'] short sector/country ETFs with high 3-month return + volume surge (flow proxy), long the
+rest, monthly: −0.1 / +0.8; gross ≈ 0 in every 5-year block. Dead.
+121 [2608.03703 'Preying on LETFs'] US analog, Yahoo 1h, Dec 2023-Nov 2026 (descriptive): on |open→15:30| > 1% days, the
+last half-hour does NOT continue the move (SPY −0.6bp, QQQ −5.1bp); next-open reversal SPY +11.4bp (64% hit, t=1.0),
+QQQ +6.8bp (t=0.9) — same direction as our weak 112 lead (overnight reversal after big days), not significant.
+No pre-positioning signature in US ETFs. Registry: 259.
