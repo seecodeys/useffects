@@ -15,7 +15,7 @@
 ## Regime / volatility
 - [x] 009 VIX term structure (^VIX/^VIX3M, ^VIX9D) and VIX gap overnight → SPY intraday direction / magnitude.
 - [x] 010 Prior-day intraday vs overnight decomposition (yesterday's oc and gap) → today's oc, by regime.
-- [ ] 011 Extreme overseas sell-off rebound (the one weak pattern from global_open_close) — event study with VIX filter.
+- [x] 011 Extreme overseas sell-off rebound (the one weak pattern from global_open_close) — event study with VIX filter.
 
 ## New ideas (added after 001-010)
 - [x] 012 Credit/rates gaps as risk signals: HYG, LQD, TLT, IEF opening gaps & prior-day moves → SPY open→close (all US-listed, liquid).

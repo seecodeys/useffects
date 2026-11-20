@@ -182,3 +182,9 @@ Registry: 145 tests.
 Combined: +0.2/+0.6. **Dead** — no detectable open→close footprint of vol-target selling on daily data.
 019 IWM−SPY spread on the last Friday of June (27 events; direction +1 chosen on train, mean +38bp train, +12bp valid):
 t=+1.6/+0.6. **Dead/untestable** (too few events). Registry: 149 tests (luck t ≈ 3.2).
+
+## 011 — Rebound after extreme overseas sell-offs  ·  2026-11-20
+Long SPY open→close after the bottom 5% of overseas sessions (global_avg ≤ −1.13%, train-defined): train t=+1.5,
+valid t=+1.2, +20bp/trade, 305 events. With prior VIX > 25: +1.9/+1.0, +25bp/trade. Right sign and sizeable per
+trade in both periods, but never significant — volatile crisis days. **Weak, fails gate.** Same crisis-rebound family
+as 009 H2/H4; parked. Registry: 151.
