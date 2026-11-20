@@ -592,3 +592,7 @@ months 2-3 positively and next quarter's month 1 negatively. 182a (follow month-
 Week-end version of 013 (−sign(SPY WTD − TLT WTD) on the last session of the week): −1.3 / −0.1; high-vol weeks −0.7 /
 +0.5. Dead — the rebalancing effect is specific to month-ends (where balanced/pension funds actually rebalance).
 Registry: 304.
+
+## 186/189 — VIX-futures flow timing (VIXY, timing value over always-short)  ·  2026-11-20
+186 short VIXY the week after monthly OPEX (vol sellers re-strike): +1.4 / +0.1. 189 short VIXY first 3 sessions of the
+month: +0.9 / +0.2. Dead (train only 2011-14). Registry: 306.
