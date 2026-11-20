@@ -15,10 +15,10 @@
       return AND a volume surge (flow proxy) → subsequent under-performance; monthly L/S, survivorship-free.
 - [x] 121 [paper 2608.03703 'Preying on Leveraged ETFs'] US analog with Yahoo 1h bars (~2y, descriptive): SPY/QQQ move
       through 15:00 → same-direction last hour (pre-positioning for LETF close rebalancing) → next-open reversal.
-- [ ] 122 [paper 2609.07946] vol-controlled SPY/TLT/GLD mix vs static — risk overlay (Sharpe/drawdown), not alpha.
-- [ ] 123 [papers 2504.20116, 2506.19200] LETF trend filter: hold SSO/QLD when trailing 63d index return > 0 else 1x —
+- [x] 122 [paper 2609.07946] vol-controlled SPY/TLT/GLD mix vs static — risk overlay (Sharpe/drawdown), not alpha.
+- [x] 123 [papers 2504.20116, 2506.19200] LETF trend filter: hold SSO/QLD when trailing 63d index return > 0 else 1x —
       vs static; low priority (trend-following, not a flow).
-- [ ] 117 LETF rebalancing, sharper: scale the signal by estimated LETF rebalancing demand = (sum of 2x/3x
+- [x] 117 LETF rebalancing, sharper: scale the signal by estimated LETF rebalancing demand = (sum of 2x/3x
       SPY/QQQ ETF AUM proxies × leverage×(leverage−1) × day return); test close→open and next-day; 2009+.
 - [~] 114 Dividend reinvestment (parked: no free pay-date data) flows (Hartzmark-Solomon): days with large aggregate dividend payments see price
       pressure up; proxy with SPY/large-cap pay-date clustering (quarter's last-business-day pay dates) close→close.

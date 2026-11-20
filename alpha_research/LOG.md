@@ -467,3 +467,13 @@ if anything. Dead.
 uncorrelated (|ρ| ≤ 0.11). Sharpe train/valid/holdout: 013 0.91/0.71/1.68; 031 0.57/0.57/**−0.72**; 062b 0.30/0.52/0.30;
 combined 0.81/0.89/0.64. The TLT month-end leg failed in 2023+ (rate regime), so adding it hurt the holdout; 013 alone
 remains best. Registry: 260.
+
+## 117/122/123 — Sharper LETF signal; paper-sourced risk overlays  ·  2026-11-20
+117 fade |SPY day|>2% close→next open only when LETF dollar-volume share (SSO/SDS/UPRO/SPXU/QLD/QID/TQQQ/SQQQ vs
+SPY+QQQ) is above its 1-year median, 2009+: train +0.1, valid +1.8 (175 events). Conditioning on LETF activity doesn't
+sharpen it; the 112 family stays a weak, valid-period-only lead.
+122 [2609.07946] vol-controlled 60/40 (10% target, monthly): Sharpe 1.15 vs 0.91 static (2003-14), 0.64 vs 0.62
+(2015-22); max drawdown −20%/−22% vs −30%/−27%. Excess return t +1.7 / +0.4. Risk-reduction overlay, not alpha (as the
+paper frames it).
+123 [2504.20116/2506.19200] SSO when SPY's 63d trend > 0, else SPY: Sharpe 0.48 vs 0.36 always-SSO (2007-14) but 0.45 vs
+0.54 (2015-22); excess t −0.2 / −1.5; cuts drawdowns (−65% vs −85%). Not alpha. Registry: 263.
