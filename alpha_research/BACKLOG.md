@@ -30,6 +30,11 @@
 - [x] 018 Vol-target deleveraging: after large realized-vol jumps (e.g. 5d realized vol doubles vs 60d), risk-parity/vol-target funds sell over following days → SPY open→close drift on days 1-3 after.
 - [x] 019 Russell reconstitution (last Friday of June) and S&P quarterly rebalance days: IWM vs SPY open→close.
 
+## Next
+- [ ] 020 Practical tool: `signals.py` that prints today's/next month-end 013 signal (SPY MTD − TLT MTD, direction, size) and the 001 OPEX-Friday tilt, plus a combined backtest/equity curve of 013(+001) with realistic costs.
+- [ ] 021 OPEX-week structure (from parking lot): Mon-Thu before monthly OPEX, Monday after, quarterly-only — pre-specify 3 variants on QQQ/SPY.
+- [ ] 022 Write-up: alpha_research/README.md summarising method, all verdicts, the 013 result and caveats (survivorship, costs, holdout contamination).
+
 ## Ideas parking lot
 - 004 follow-up: verify ADR opening-auction fills (paper MOO/MOC orders, or tick/quote data); same idea for European ADRs once 9:30 Europe levels exist (005).
 - OPEX-week structure follow-up to 001 (Mon-Thu before OPEX, Monday after, quarterly-only, VIX-expiry Wednesdays). Lower priority: each new test raises N.
