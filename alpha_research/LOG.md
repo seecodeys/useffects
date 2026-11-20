@@ -933,3 +933,10 @@ Dead — crowded short-vol positioning didn't foreshadow sell-offs at a weekly h
 Last-3-session bp, ordinary / Mar-Jun-Sep / December months: IEF +22.0 (t=4.1) / +25.4 (3.1) / +25.5 (1.6);
 TLT +37.5 / +45.0 / +41.1; SHY +6.6 / +7.6 / +9.9. Slightly larger at quarter- and year-ends but essentially uniform —
 unlike the equity rebalancing trade (116: concentrated in ordinary months). No quarter-end filter needed. Not registered.
+
+## 303 — Month-end equity trade (013) vs asset managers' equity-futures length (descriptive, 2009-22)  ·  2026-11-20
+013 signed open→close bp by tercile of asset-manager net ES length (z, last release before the day), low / mid / high:
+all trades +20.0 / +17.2 / +4.7; short-side (stocks led) +25.3 / +22.0 / +19.2; long-side (stocks lagged)
++13.3 / +8.4 / **−19.4** (n=21). The buy-side month-ends fail when real money is already heavily long equity futures —
+plausible (less under-weight to refill), but n≈20 per cell and post-hoc. Not adopted as a filter; noted as a watch item
+(would need a pre-registered test on new data). Not registered.
