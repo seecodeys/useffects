@@ -6,6 +6,7 @@
   python -m met.cli check      --config config.yaml      connect to IBKR and run every preflight check, no orders
   python -m met.cli test-order --config config.yaml      PAPER ONLY: buy 1 contract and sell it immediately
   python -m met.cli flatten    --config config.yaml      close any open position the bot owns (asks first)
+  python -m met.cli resolve DATE --config ...            record a manual close the bot cannot see (daemon stopped)
   python -m met.cli kill | unkill                         create / remove the kill switch file
   python -m met.cli report     --config config.yaml      run the decay monitor now
   python -m met.cli dry-run    [--months N]              full daemon run against the simulated broker
@@ -56,6 +57,8 @@ def main(argv=None):
     ap.add_argument("--config", default="config.yaml")
     ap.add_argument("--months", type=int, default=3)
     ap.add_argument("--yes", action="store_true")
+    ap.add_argument("date", nargs="?", help="trade date for `resolve`")
+    ap.add_argument("--price", type=float, default=None, help="close price for `resolve` (default: current price)")
     ap.add_argument("-v", action="store_true")
     a = ap.parse_args(argv)
 
@@ -123,7 +126,7 @@ def main(argv=None):
         print("kill switch:", (Path(cfg.monitoring.state_dir) / "KILL").exists())
         return 0
 
-    if a.cmd in ("test-order", "flatten"):
+    if a.cmd in ("test-order", "flatten", "resolve"):
         from .state import DaemonLock
         try:
             _lk = DaemonLock(cfg.monitoring.state_dir).acquire()
@@ -131,7 +134,9 @@ def main(argv=None):
             print("the met daemon is running: stop it first (or use `met kill`, which makes the daemon flatten)")
             return 2
 
-    broker = _broker(cfg, cli=(a.cmd != "run"), alerter=alerter, connect=(a.cmd != "run"))
+    # flatten/test-order/resolve hold the daemon lock, so they can use the daemon's clientId and see its orders
+    broker = _broker(cfg, cli=(a.cmd not in ("run", "flatten", "test-order", "resolve")), alerter=alerter,
+                     connect=(a.cmd != "run"))
     from .executor import Executor
     from .monitor import run_report
     ex = Executor(cfg, broker, alerter, make_fetchers(cfg, broker, broker.now), reporter=lambda d: run_report(cfg))
@@ -187,6 +192,30 @@ def main(argv=None):
         broker.sleep(2)
         r2 = broker.market_order(c, "SELL", r1.filled or 1, "TEST-sell", 30); print("sell:", r2)
         print("position now:", broker.future_position(c)); return 0
+
+    if a.cmd == "resolve":
+        st = TradeState(cfg.monitoring.state_dir, a.date)
+        if st.get("fills") is None:
+            print("no fills recorded for", a.date); return 2
+        c = ex.contract_for(st)
+        ex.sync(st)
+        pos = broker.future_position(c)
+        print(f"{a.date}: state {st.phase}, bot's fills say {st.owned:+d}, broker shows {pos:+g} {c.local_symbol}")
+        if st.owned == 0:
+            print("nothing owned according to the bot's fills; marking reconciled")
+            st.update(ex.ts(), note="manual resolve: nothing owned", reconciled=True); return 0
+        if pos != 0 and (pos > 0) == (st.owned > 0):
+            print("the broker still shows a position in the bot's direction: use `met flatten` instead"); return 2
+        px = a.price or (ex._try_price(c) or 0.0)
+        if not a.yes and input(f"record a manual close of {-st.owned:+d} @ {px:.2f} (P&L ESTIMATED)? [y/N] ") != "y":
+            return 1
+        side = "SELL" if st.owned > 0 else "BUY"
+        st.merge_fills([dict(exec_id=f"manual-{ex.ts()}", rev=0, ref=f"MET-{a.date}-manual", side=side,
+                             qty=float(abs(st.owned)), price=float(px), time=ex.ts())])
+        st.update(ex.ts(), "EXIT_SUBMITTED", note="manual resolve", exit_reason="manual", entry_price_estimated=True)
+        ex._finalise(dt.date.fromisoformat(a.date), st)
+        st.update(ex.ts(), note="reconciled after manual resolve", reconciled=True, pnl_estimated=True)
+        print("resolved:", st.phase, "net P&L (estimated)", st.get("net_pnl")); return 0
 
     if a.cmd == "flatten":
         from .state import unfinished

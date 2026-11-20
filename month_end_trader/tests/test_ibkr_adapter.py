@@ -18,7 +18,8 @@ class FakeTrade:
     def __init__(self, status="Filled", filled=0, avg=0.0, fills=(), done=True, cancel_to=None):
         self.order = NS(orderId=1)
         self.orderStatus = NS(status=status, filled=filled, avgFillPrice=avg)
-        self.fills = [NS(execution=NS(shares=q, price=p), time="t") for q, p in fills]
+        self.fills = [NS(execution=NS(shares=q, price=p, execId=f"000{i}.aa.01.01", side="BOT", orderRef="MET-x"),
+                         time="t", contract=NS(localSymbol="MESZ6")) for i, (q, p) in enumerate(fills)]
         self.log = [NS(message="")]
         self._done = done
         self.cancel_to = cancel_to
@@ -204,3 +205,11 @@ def test_executions_filter_and_corrections(br):
     ex = br.executions("MET-2026-11-30-")
     assert sorted((e["qty"], e["side"]) for e in ex) == [(3.0, "BUY"), (4.0, "BUY")]
     assert next(e for e in ex if e["qty"] == 4.0)["price"] == 7000.25
+
+
+def test_unexpected_side_raises():
+    from met.ibkr import _exec_dict
+    with pytest.raises(BrokerError):
+        _exec_dict(NS(side="", execId="1.2.01", orderRef="MET-x", shares=1, price=1.0), NS(time="t"))
+    d = _exec_dict(NS(side="SLD", execId="0001.aa.01.0a", orderRef="MET-x", shares=2, price=5.0), NS(time="t"))
+    assert d["side"] == "SELL" and d["rev"] == 10 and d["exec_id"] == "0001.aa.01"

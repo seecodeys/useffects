@@ -96,6 +96,8 @@ class Config:
             errs.append("mode must be 'paper' or 'live'")
         if require_account and not self.ib.account:
             errs.append("ib.account is required")
+        if self.ib.account and self.ib.account.upper().startswith("F"):
+            errs.append("ib.account must be an individual account (U.../DU...), not an FA master or group")
         if self.ib.account:
             is_paper_acct = self.ib.account.upper().startswith("DU")
             if self.mode == "paper" and not is_paper_acct:

@@ -325,7 +325,10 @@ def test_crash_in_entry_submitted_resolved_next_week(env):
     b.disconnect()
     ex2 = Executor(cfg, b, ex.alert, ex.fetchers, None)
     run_until(ex2, clock, dt.datetime(2025, 11, 3, 10, 0))
-    assert b.fut_pos == 0 and st(cfg, FRI).phase == "FLAT"
+    # Monday's IB no longer reports Friday's executions: the bot must not guess; it says so precisely
+    assert st(cfg, FRI).phase == "ERROR" and st(cfg, FRI).get("executions_expired")
+    assert any("UNKNOWN" in t for t in crit(alerts))
+    assert b.fut_pos != 0            # left for the user (met resolve / manual close with MET ref)
 
 
 def test_daemon_starts_while_ib_down_and_alerts(env):
@@ -550,3 +553,41 @@ def test_executions_unavailable_means_no_orders(env):
     assert len(b.orders) == n                  # never trades blind
     run_until(ex, clock, dt.datetime(2025, 9, 30, 19, 0))
     assert b.fut_pos == 0
+
+
+
+# ---------------------------------------------------------------- review round 6 (execution semantics)
+def test_manual_close_with_met_ref_resolves(env):
+    cfg, clock, b, ex, alerts = env()
+    run_until(ex, clock, dt.datetime(2025, 9, 30, 12, 0))
+    c = b.front_future("MES", "CME", T + dt.timedelta(days=3))
+    b.market_order(c, "SELL", 7, f"MET-{T}-manual", 5)          # user closes in TWS with the bot's ref
+    run_until(ex, clock, dt.datetime(2025, 9, 30, 19, 0))
+    s = st(cfg)
+    assert s.phase == "FLAT" and b.fut_pos == 0 and sum(o["action"] == "SELL" for o in b.orders) == 1
+
+
+def test_manual_close_without_ref_asks_for_resolve(env):
+    cfg, clock, b, ex, alerts = env()
+    run_until(ex, clock, dt.datetime(2025, 9, 30, 12, 0))
+    c = b.front_future("MES", "CME", T + dt.timedelta(days=3))
+    b.market_order(c, "SELL", 7, "TWS-manual", 5)
+    run_until(ex, clock, dt.datetime(2025, 9, 30, 19, 0))
+    assert b.fut_pos == 0 and sum(o["action"] == "SELL" for o in b.orders) == 1    # no extra orders
+    assert any("RESOLVE NEEDED" in t for t in crit(alerts))
+
+
+def test_execution_correction_replaces_price(tmp_path):
+    s = TradeState(str(tmp_path), "2025-09-30")
+    s.update("t", "ENTERED", direction=1)
+    s.merge_fills([dict(exec_id="0001.aa.01", rev=1, ref="MET-2025-09-30-entry", side="BUY", qty=7.0, price=6600.0, time="t")])
+    s.merge_fills([dict(exec_id="0001.aa.01", rev=2, ref="MET-2025-09-30-entry", side="BUY", qty=7.0, price=6601.0, time="t")])
+    s.merge_fills([dict(exec_id="0001.aa.01", rev=1, ref="MET-2025-09-30-entry", side="BUY", qty=7.0, price=6600.0, time="t")])
+    assert s.get("entry_price") == 6601.0 and s.owned == 7
+
+
+def test_fa_master_account_rejected():
+    from met.config import Config, ConfigError
+    c = Config(); c.ib.account = "F1234567"
+    with pytest.raises(ConfigError):
+        c.validate()

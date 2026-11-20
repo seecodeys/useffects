@@ -48,6 +48,21 @@ def pick_front(details, min_expiry: dt.date):
     return min(cands, key=lambda x: x[0])
 
 
+def _exec_dict(e, f) -> dict:
+    """IB execution -> dict. execId corrections differ only after the final '.' (higher = newer)."""
+    side = {"BOT": "BUY", "SLD": "SELL"}.get(e.side)
+    if side is None:
+        raise BrokerError(f"unexpected execution side {e.side!r} for {e.execId}")
+    base, _, suffix = e.execId.rpartition(".")
+    try:
+        rev = int(suffix, 16)
+    except ValueError:
+        rev = 0
+    return dict(exec_id=base or e.execId, rev=rev, ref=e.orderRef or "", side=side, qty=float(e.shares),
+                price=float(e.price), time=str(getattr(f, "time", "")),
+                local_symbol=getattr(getattr(f, "contract", None), "localSymbol", ""))
+
+
 def fill_summary(trade) -> tuple[int, float]:
     """Authoritative fill quantity/price: executions first (orderStatus can lag), orderStatus as fallback."""
     fq = sum(_f(f.execution.shares, 0.0) for f in trade.fills)
@@ -238,10 +253,11 @@ class IBKRBroker(Broker):
         for f in fills:
             e = f.execution
             if (e.orderRef or "").startswith(ref_prefix) and e.acctNumber == self.cfg.ib.account:
-                key = e.execId.rsplit(".", 1)[0]          # IB corrections replace the last segment
-                out[key] = dict(exec_id=key, ref=e.orderRef, side="BUY" if e.side in ("BOT", "BUY") else "SELL",
-                                qty=float(e.shares), price=float(e.price), time=str(f.time),
-                                local_symbol=f.contract.localSymbol)
+                d = _exec_dict(e, f)
+                if d["exec_id"] not in out or d["rev"] > out[d["exec_id"]]["rev"]:
+                    out[d["exec_id"]] = d
+        if out:
+            log.info("executions %s: %d, oldest %s", ref_prefix, len(out), min(v["time"] for v in out.values()))
         return list(out.values())
 
     def cancel_working(self, ref_prefix="MET-"):
@@ -346,7 +362,12 @@ class IBKRBroker(Broker):
             res_status = "PartiallyFilled" if not timed_out else "Timeout"
         else:
             res_status = "Timeout" if timed_out else "Rejected"
-        fills = [dict(time=str(f.time), shares=f.execution.shares, price=f.execution.price) for f in trade.fills]
+        fills = []
+        for f in trade.fills:
+            try:
+                fills.append(_exec_dict(f.execution, f))
+            except BrokerError as ex:
+                log.error("%s", ex)
         return OrderResult(str(o.orderId), res_status, qty, filled, avg, msg, fills)
 
     def open_orders(self, ref_prefix="MET-"):

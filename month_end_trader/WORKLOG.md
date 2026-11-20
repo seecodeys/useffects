@@ -44,6 +44,11 @@ Branch: `claude/blissful-mccarthy-mt2shh`. Scheduled check-ins (4 hourly tasks, 
       dedup by execId incl. corrections), persisted fills; exits only when executions AND position agree; exact P&L from
       fills; adoption heuristics removed; evening execution watch until midnight; late/dead-then-filled orders and
       reversals closed; exit rounds capped (10, then hourly); 30-min alert dedupe; no orders while executions unreadable. 176 tests
-- [ ] Review round 6: fresh agent on the execution-ownership redesign (IBKR reqExecutions semantics: 24h window? after Gateway restart? execId correction format; partial fills; commission reports)
+- [x] Review round 6 (execution semantics, 11 findings) fixed: `met resolve` + MET-<date>-manual ref for manual closes,
+      RESOLVE NEEDED alert, expired-executions detection with accurate alerts (no guessing), Gateway timezone documented +
+      missing-execution warning, CLI flatten/test-order/resolve use the daemon's clientId (lock-protected), fills merged
+      straight from order results, execId corrections by suffix, two agreeing reads before an exit when sources differ,
+      30s post-reconnect grace, strict BOT/SLD, FA accounts refused; FakeBroker executions expire at midnight ET. 181 tests
+- [ ] Paper-test checklist for the user (exact commands for 30 Nov: check, validate-data, test-order, verify reqExecutions after a Gateway restart, MET-manual ref test)
 - [x] End-to-end 'paper rehearsal' script (met rehearse): replays 27-30 Nov 2026 with a synthetic path and prints the exact alert timeline
 - [ ] Sizing: floor rounding gives 1.78x on ~$120k (6 MES); consider nearest-contract rounding capped by max_leverage (ask user before changing behaviour)

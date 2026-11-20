@@ -88,6 +88,7 @@ class Executor:
         self._disconnected_since: dt.datetime | None = None
         self._disc_any_alert: dt.datetime | None = None
         self._sync_fail = 0
+        self._last_reconnect: dt.datetime | None = None
         self._evening_last: dict = {}
         self._unfinished_alert: dict = {}
 
@@ -129,6 +130,7 @@ class Executor:
             return False             # socket fine, IB itself unreachable (1100): wait for 1102, don't reconnect
         try:
             self.broker.connect()
+            self._last_reconnect = self.broker.now()
             self.alert.info("reconnected to broker")
             return True
         except Exception as e:
@@ -242,6 +244,8 @@ class Executor:
                   entry_submitted_at=self.ts())
         r = self.broker.market_order(c, plan["action"], plan["qty"], ref=f"MET-{trade_date}-entry",
                                      timeout_s=self.cfg.strategy.fill_timeout_s)
+        if r.fills:
+            st.merge_fills(r.fills)
         st.update(self.ts(), note=f"entry order result {r.status} {r.filled}", entry_status=r.status)
         if r.status not in ("Filled", "PartiallyFilled", "Rejected"):
             self.broker.cancel_working()                 # uncertain: make sure nothing is left working
@@ -252,6 +256,14 @@ class Executor:
         for i in range(tries):
             try:
                 ex = self.broker.executions(f"MET-{st.trade_date}-")
+                if st.trade_date == str(self.broker.now().date()) and st.get("fills"):
+                    seen = {e["exec_id"] for e in ex}
+                    missing = [k for k in st.get("fills") if k not in seen and not k.startswith("manual")]
+                    if missing and not st.get("missing_exec_warned"):
+                        st.update(self.ts(), note=f"executions missing from IB: {missing}", missing_exec_warned=True)
+                        self.alert.warn(f"{st.trade_date}: IB stopped reporting some of today's bot executions",
+                                        "likely the Gateway's day rollover (set its timezone to America/New_York); "
+                                        "the bot keeps using its saved fills")
                 if st.merge_fills(ex):
                     st.update(self.ts(), note=f"fills synced: bot owns {st.owned:+d}")
                 self._sync_fail = 0
@@ -268,9 +280,12 @@ class Executor:
     def resolve_entry(self, trade_date, st, final_status=None, msg=""):
         """Decide the entry outcome from executions. Stays ENTRY_SUBMITTED while undecided."""
         self.broker.sleep(1)
+        if self._last_reconnect and (self.broker.now() - self._last_reconnect).total_seconds() < 30:
+            return                                        # executions may be incomplete right after a reconnect
         if not self.sync(st):
             return
         d, plan = st.get("direction"), st.get("plan")
+        expired = self.broker.now().date() > dt.date.fromisoformat(st.trade_date)
         owned = st.owned
         if owned != 0:
             if (owned > 0) != (d > 0) or abs(owned) > plan["qty"]:
@@ -286,6 +301,12 @@ class Executor:
             if sub and (self.broker.now() - dt.datetime.fromisoformat(sub)).total_seconds() > 60:
                 self.broker.cancel_working()
             return                                        # still working: decide later
+        if expired and st.owned == 0:
+            st.update(self.ts(), "ERROR", note="entry outcome unknown: executions expired", executions_expired=True)
+            self.alert.critical(f"{trade_date}: entry outcome UNKNOWN (IB no longer reports that day's executions)",
+                                f"Check {st.get('contract_local_symbol')} in TWS. If the bot's entry filled, close it with "
+                                f"Order Ref MET-{trade_date}-manual, or run `met resolve {trade_date}`.")
+            return
         if final_status in (None, "Filled", "PartiallyFilled"):
             # broker said filled (or we restarted) but no executions yet: give the reports time
             n = int(st.get("entry_resolve_tries", 0)) + 1
@@ -294,7 +315,7 @@ class Executor:
                 return
         st.update(self.ts(), "ERROR", note=f"entry not filled: {final_status} {msg}")
         self.alert.critical(f"{trade_date}: ENTRY FAILED ({final_status})",
-                            (msg or "") + "\nThe bot keeps watching its own executions and will manage a late fill.")
+                            (msg or "") + "\nUntil midnight ET the bot keeps reading its own executions and will manage a late fill.")
 
     def watch_fills(self, trade_date, st, exit_time):
         """ERROR / FLAT states on the trade day: a late fill of the bot's own order shows up in executions."""
@@ -400,9 +421,22 @@ class Executor:
             st.update(self.ts(), note="reversed", reversal_alerted=True)
             self.alert.critical(f"{trade_date}: bot position REVERSED to {owned:+d} by a late fill", "closing it")
         pos = self.broker_pos(c)
+        if pos != owned:                                  # disagreement: need two agreeing fresh reads
+            self.broker.sleep(3)
+            pos2 = self.broker_pos(c)
+            if pos2 != pos:
+                self._backoff(st, quick=True)
+                return False
         if pos == 0 or (pos > 0) != (owned > 0):
-            self.alert.critical(f"{trade_date}: executions and broker position disagree",
-                                f"bot's fills {owned:+d}, broker {pos:+g}; not sending an order this round")
+            n_dis = int(st.get("disagree_rounds", 0)) + 1
+            st.update(self.ts(), note=f"fills {owned:+d} vs broker {pos:+g}", disagree_rounds=n_dis)
+            if n_dis == 3:
+                self.alert.critical(f"{trade_date}: RESOLVE NEEDED - bot's fills say {owned:+d} but the broker shows {pos:+g}",
+                                    f"If you closed it yourself (or IB liquidated it), run `met resolve {trade_date}` "
+                                    f"(daemon stopped). Next time put Order Ref MET-{trade_date}-manual on manual closes.")
+            elif n_dis == 1:
+                self.alert.critical(f"{trade_date}: executions and broker position disagree",
+                                    f"bot's fills {owned:+d}, broker {pos:+g}; not sending an order")
             self._backoff(st)
             return False
         qty = int(min(abs(owned), abs(pos)))
@@ -412,6 +446,9 @@ class Executor:
                   exit_orders=n)
         r = self.broker.market_order(c, action, qty, ref=f"MET-{trade_date}-exit{n}",
                                      timeout_s=self.cfg.strategy.fill_timeout_s)
+        if r.fills:
+            st.merge_fills(r.fills)
+            st.update(self.ts(), note=f"exit fills from order result: owns {st.owned:+d}")
         if r.status not in ("Filled", "PartiallyFilled", "Rejected"):
             self.broker.cancel_working()
         self.broker.sleep(2)
@@ -470,8 +507,13 @@ class Executor:
             c = self.contract_for(st)
             pos = self.broker_pos(c)
             if pos != 0:
-                self.alert.critical(f"{trade_date}: {c.local_symbol} {pos:+g} open at the broker, not from the bot's orders",
-                                    "left untouched - check it")
+                if st.get("executions_expired") or (st.phase == "ERROR" and self.broker.now().date() > dt.date.fromisoformat(st.trade_date)):
+                    self.alert.critical(f"{trade_date}: {c.local_symbol} {pos:+g} open; the bot cannot tell whether it is its own",
+                                        f"IB no longer reports that day's executions. Check TWS; if it is the bot's, close it "
+                                        f"(Order Ref MET-{trade_date}-manual) or run `met resolve {trade_date}`.")
+                else:
+                    self.alert.critical(f"{trade_date}: {c.local_symbol} {pos:+g} open at the broker, not from the bot's orders",
+                                        "left untouched - check it")
         st.update(self.ts(), note="reconciled", reconciled=True)
 
     def evening_watch(self, T, st, now):

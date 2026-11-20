@@ -180,7 +180,7 @@ class FakeBroker(Broker):
         if self.fut_pos == 0:
             self.cash -= self.fut_cost * self.multiplier
             self.fut_cost = 0.0
-        self.execs.append(dict(exec_id=f"E{len(self.execs) + 1}", ref=ref, side=action, qty=float(qty), price=px,
+        self.execs.append(dict(exec_id=f"E{len(self.execs) + 1}", rev=0, ref=ref, side=action, qty=float(qty), price=px,
                                time=str(self.clock.t), local_symbol=self._local(self._front(self.clock.t.date()))))
         return px
 
@@ -190,7 +190,9 @@ class FakeBroker(Broker):
         if self.executions_fail > 0:
             self.executions_fail -= 1
             raise BrokerError("executions unavailable (simulated)")
-        ex = [e for e in self.execs if e["ref"].startswith(ref_prefix)]
+        today = self.clock.t.date()
+        ex = [e for e in self.execs if e["ref"].startswith(ref_prefix)
+              and dt.datetime.fromisoformat(e["time"]).date() == today]          # IB Gateway: since midnight only
         if self.exec_hide_reads > 0 and ex:
             self.exec_hide_reads -= 1
             ex = ex[:-1]
@@ -247,7 +249,7 @@ class FakeBroker(Broker):
             return OrderResult(oid, "Timeout", qty, 0, 0.0, "simulated: cancel raced a fill")
         self.orders.append(dict(id=oid, ref=ref, action=action, qty=qty, filled=fill, price=px, status=status,
                                 t=self.clock.now()))
-        return OrderResult(oid, status, qty, fill, px)
+        return OrderResult(oid, status, qty, fill, px, fills=[dict(self.execs[-1])] if fill else [])
 
     def daily_adjusted_closes(self, symbol, days=120):
         self._need()

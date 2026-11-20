@@ -81,8 +81,10 @@ class TradeState:
         fills = self.data.setdefault("fills", {})
         new = False
         for e in execs:
-            if e["exec_id"] not in fills:
-                fills[e["exec_id"]] = {k: e[k] for k in ("ref", "side", "qty", "price", "time")}
+            cur = fills.get(e["exec_id"])
+            rev = int(e.get("rev", 0))
+            if cur is None or rev > int(cur.get("rev", 0)):          # IB corrections carry a higher suffix
+                fills[e["exec_id"]] = {k: e[k] for k in ("ref", "side", "qty", "price", "time")} | {"rev": rev}
                 new = True
         if new:
             self._derive()

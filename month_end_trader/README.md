@@ -30,6 +30,8 @@ The daemon is a single loop of idempotent `tick()`s over the state saved in `sta
 - **Ownership comes from IBKR execution reports.** The bot owns exactly the signed sum of the fills of its own orders (orderRef `MET-<date>-…`), persisted in the trade state. Late fills, timeouts, cancel races, crashes and reversals are all visible there. Fill prices, and so the P&L, are exact. Positions you open yourself never appear in the bot's executions and are never touched.
 - Position snapshots are only a cross-check. An exit order is sent only when the bot's executions and the broker's position agree there is something to close, sized to the smaller of the two. If they disagree, no order is sent and a CRITICAL alert fires.
 - The bot keeps reading its own executions until midnight after the close. An order IB reported as dead that fills later is caught and closed.
+- **IB Gateway only reports executions since midnight.** Set the Gateway/TWS timezone to **America/New_York**, so that "midnight" is not inside the US session (e.g. Singapore midnight is 11:00 ET). Fills the bot has already saved stay valid across days. If the bot was down and a day's executions aged out, it says so ("outcome UNKNOWN") instead of guessing.
+- **Closing a bot position yourself:** in TWS, put **Order Ref `MET-<trade date>-manual`** on the order (e.g. `MET-2026-11-30-manual`). The bot then sees the close. If you closed it without that ref, or IB liquidated it, stop the daemon and run `met resolve <trade date>`. It records the close (P&L marked ESTIMATED) and unblocks future trades.
 - No new trade starts while an older trade state is unfinished (`met status` lists them).
 
 ## Guardrails
@@ -101,6 +103,7 @@ The daemon is a single loop of idempotent `tick()`s over the state saved in `sta
      - Use a **dedicated second IBKR username** for the API (free in Client Portal). Logging into TWS or the Mobile app with the same username either blocks market data (error 10197) or logs the Gateway out.
      - US equity market data, so SPY/TLT `ADJUSTED_LAST` daily bars are available for the signal.
      - The machine's clock must be NTP-synced. The bot alerts if it is more than 5 s off IB server time.
+     - Set the Gateway/TWS **timezone to America/New_York** (login dialog / IBC `TIME_ZONE`). IB reports executions only since that timezone's midnight.
 2. **Install the bot:**
    ```bash
    python -m venv .venv && . .venv/bin/activate && pip install -r requirements.txt
@@ -134,7 +137,8 @@ The daemon is a single loop of idempotent `tick()`s over the state saved in `sta
 | `signal` | Compute the signal for the next trade date |
 | `check` | Connect and run the full preflight, with no orders |
 | `test-order` | Paper only: buy 1 contract and sell it immediately |
-| `flatten` | Close any position the bot owns (asks first) |
+| `flatten` | Close any position the bot owns (asks first; daemon must be stopped) |
+| `resolve DATE [--price P]` | Record a manual close the bot cannot see, e.g. one done in TWS without the MET ref (daemon stopped) |
 | `kill` / `unkill` | Create or remove the kill switch file |
 | `report` | Run the decay monitor now |
 | `dry-run --months N` | Run the whole daemon against the simulated broker |
