@@ -653,3 +653,7 @@ Fade |z|>2 days from the close to the next open, 2010+: GDX −0.1/−0.0, GDXJ 
 TLT +0.5/+0.3; pooled −0.7/+0.4. Even where LETFs are big relative to the underlying, no overnight reversal — this
 undercuts the LETF-rebalancing reading of 112 (whose SPY result may be generic big-day overnight reversal, not LETF flow).
 Dead. Registry: 326.
+
+## 226 — Risk-parity month-end rebalancing in gold  ·  2026-11-20
+GLD on the last day, −sign(GLD MTD − avg(SPY, TLT) MTD): +0.3 / −1.2. Dead — no multi-asset rebalancing footprint in gold.
+Registry: 327.
