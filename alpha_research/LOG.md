@@ -531,3 +531,8 @@ Registry: 276.
 
 ## 163 — Pre-holiday sessions held close→close  ·  2026-11-20
 Long TLT over the pre-holiday session: −2.1 / +0.2. SPY: +0.8 / +0.9. Dead. Registry: 284.
+
+## 013f — Month-end rule with AGG as the bond leg  ·  2026-11-20
+gap = SPY MTD − AGG MTD: train t=+2.9, valid +1.4 (+12bp/trade); 82% sign agreement with the TLT version. Weaker than
+TLT (consistent with 027/013d: the long-duration bond move carries the signal). Robustness: same direction, smaller.
+Registry: 285.
