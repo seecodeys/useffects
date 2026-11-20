@@ -283,3 +283,16 @@ a < −2σ day: +1.5 / +0.1 (219 events); after a VIX +25% day: +1.7 / −0.1 (6
 By decade the fear rebound was large in the 2000s (+74…+83bp/trade after VIX spikes), ~0 in the 2010s, +26bp in the
 2020s — positive overall but erratic and never significant. **Dead** as tradable rules; same "worked before ~2010" shape.
 Registry: 192 (luck t ≈ 3.2).
+
+## 054-057 — Anchoring (52w highs/lows), lottery (MAX), sector herding, Monday mood  ·  2026-11-20
+054 long new-52w-high / short new-52w-low large caps (SPY-hedged): −2.2 / −3.0 net — gross ≈ 0, costs (~4-5bp/day of
+daily round trips) produce the negative t. 055 MAX/lottery L/S: −2.0 / −4.1 net, same story. 056 sector herding
+reversal: +1.3 / −0.3. 057 Monday after a Friday drop: +0.1 / +0.4. **All dead.** Registry: 196.
+
+### Behavioral round summary (050-057)
+Thirteen behavioral variants (over-reaction vs news, attention, streaks, fear, anchoring, lottery, herding, mood): none
+pass. The recurring shape: effects that are visible in the 2000s (fear rebounds of +70-80bp/trade, streak reversals)
+are ~0 after 2010 in liquid US stocks/ETFs held open→close. The open→close constraint matters: much of documented
+over-reaction correction happens **overnight** or over **several days**, and in **small, retail-heavy stocks** —
+neither of which this setup captures. Logical next steps: (a) allow overnight/multi-day holds for behavioral signals;
+(b) a survivorship-free small-cap universe (not freely available).

@@ -10,12 +10,12 @@ is an opening-print artifact (015). New tests use prior-close information only.
 - [x] 052 Streaks / extrapolation: N≥4 consecutive down (up) closes in a stock or sector ETF → next-day open→close reversal.
 - [x] 053 Fear over-reaction at the index level, structured: SPY close-to-close drop > 2σ / VIX jump > 25% / both →
       next-day open→close; by era (retail dip-buying post-2020?).
-- [ ] 054 Anchoring to the 52-week high (George-Hwang): stocks that closed at a new 52w high yesterday → continuation
+- [x] 054 Anchoring to the 52-week high (George-Hwang): stocks that closed at a new 52w high yesterday → continuation
       next day (investors anchor and under-react); and 52w lows.
-- [ ] 055 Lottery demand (MAX effect): stocks with the largest single-day return in the last month → overpriced →
+- [x] 055 Lottery demand (MAX effect): stocks with the largest single-day return in the last month → overpriced →
       negative open→close drift; and round-number price psychology (closes just below $X0/$X00).
-- [ ] 056 Sector herding: sector ETF extreme residual move yesterday → next-day open→close reversal (cross-section of 9 SPDRs + industry ETFs).
-- [ ] 057 Monday mood / weekend rumination: big Friday drop → Monday open→close; by era.
+- [x] 056 Sector herding: sector ETF extreme residual move yesterday → next-day open→close reversal (cross-section of 9 SPDRs + industry ETFs).
+- [x] 057 Monday mood / weekend rumination: big Friday drop → Monday open→close; by era.
 
 
 ## Overseas / cross-market signals (core theme)
@@ -41,6 +41,13 @@ is an opening-print artifact (015). New tests use prior-close information only.
 - [x] 013c Month-end follow-ups: same pre-specified rule on IWM/QQQ/DIA, SPY-vs-TLT pair, |gap| sizing, intraday timing via 1h bars (last-hour MOC flows?).
 - [~] 014 Earnings-season intensity: SPY/QQQ intraday during heavy mega-cap earnings weeks vs not (needs earnings dates — Yahoo events or skip).
 - [x] 015 Execution reality check for 004/006 (first-hour open-print reversals): document what evidence would confirm them (MOO paper fills, TAQ-like data); test robustness to entering at 9:35 using Yahoo 5m bars (60 days) — descriptive only.
+
+- [ ] 058 (needs user OK to relax open→close) Behavioral signals with close→next-close or close→open holds: short-term
+      reversal of extreme residual moves, fear rebounds, attention reversal — where the literature says the effect lives.
+- [ ] 059 Retail-attention proxies available free: Google-Trends-like? (not free/clean) → instead: abnormal volume in
+      leveraged/meme-adjacent ETFs (TQQQ/SQQQ volume share) as a crowd-sentiment gauge → SPY next-day open→close (contrarian).
+- [ ] 060 Put/call-style sentiment from free data: VIX vs realized vol spread (fear premium), VIX9D/VIX inversion as panic
+      gauge → contrarian SPY open→close.
 
 ## Flow-driven ideas (the 013 theme is the only robust winner so far)
 - [x] 016 Quarter-end window-dressing vs rebalancing: last day of quarter, sector/style winners vs losers MTD (XLK vs XLU etc.) — does the losing sleeve get bought? (cross-sectional sector version of 013).
