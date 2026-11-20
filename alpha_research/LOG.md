@@ -946,3 +946,11 @@ FRED weekly data, available from the Friday after the Wednesday level (first use
 change +1.5 / +0.9 (timing value t=1.2, 2003-22); B 13-week −/+ +1.3 / +0.2; C long only when 4w change > 0:
 Sharpe 0.59 / 0.61, t +2.0 / +1.7 — but its timing value over an exposure-matched long is only t=1.2. Fails the gate.
 The popular liquidity narrative has the right sign but is mostly just "be long more often". Weak. Registry: 404 rows.
+
+## 305 — Tax-date reserve drain (TGA jumps on quarterly tax dates)  ·  2026-11-20
+DTS daily cash (fiscaldata operating_cash_balance; 2005+): the TGA rises a median $56bn on tax dates vs −$0.5bn otherwise,
+and 45% of the top-2% TGA-jump days are tax dates — the drain is real and calendar-predictable. But SPY on the top-2%
+drain days: +5.2bp vs +4.2bp average. Registered calendar rule, short SPY close→close: A tax day −0.1 / +0.4;
+B tax day + next −1.9 / −0.7 (wrong sign: the day after a tax date averaged strongly positive, which is post-hoc and
+overlaps the generally firm OPEX week — not pursued). Dead: reserve drains don't move equities day-to-day.
+Registry: 406 rows.
