@@ -36,7 +36,7 @@
 - [x] 022 Write-up: alpha_research/README.md summarising method, all verdicts, the 013 result and caveats (survivorship, costs, holdout contamination).
 
 ## Scheduled-event ideas (added 2026-11-20)
-- [ ] 024 FOMC announcement days (14:00 ET): SPY/QQQ open→close on FOMC days (long; and conditional on pre-FOMC drift). Needs FOMC dates 2000-2026 (fetch from federalreserve.gov → tools/fomc_dates.csv).
+- [x] 024 FOMC announcement days (14:00 ET): SPY/QQQ open→close on FOMC days (long; and conditional on pre-FOMC drift). Needs FOMC dates 2000-2026 (fetch from federalreserve.gov → tools/fomc_dates.csv).
 - [x] 025 Jobs-report days (8:30 ET, usually first Friday): does the post-release gap reverse or continue intraday? Rule-based first-Friday dates (approximate; note exceptions).
 - [x] 026 Pre-holiday/post-holiday half-days (day after Thanksgiving, Christmas Eve) and the "Santa"/year-end window — few events, descriptive.
 - [x] 027 Month-end rebalancing, more evidence: does 013's edge scale with the *bond* leg's size (TLT MTD alone) or the *equity* leg? Which one drives it? Also: month-ends when SPY MTD and gap disagree in sign.

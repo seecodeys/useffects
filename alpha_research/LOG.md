@@ -230,3 +230,10 @@ Consistent right sign in both periods (index-extension buying is a documented ef
 **weak-but-consistent**, not holdout-tested. Note it complements 013 (bonds bid at month-end while the bond-leg rebalance
 also pushes equities).
 032 short SPY on VIX-expiration Wednesday (251 events): +0.4 / −1.0. **Dead.** Registry: 170.
+
+## 024 — FOMC announcement days (scheduled meetings, dates from federalreserve.gov)  ·  2026-11-20
+Dates fetched by a web-fetch agent from the Fed's per-year historical pages + current calendar → tools/fomc_dates.csv
+(scheduled + unscheduled flagged; spot-checked). 4 variants, 214 scheduled FOMC days 2000-2026:
+long SPY on FOMC day train t=+1.7 → valid −0.4; QQQ +1.0/−0.2; day-before (pre-FOMC drift) +1.0/−0.3; long TLT on
+FOMC day −0.7/+2.0. **Dead** — the documented pre-FOMC/FOMC-day equity premium has not survived in open→close terms
+since 2015 (consistent with the literature's post-publication decay). Registry: 174 (luck t ≈ 3.2).
