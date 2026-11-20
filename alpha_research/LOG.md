@@ -607,3 +607,7 @@ Signal: short USD on the last day if SPY beat EFA month-to-date (foreign holders
 a) UUP open→close: −2.5 / −2.9 net — wrong-signed (USD tends to *rise*), but gross is only ~−4.7bp/trade, so the flipped
 rule would barely clear 2bp/side costs. b) USDJPY 09:29→11:05 NY across the fix (HistData 1-min, 2001-25): −0.6 / −0.7,
 ~0bp. Dead as specified; no clean FX month-end hedge flow in daily data. Registry: 309.
+
+## 205 — Credit-fund outflow pressure (HYG/LQD vs IEF after bad weeks)  ·  2026-11-20
+Short HYG (LQD) / long IEF for 5 sessions after a bottom-decile 5-day return: HYG −0.9 / −0.3; LQD −0.3 / +0.2. Dead —
+no outflow-driven continuation in credit ETFs. Registry: 311.
