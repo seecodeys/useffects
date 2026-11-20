@@ -837,3 +837,8 @@ Raw legs run at ~2-3% vol (active only a few days a month). Scaled to 10% annual
 e.g. via ES/ZN futures): SPY month-end leg ≈ +8.4% / +8.2% per year (2003-14 / 2015-22), IEF bond-bid leg ≈ +8.7% /
 +11.4%, equal-risk combo ≈ +11.4% / +13.8% — before financing, slippage on larger size, and with the caveat that only
 the SPY leg is solidly holdout-confirmed (IEF holdout Sharpe 0.83). Not advice; illustrates the economic size.
+
+## 276g — Bond bid: overnight vs intraday split (descriptive, 2002-22)  ·  2026-11-20
+Last-3-session mean bp per session: IEF overnight +3.7 (t=3.7), intraday +4.0 (t=3.8); TLT +6.2 / +7.0 (t=3.1 each) vs
+all-day ~0.7-1.3. The bid is split evenly across overnight and trading hours → hold through the window (enter at the
+close 4 sessions before month-end, exit at the month-end close), as specified in 275/276.
