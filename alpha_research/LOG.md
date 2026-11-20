@@ -546,3 +546,7 @@ Last trading day, pos = −sign(SPY MTD − TLT MTD) in the SPY−TLT spread (bo
 ## Strategy-catalog sourcing (Quantpedia free pages; Alpha Architect 403)  ·  2026-11-20
 Usable new flow candidates: mid-month payday (16th; 401k contributions) → 165; option-expiration Monday (already 021B,
 dead). Others need non-free data (13F holdings, fund returns, commodity futures curves) or aren't flows (Ramadan).
+
+## 165 — Mid-month payday (16th)  ·  2026-11-20
+Long SPY close→close on the first session ≥ the 16th (timing value): +0.8 / +0.4. Dead (as the source itself notes it
+weakened after 2010). Registry: 287.

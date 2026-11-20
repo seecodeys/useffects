@@ -35,7 +35,14 @@
 - [x] 135 Second paper-sourcing round (nothing new on arXiv)
 - [x] 151 CTA MA-cross flows — dead.
 - [x] 154 VIX-ETP rebalancing reversal — dead.
-- [ ] 155 Strategy-catalog sourcing: have a web-fetch agent read free strategy summaries (e.g. Quantpedia's free
+- [x] 155 Strategy-catalog sourcing (Quantpedia; thin)
+- [x] 165 Mid-month payday — dead.
+- [x] 013f AGG bond leg — weaker, same sign.  - [x] 013g SPY−TLT pair — survived holdout.
+- [ ] 166 Month-end flow in the closing auction: does 013's edge concentrate at the close? Use Yahoo 1h bars to split
+      descriptive 2023-26 only (holdout-era → descriptive) — already seen in 013c (last hour 81% hit); skip unless new data.
+- [ ] 167 Month-end flow in *credit*: HYG−IEF spread on the last day by stock-bond gap (balanced funds' credit sleeve)?
+- [ ] 168 Month-end signal strength by equity-vs-bond volatility regime (when bonds are volatile the rebalance is
+      bigger in $ terms): interaction on TRAIN+VALID only, then a single pre-specified filter if it's strong.: have a web-fetch agent read free strategy summaries (e.g. Quantpedia's free
       strategy pages, Alpha Architect / CXO-style summaries) for flow-driven anomalies not yet tested; add to backlog.
 - [x] 142 Fed net-liquidity weekly timing — dead.
 - [x] 140 S&P 500 index additions (flow from index funds at the effective-date close): effective dates from Wikipedia's
