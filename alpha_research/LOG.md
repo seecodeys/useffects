@@ -1024,3 +1024,11 @@ Permutation vs random 3-day windows, pre-2002 only: p = 0.03 (10y), 0.006 (2y), 
 in every decade since** — exactly the timeline the index-extension / benchmarked-manager mechanism predicts (Lehman
 indices launched 1973; index-tracked bond assets grew from the mid-1980s). Unlike 013's equity trade (weak pre-2002, 040),
 the bond bid replicates on ~20 years of never-used data. Strongest robustness evidence for finding 2 so far. Not registered.
+
+## 316 — Back-cast of the month-end equity rebalancing trade (013) to 1962-92 (never-used data, descriptive)  ·  2026-11-20
+^GSPC last-day close→close (no reliable opens pre-1990s), bond leg = −7 × ΔDGS10. bp/trade (t):
+1962-72 +3.4 (0.6) | 1973-82 −9.8 (−1.2) | 1983-92 −1.0 (−0.1) | same proxy 2002-14 +24.1 (3.0) | 2015-22 +6.7 (0.7).
+No equity month-end rebalancing effect before 2002 (with 040's weak 1993-2002 result) — unlike the bond bid (315), which
+is present from 1983. 013 is a modern effect, consistent with the post-2000s growth of target-date/balanced/risk-parity
+assets that rebalance mechanically; it could also fade if those flows change. The cruder proxy (close→close, yield-based
+bond leg) is noisier than the real 013 in 2015-22. Not registered.

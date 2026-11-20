@@ -61,7 +61,7 @@ Extra detail: the edge sits in ORDINARY month-ends (+27bp/trade, t=4.1 in 2002-2
 or year-ends (+18.6bp) (116); it is a last-day effect (no mid-month, day −2/−3 or first-day-unwind effect).
 
 Limits: back-cast to 1993-2002 (never-seen data, bond leg proxied by the 30y yield) it is only weakly positive
-(t=0.6, +6.6bp/trade), so the effect looks **era-dependent** (likely tied to the growth of rebalancing-driven assets
+(t=0.6, +6.6bp/trade), and a 1962-92 back-cast (316) shows nothing at all, so the effect looks **era-dependent** (likely tied to the growth of rebalancing-driven assets
 after ~2006) rather than permanent. Also: 12 trades a year, so about +2.6%/yr at 1× notional (capital is idle the other days). Even good results
 from 46 holdout trades leave a wide uncertainty band. It's also a published, known effect, so it could be traded away.
 
