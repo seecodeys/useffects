@@ -401,3 +401,11 @@ The model tracks reality closely but **overstates the seller's edge by ~0.26%/mo
 it sits above ATM implied vol. Implication for 083 (model-priced short same-day options): real-world results are
 likely lower than modelled — e.g. a 15% lower premium would cut the +15.7bp/trade holdout figure to roughly +10bp.
 Still positive, but treat 083's numbers as an upper bound.
+
+## 085/086 — OPEX tilt via same-day options; SKEW (tail-insurance demand) as sentiment  ·  2026-11-20
+085 sell a same-day ATM SPY call on monthly OPEX Friday (083's calibrated model): train t=+5.15, valid +2.82,
++17 / +12bp per trade → gate passed (per-trade). **Holdout: +3.0bp/trade, t=+0.52, 73% hit (44 trades), worst −118bp.**
+Weak — mirrors the stock version's fade (001 holdout +12.6bp). Model-priced and likely optimistic (087).
+086 SKEW top-20% (tail insurance over-bought) → contrarian put-writing: PUT timing value **−2.95 / −1.15**; SPY −1.6 /
+−0.7. Wrong-signed: high SKEW precedes *worse* put-writing returns (tail demand is informed, not over-reaction). Dead.
+Registry: 240.

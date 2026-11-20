@@ -8,8 +8,8 @@
       and when VIX/VIX3M is in contango; behavioral = VIX over-shoots then mean-reverts.
 - [x] 083 Model-priced SPY options for the month-end signal (013): sell the put (when long signal) / call (when short)
       vs buying 1-day ATM options — premium (VIX9D-implied) vs realized edge; is options expression better than stock?
-- [ ] 085 OPEX-Friday tilt (001) via options: sell a same-day ATM call on monthly OPEX Friday (calibrated model, as 083).
-- [ ] 086 Crash-fear sentiment via CBOE SKEW: high SKEW (tail insurance demand) → subsequent PUT-index / SPY returns
+- [x] 085 OPEX-Friday tilt (001) via options: sell a same-day ATM call on monthly OPEX Friday (calibrated model, as 083).
+- [x] 086 Crash-fear sentiment via CBOE SKEW: high SKEW (tail insurance demand) → subsequent PUT-index / SPY returns
       (contrarian: over-paid tail insurance), monthly.
 - [x] 087 Model validation: monthly ATM put-write priced with VIX (BS) vs the real CBOE PUT index — mean/correlation of
       monthly returns, to bound how wrong the model-pricing in 083/085 could be.
