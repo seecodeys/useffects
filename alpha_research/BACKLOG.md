@@ -30,7 +30,7 @@
 - [x] 127 013 held close→close — no improvement.
 - [x] 129 Mid-month rebalancing — dead.
 - [x] 133 Treasury auction cycle (TLT) — gate passed but concentrated in 2009-10/2020; no holdout.
-- [ ] 134 Auction cycle conditional on rate volatility: run 133c only when TLT 20d realized vol > its trailing 1y median
+- [x] 134 Auction cycle conditional on rate volatility: run 133c only when TLT 20d realized vol > its trailing 1y median
       (dealer stress regime) — pre-specified; also on IEF with 10y auctions only.
 - [ ] 135 Second paper-sourcing round: arXiv queries on 'Treasury auction', 'dealer inventory', 'closing auction',
       'index reconstitution', 'ETF creation redemption', 'month-end' for more flow ideas.

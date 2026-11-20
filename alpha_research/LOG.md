@@ -487,3 +487,8 @@ data/auctions.json): (a) short TLT d−3..d−1: +0.8 / +2.3; (b) long TLT d+1..
 train ex-2009/10 t=+0.8 (13/21 positive years). Fails the "not driven by one year" rule → **no holdout look**; the
 effect appears only in high-volatility bond regimes (dealer balance-sheet stress). Candidate refinement: scale by rate
 volatility (MOVE-like proxy from TLT realized vol) — pre-specify before testing. Registry: 268.
+
+## 134 — Auction cycle refinements  ·  2026-11-20
+a) TLT cycle only in high rate-vol regimes: +0.7 / +1.6 (ex-2020 +0.8). b) IEF with 10y auctions: +1.0 / +1.6 (ex-2020
++0.9). Right sign everywhere but weaker than 133c — the auction cycle is a real but small, episodic effect.
+**Weak-but-consistent; parked.** Registry: 270.
