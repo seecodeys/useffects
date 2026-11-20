@@ -25,8 +25,8 @@
 - [x] 015 Execution reality check for 004/006 (first-hour open-print reversals): document what evidence would confirm them (MOO paper fills, TAQ-like data); test robustness to entering at 9:35 using Yahoo 5m bars (60 days) — descriptive only.
 
 ## Flow-driven ideas (the 013 theme is the only robust winner so far)
-- [ ] 016 Quarter-end window-dressing vs rebalancing: last day of quarter, sector/style winners vs losers MTD (XLK vs XLU etc.) — does the losing sleeve get bought? (cross-sectional sector version of 013).
-- [ ] 017 Month-end rebalancing in other markets with US-listed vehicles: EFA/EEM vs TLT; small-cap vs large-cap (IWM vs SPY) month-to-date gap on last day.
+- [x] 016 Quarter-end window-dressing vs rebalancing: last day of quarter, sector/style winners vs losers MTD (XLK vs XLU etc.) — does the losing sleeve get bought? (cross-sectional sector version of 013).
+- [x] 017 Month-end rebalancing in other markets with US-listed vehicles: EFA/EEM vs TLT; small-cap vs large-cap (IWM vs SPY) month-to-date gap on last day.
 - [ ] 018 Vol-target deleveraging: after large realized-vol jumps (e.g. 5d realized vol doubles vs 60d), risk-parity/vol-target funds sell over following days → SPY open→close drift on days 1-3 after.
 - [ ] 019 Russell reconstitution (last Friday of June) and S&P quarterly rebalance days: IWM vs SPY open→close.
 

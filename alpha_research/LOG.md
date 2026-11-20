@@ -167,3 +167,12 @@ Descriptive only (Yahoo 5m, 59 sessions Aug-Nov 2026; not registered). Gross L/S
 The edge is gone within 5-10 minutes of the open. Verdict: **004 and 006 downgraded to "opening-print artifact unless
 proven otherwise".** They could only be real if MOO orders actually fill at the printed opening-auction price with
 negligible impact; a 5-minute delay already erases them. Not worth more research without auction-fill evidence.
+
+## 016/017 — Other rebalancing flows on the last trading day of the month  ·  2026-11-20
+6 variants, 1bp/side per leg, MTD through prior close (helper verified identical to 013's SPY−TLT gap on all last days).
+- 017a IWM−SPY size spread fade: train t=−0.8, valid +1.9. 017b EFA vs TLT: +1.3/+1.0. 017c EEM vs TLT: +1.6/+1.7.
+  017d SPY−EFA spread fade: +1.9/+1.4. 016a sector XS (long 3 worst MTD, short 3 best): +0.6/+1.2. 016b quarter-ends: 0.
+- None pass the gate. The international stock-bond versions (EFA, EEM) have the right sign in both periods but are
+  roughly half as strong as the US stock-bond effect; sector/size rotation flows show nothing.
+Verdict: **dead/weak.** The month-end effect is specific to the broad US equity-vs-Treasury rebalance (013).
+Registry: 145 tests.
