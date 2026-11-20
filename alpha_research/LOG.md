@@ -203,3 +203,6 @@ results/combined_yearly_pct.csv and combined_equity.png. Combined 2002-08→2026
 Sharpe 1.04, maxDD −5.3% (at 1× notional only on ~24 trade days/yr — capital is idle the rest of the time).
 Fix: lib.get dropped a *completed* same-day bar when run after the close; now only drops it before 16:30 ET (earlier
 experiments ran intraday and are unaffected).
+
+## 022 — README.md write-up  ·  2026-11-20
+Summary of method, all verdicts, the 013 finding and caveats.
