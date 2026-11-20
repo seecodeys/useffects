@@ -797,3 +797,7 @@ indices' monthly extension) — a nice cross-check of the index-extension mechan
 ## 281 — Full month-end bond cycle (long last 3 / short first 3 sessions; consistency)  ·  2026-11-20
 IEF +3.52 / +2.27 (vs long-only +3.39 / +3.24); TLT +4.34 / +2.03 (vs +3.31 / +2.32). The early-month reversal leg helped
 in 2002-14 but not 2015-22 → keep the long-only month-end bid. Registry: 373 rows.
+
+## 284 — Month-end bond bid in global bond ETFs (consistency)  ·  2026-11-20
+BWX (intl govt, unhedged) +1.2 / +0.6; EMB (EM USD sovereigns) +2.65 / +1.38. Right sign, weaker than US Treasuries/MBS/
+TIPS (FX noise in BWX; EMB partly tracks the US-dollar index-extension bid). Registry: 375 rows.
