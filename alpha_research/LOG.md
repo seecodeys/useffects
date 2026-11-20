@@ -528,3 +528,6 @@ Registry: 276.
 151 follow SPY 50d / 200d moving-average crosses for 3 sessions: MA50 −0.5/−0.8 (lag0), +0.9/−0.8 (lag1); MA200
 −2.0/+0.6, −0.7/+0.1. No CTA-flow continuation. 154 fade |VIXY day| > 10% next day (106 events): −0.5/+0.6 (lag0),
 −1.0/+0.1 (lag1). Both **dead**. Protocol amended (rule 4b: descriptive tables stop at 2022). Registry: 282.
+
+## 163 — Pre-holiday sessions held close→close  ·  2026-11-20
+Long TLT over the pre-holiday session: −2.1 / +0.2. SPY: +0.8 / +0.9. Dead. Registry: 284.
