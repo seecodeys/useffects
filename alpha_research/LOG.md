@@ -987,3 +987,10 @@ arrives overnight into the 3rd-last session, so **enter at the close of the 4th-
 Short on non-monthly Fridays: 10:30→15:00 −1.8 / +0.6 (−1.1bp/trade); 09:30→16:00 −0.5 / −0.2; Thursday control 10:30→15:00
 −1.0 / −1.3. No weekly-expiry effect. If 001/297's tilt is real it is tied to the large monthly open interest, not to
 expiry per se — no support from this out-of-sample angle. Registry: 417 rows.
+
+## 312 — Off-exchange short volume ("DIX"-style) as a flow signal (FINRA daily files, 2019-22)  ·  2026-11-20
+FINRA consolidated short-volume files (cdn.finra.org/equity/regsho/daily, free only from 2019; tools/finra_shvol.py keeps
+S&P 500 / SPY / QQQ aggregates). Ratio z vs 60 sessions, used from the next day's close. Timing value t (2019-20 / 2021-22):
+A long 5d after high S&P short ratio +0.1 / +0.3; B sign of z, 1-day +1.3 / −0.0; C long 5d after high SPY short ratio
++0.4 / −1.2. Dead — the popular dark-pool/short-volume signal adds nothing beyond being long (2023+ left untouched).
+Registry: 420 rows.
