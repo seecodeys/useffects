@@ -621,3 +621,11 @@ Hedged Equity collar's growth (2016+); more likely general quarter-end pinning (
 ## 209 — Treasury coupon/maturity reinvestment (refunding 15ths)  ·  2026-11-20
 Long TLT over the 2 sessions into the 15th of Feb/May/Aug/Nov: train **+2.7** → valid −0.2; control months −0.5 / +0.3.
 Worked in 2002-14, gone since. Dead. Registry: 313.
+
+## Paper APIs blocked → literature from memory; 210/211  ·  2026-11-20
+OpenAlex still 429; Crossref relevance collapses when sorted by citations. Switched to well-known flow papers directly.
+210 'Dash for cash' (Etula et al., RFS 2020): short SPY over sessions −3,−2 before month-end: −1.3 / −1.4 — returns are
+not low there in SPY (if anything slightly positive). Dead.
+211 FOMC cycle (Cieslak-Morse-Vissing-Jorgensen, JF 2019): long SPY in even FOMC-cycle weeks, timing value: train **+2.6**
+→ valid +0.4. Strong in-sample (the paper's era), faded after 2015 — consistent with post-publication decay. Dead.
+Registry: 315.
