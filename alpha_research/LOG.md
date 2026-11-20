@@ -852,3 +852,10 @@ TLT 0.93 / 0.94 / 0.72 / 0.79 / 0.75. Mean bp/session falls as the window widens
 IEF last-3-session sum when 10y yields ROSE month-to-date (to the window start): +22.0bp (t=3.5, n=128); when they FELL:
 +24.5bp (t=4.1, n=117). Regime-independent — the bid doesn't depend on recent rate moves, again pointing to a
 mechanical calendar flow. (So the weaker 2023+ TLT result isn't explained by the rate direction alone.)
+
+## 287 — Intraday timing of the month-end equity flow (HistData SPX CFD 1-min, 2010-22)  ·  2026-11-20
+141 month-ends; signed bp by segment: 09:30-12:00 +8.3 (t=2.2), 12:00-15:00 +4.9 (t=1.6), 15:00-15:50 +1.2 (t=0.5),
+15:50-16:00 +2.6 (t=1.2). Over 2010-22 the edge accrues mostly in the MORNING, not at the close (the 2023-26 hourly
+snapshot in 013c suggested a strong last hour — that was a short-sample impression). Registered variant 'last hour only
+(15:00→16:00)': +0.2 / +0.9 — weak. Execution conclusion: hold the full session from the open (as 013 specifies).
+Registry: 382 rows.
