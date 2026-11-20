@@ -773,3 +773,8 @@ C monthly country reversal (062b). Pairwise correlations ≈ 0 (|ρ| ≤ 0.03). 
 2015-22: A 0.82 (−2.3%), B 1.14 (−2.6%), C 0.52 (−7.8%), equal-risk combo **1.38 (−1.7%)**.
 Diversified month-end flow book. Caveats: B and C were never holdout-confirmed (B's TLT sibling 275 was weak in 2023+);
 returns are small in absolute terms (legs active on a few days a month) unless levered.
+
+## 276b — Holdout look for the IEF month-end bid (2nd look in the bond-bid family)  ·  2026-11-20
+276 was pre-specified as consistency-only; this deliberate look is logged as the family's 2nd holdout look (after 275/TLT).
+IEF long over the last 3 sessions of each month, 2023→Nov 2026: **Sharpe 0.83, t=+1.63 @1bp (0.72 / 1.42 @2bp),
++1.9%/yr, max DD −2.9%; yearly +1.2 / +3.1 / +3.3 / −0.3%.** Weak-but-alive, better than TLT's holdout (0.31).

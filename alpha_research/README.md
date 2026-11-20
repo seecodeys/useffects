@@ -68,8 +68,8 @@ Check the current state with `python alpha_research/signals.py`. `--backtest` pl
 
 ## Month-end flow book (279, construction on 2002-22)
 Combining the SPY month-end trade (vol-tilted), the IEF last-3-sessions month-end bond bid (276) and monthly country
-reversal (062b) — uncorrelated legs — gives Sharpe 1.14 (2003-14) and 1.38 (2015-22) with ~2% max drawdown. Only
-the SPY leg is holdout-confirmed.
+reversal (062b) — uncorrelated legs — gives Sharpe 1.14 (2003-14) and 1.38 (2015-22) with ~2% max drawdown. The
+SPY leg is holdout-confirmed; the IEF leg is weak-but-alive in 2023+ (Sharpe 0.83, t=1.6, 276b).
 
 ## Month-end playbook (how the surviving signal would actually be traded)
 
