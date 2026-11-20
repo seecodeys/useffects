@@ -825,3 +825,9 @@ IEF/SHY/TIP/MBB, permutation p<0.0002, controls null; holdout IEF Sharpe 0.83). 
 strategy catalogs are largely exhausted; OpenAlex/Semantic Scholar rate-limited. Highest-value next steps need data we
 don't have for free: intraday/auction data (opening/closing imbalance, MOC flows), fund holdings/flows, options open
 interest. Rounds continue per the user's instruction, prioritising robustness work on the two findings.
+
+## 276f — Bond-bid stability by 5-year block (2002-22, descriptive)  ·  2026-11-20
+Last-3-session bp per month (mean, t): IEF 17.6 (1.3) / 22.5 (2.2) / 25.5 (3.4) / 22.7 (3.3) / 25.7 (2.0) for
+2002-04 / 05-09 / 10-14 / 15-19 / 20-22; TLT 23.8 / 37.7 / 54.7 / 43.0 / 25.4; SHY 7.0 / 10.4 / 5.3 / 6.0 / 6.8 (t 2.4-5.7).
+Positive in every block for every maturity, no decay in IEF/SHY (TLT smaller recently) — unlike most anomalies tested,
+this one hasn't been arbitraged away (consistent with its mechanical, size-driven nature).
