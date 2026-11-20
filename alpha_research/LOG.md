@@ -357,3 +357,15 @@ BTC-USD starts 2014-09, so TRAIN is essentially empty; judged on VALID (2015-22)
 071 short the next US session after a BTC day < −10% (44 events): QQQ −1.5, ARKK −0.8 — i.e. tech/ARKK tend to *bounce*
 (~+28bp) after crypto crashes, the opposite of the pre-specified shock direction; not significant, noted only.
 Registry: 227.
+
+## 080/081 — CBOE option-strategy data; fear-premium timing of put-writing  ·  2026-11-20
+080: CBOE strategy-index histories downloaded to data/cboe/ (PUT 1991+, BXM, CNDR, BFLY, WPUT 2006+, PPUT, BXMD, CLL)
+from cdn.cboe.com/api/global/us_indices/daily_prices/<NAME>_History.csv (follow redirects). Real option prices.
+081: write SPX puts only when the fear premium (VIX − 20d realized vol) is above its train median; measured as timing
+value over exposure-matched always-on writing, net of switch costs.
+- Monthly (decide at each roll): PUT −1.0 / +1.6; weekly WPUT +0.3 / +0.0.
+- Descriptive: always-on PUT excess return by prior-day fear-premium tercile 2000-22 = +10% / −3% / +30% annualised —
+  high-fear days do pay most, but they're also the most volatile, so timing doesn't produce a reliable edge.
+- 081b daily exposure switch (hypothesis formed from that table): 10bp/switch −0.4 / +1.3; 25bp/switch −1.2 / −0.4.
+Verdict: **dead/weak** — the insurance premium is real (put-writing earns ~equity-like returns) but timing it by the
+fear premium adds no robust value. Registry: 231.

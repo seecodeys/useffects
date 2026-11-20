@@ -1,8 +1,8 @@
 # Backlog (top = next). Mark `[x]` when done, `[~]` in progress.
 
 ## OPTIONS (user request 2026-11-20) — behavioral angle: people overpay for insurance after fear spikes
-- [ ] 080 Data: pull CBOE strategy-index CSVs (PUT, BXM, CNDR, BFLY, WPUT, PPUT) into data/cboe/; sanity-check vs ^PUT.
-- [ ] 081 Fear-premium timing of put-writing: PUT/WPUT index returns when VIX−RV fear premium is high vs low
+- [x] 080 Data: pull CBOE strategy-index CSVs (PUT, BXM, CNDR, BFLY, WPUT, PPUT) into data/cboe/; sanity-check vs ^PUT.
+- [x] 081 Fear-premium timing of put-writing: PUT/WPUT index returns when VIX−RV fear premium is high vs low
       (excess over always-on writing), monthly decision at prior close.
 - [ ] 082 Short-vol ETPs after fear over-reaction: short VIXY / long SVXY (−0.5x era) for N days after VIX spikes,
       and when VIX/VIX3M is in contango; behavioral = VIX over-shoots then mean-reverts.
