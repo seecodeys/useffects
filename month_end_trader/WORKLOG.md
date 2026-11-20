@@ -58,4 +58,7 @@ Branch: `claude/blissful-mccarthy-mt2shh`. Scheduled check-ins (4 hourly tasks, 
       two-read check keeps a good second read (exit stays before 16:00), exit vwap from closing-side fills only + reversal
       flag (trade_bp None), guard re-reads before mismatch alerts, exit counters reset on re-entry, entry status persisted,
       user '-manual' orders not treated as bot orders, executions filtered by contract, PAPER_TEST/systemd notes. 187 tests
-- [ ] Review round 8: short focused pass on the round-7 diff only
+- [x] Review round 8 (5 findings, no P&L/ownership bugs) fixed: disagreement flag resets when sources agree, bot waits
+      while the user's MET-<date>-manual order is working (no double close), Unknown/Timeout entries wait for executions,
+      guard re-read only for new mismatches, mismatch flag clears. 189 tests
+- [ ] Next: idle unless the user answers the sizing question (floor vs nearest contract); otherwise periodic full-suite + replay (MET_SLOW=1) run

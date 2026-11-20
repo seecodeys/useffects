@@ -652,7 +652,7 @@ def test_cli_flatten_syncs_before_ownership(env, monkeypatch, tmp_path):
     cfg, clock, b, ex, alerts = env()
     b.fill_delay_next = (20, False)            # entry reported dead, fills while the daemon is stopped
     run_until(ex, clock, dt.datetime(2025, 9, 30, 9, 30, 10))
-    assert st(cfg).phase == "ERROR"
+    assert st(cfg).phase in ("ERROR", "ENTRY_SUBMITTED")     # Timeout waits for executions before failing
     clock.advance(30)
     (tmp_path / "c.yaml").write_text(f"ib: {{account: DU1234567}}\nmonitoring: {{state_dir: {cfg.monitoring.state_dir}, start: '2025-09'}}\n")
     monkeypatch.setattr(cli, "_broker", lambda *a, **k: b)
@@ -667,3 +667,26 @@ def test_reversal_fills_excluded_from_exit_vwap(tmp_path):
                    dict(exec_id="2", rev=0, ref="MET-2025-09-30-exit1", side="SELL", qty=14.0, price=101.0, time="t"),
                    dict(exec_id="3", rev=0, ref="MET-2025-09-30-exit2", side="BUY", qty=7.0, price=99.0, time="t")])
     assert s.get("exit_price") == 101.0 and s.get("exit_filled") == 14 and s.get("reversal_fills") == 7 and s.owned == 0
+
+
+# ---------------------------------------------------------------- review round 8
+def test_bot_waits_for_users_manual_close(env):
+    cfg, clock, b, ex, alerts = env()
+    run_until(ex, clock, dt.datetime(2025, 9, 30, 15, 59))
+    b.manual_open = 1                              # user's MET-…-manual limit order working
+    run_until(ex, clock, dt.datetime(2025, 9, 30, 16, 0, 30))
+    assert not [o for o in b.orders if o["action"] == "SELL"]
+    c = b.front_future("MES", "CME", T + dt.timedelta(days=3))
+    b.manual_open = 0
+    b.market_order(c, "SELL", 7, f"MET-{T}-manual", 5)        # it fills
+    run_until(ex, clock, dt.datetime(2025, 9, 30, 17, 0))
+    assert b.fut_pos == 0 and st(cfg).phase == "FLAT"
+    assert sum(o["action"] == "SELL" for o in b.orders) == 1
+
+
+def test_disagreement_flag_resets_when_sources_agree(env):
+    cfg, clock, b, ex, alerts = env()
+    run_until(ex, clock, dt.datetime(2025, 9, 30, 15, 59, 57))
+    b.pos_glitch_reads = 4                         # one disagreeing round
+    run_until(ex, clock, dt.datetime(2025, 9, 30, 16, 5))
+    assert b.fut_pos == 0 and not st(cfg).get("disagree_rounds")

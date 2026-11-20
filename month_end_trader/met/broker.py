@@ -120,6 +120,10 @@ class Broker(abc.ABC):
         dicts with exec_id (stable across IB corrections), ref, side ('BUY'/'SELL'), qty, price, time, local_symbol.
         Raises BrokerError if they cannot be retrieved."""
 
+    def manual_working(self, ref: str) -> int:
+        """Number of the user's working orders with exactly this orderRef (e.g. MET-<date>-manual)."""
+        return 0
+
     def cancel_working(self, ref_prefix: str = "MET-") -> int:
         """Cancel this bot's working orders; returns how many cancels were sent."""
         return 0

@@ -59,6 +59,7 @@ class FakeBroker(Broker):
         self.pos_glitch_reads = 0         # next N positions() calls omit the futures position (stale cache)
         self.account_reported = None      # account id the broker reports (default: self.account)
         self.stuck_working = 0            # working_orders() result (orders stuck at the broker)
+        self.manual_open = 0              # user's working MET-<date>-manual orders
         self.cancel_clears_stuck = True
         self.stale_after_fill = 0         # after the next fill, N positions() reads still show the pre-fill qty
         self._stale_left, self._stale_pos = 0, 0
@@ -201,6 +202,9 @@ class FakeBroker(Broker):
     def working_orders(self, ref_prefix="MET-"):
         self._process_pending()
         return self.stuck_working + sum(1 for p in self._pending if p[4])
+
+    def manual_working(self, ref):
+        return self.manual_open
 
     def cancel_working(self, ref_prefix="MET-"):
         n = self.stuck_working

@@ -271,6 +271,15 @@ class IBKRBroker(Broker):
             self.ib.sleep(1)
         return n
 
+    def manual_working(self, ref):
+        if not self.ib.isConnected():
+            return 0
+        try:
+            trades = self._call("reqAllOpenOrders", self.ib.reqAllOpenOrders)
+        except BrokerError:
+            trades = self.ib.openTrades()
+        return sum(1 for t in trades if not t.isDone() and (t.order.orderRef or "") == ref)
+
     def working_orders(self, ref_prefix="MET-"):
         if not self.ib.isConnected():
             return 0

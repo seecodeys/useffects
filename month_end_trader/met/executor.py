@@ -313,7 +313,7 @@ class Executor:
                                 f"Check {st.get('contract_local_symbol')} in TWS. If the bot's entry filled, close it "
                                 f"yourself in TWS: the bot will not touch a position it cannot prove is its own.")
             return
-        if final_status in (None, "Filled", "PartiallyFilled"):
+        if final_status in (None, "Filled", "PartiallyFilled", "Unknown", "Timeout"):
             # broker said filled (or we restarted) but no executions yet: give the reports time
             n = int(st.get("entry_resolve_tries", 0)) + 1
             st.update(self.ts(), note="no entry executions yet", entry_resolve_tries=n)
@@ -353,14 +353,17 @@ class Executor:
             self._finalise(trade_date, st)               # closed by fills we can see (e.g. manual in TWS with our ref)
             return
         pos = self.broker_pos(c)
-        if pos != owned:
+        if pos != owned and pos != st.get("last_mismatch_pos"):
             self.broker.sleep(2)
             pos = self.broker_pos(c)                      # a single stale read right after a fill is common
+        if pos == owned and st.get("mismatch_alerted"):
+            st.update(self.ts(), note="broker agrees with fills again", mismatch_alerted=False, last_mismatch_pos=None)
         if pos != owned:
             now = self.broker.now()
             gap = 3600 if st.get("mismatch_alerted") else 0
             if not self._last_mismatch_alert or (now - self._last_mismatch_alert).total_seconds() > max(gap, 600):
-                st.update(self.ts(), note=f"mismatch broker {pos:+g} vs fills {owned:+d}", mismatch_alerted=True)
+                st.update(self.ts(), note=f"mismatch broker {pos:+g} vs fills {owned:+d}", mismatch_alerted=True,
+                          last_mismatch_pos=pos)
                 self._last_mismatch_alert = now
                 self.alert.critical(f"{trade_date}: broker position differs from the bot's fills",
                                     f"broker {pos:+g}, bot's executions {owned:+d}; the exit closes only the bot's quantity")
@@ -436,6 +439,12 @@ class Executor:
         if owned == 0:
             self._finalise(trade_date, st)
             return True
+        if self.broker.manual_working(f"MET-{trade_date}-manual") > 0:
+            if not st.get("manual_wait_alerted"):
+                st.update(self.ts(), note="user's manual close working", manual_wait_alerted=True)
+                self.alert.warn(f"{trade_date}: your MET-{trade_date}-manual order is working; the bot waits for it")
+            self._backoff(st, quick=True)
+            return False
         if (owned > 0) != (st.get("direction", 1) > 0) and not st.get("reversal_alerted"):
             st.update(self.ts(), note="reversed", reversal_alerted=True)
             self.alert.critical(f"{trade_date}: bot position REVERSED to {owned:+d} by a late fill", "closing it")
@@ -461,6 +470,8 @@ class Executor:
                                     f"bot's fills {owned:+d}, broker {pos:+g}; not sending an order")
             self._backoff(st)
             return False
+        if st.get("disagree_rounds"):
+            st.update(self.ts(), note="fills and broker agree again", disagree_rounds=0, last_broker_pos=None)
         qty = int(min(abs(owned), abs(pos)))
         action = "SELL" if owned > 0 else "BUY"
         n = int(st.get("exit_orders", 0)) + 1
