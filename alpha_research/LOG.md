@@ -999,3 +999,11 @@ Registry: 420 rows.
 Fade TLT after |close→close| > 1.5% / 2% (TMF/TMV rebalance in the move's direction into the close): next-day
 open→close +1.1 / −0.8 and +1.1 / −0.4; overnight close→open −0.4 / +0.9 (2bp/side). Dead — Treasury LETFs are too small
 relative to the bond market to leave a footprint. Registry: 423 rows.
+
+## 314 — Option hedging-demand spikes (CBOE put/call ratios, 2006-2019)  ·  2026-11-20
+CBOE equity/index P/C CSVs (free history ends Oct 2019). z vs 60 sessions, used from the next close (lag=1).
+A long SPY 5 sessions after z(equity P/C) > 1.5: train +1.62 / valid +2.18 (Sharpe 0.57 / 1.00), timing value over
+exposure-matched long t=+1.38 / +1.88 — **weak but consistent**, fails the gate on train t. B index P/C: +0.5 / +1.5 (timing
+−0.2 / +0.9). C 1-day contrarian sign: −1.9 / −1.1 — consistently wrong-signed, i.e. the day after a hedging spike tends to
+be weak and the rebound comes over the following week (dealer hedge unwind). Post-hoc shape, not chased. No post-2019 free
+data → no holdout possible. Registry: 426 rows.
