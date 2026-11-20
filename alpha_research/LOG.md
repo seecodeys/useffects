@@ -793,3 +793,7 @@ TLT +43.7 vs +37.7bp. No meaningful difference — the bid is present every mont
 Long over the last 3 sessions: MBB (agency MBS) +2.61 / +3.23; TIP (TIPS) +3.31 / +2.91; MUB (munis) +0.87 / +0.98.
 Strong in index-tracked taxable bonds (Treasuries, TIPS, MBS, IG credit), weak in munis (not in the main taxable bond
 indices' monthly extension) — a nice cross-check of the index-extension mechanism. Registry: 371 rows.
+
+## 281 — Full month-end bond cycle (long last 3 / short first 3 sessions; consistency)  ·  2026-11-20
+IEF +3.52 / +2.27 (vs long-only +3.39 / +3.24); TLT +4.34 / +2.03 (vs +3.31 / +2.32). The early-month reversal leg helped
+in 2002-14 but not 2015-22 → keep the long-only month-end bid. Registry: 373 rows.
