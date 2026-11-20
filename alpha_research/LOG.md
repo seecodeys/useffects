@@ -663,3 +663,7 @@ NY Fed operation results (markets.newyorkfed.org/api/tsy/all/results/summary/sea
 1,612 outright Treasury purchases 2008-12 → 2022-12 (QE1-3 and 2019-22). Long SPY open→close on purchase days: train
 +1.5 (2009-14 QE era) → valid −0.2; long TLT on long-maturity purchase days: −0.5 / +0.9. Dead — the POMO-day equity
 premium reported for QE2/QE3 doesn't hold up out of sample. Registry: 329.
+
+## 234 — SPY dividend reinvestment on pay-date month-ends  ·  2026-11-20
+Long SPY open→close on the last day of Jan/Apr/Jul/Oct: −0.6 / −1.0; other month-ends −0.7 / −0.6. No unconditional
+month-end buying (direction comes from the stock-bond gap, as in 013). Dead. Registry: 331.

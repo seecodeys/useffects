@@ -69,6 +69,7 @@
 - [x] 225 LETF-heavy sector ETFs overnight reversal — dead (undercuts 112's LETF story).
 - [x] 226 Risk-parity month-end in gold — dead.
 - [x] 233 Fed POMO purchase days — dead.
+- [x] 234 SPY dividend reinvestment month-ends — dead.
 - [ ] 183 Retry OpenAlex/Semantic Scholar later (rate limits) for flow papers; Crossref with targeted titles.: web-fetch NBER working-paper search pages (nber.org/papers?q=...) for 'rebalancing',
       'price pressure', 'flows' — empirical asset-pricing papers with daily-testable rules.
 - [x] 179 Month-end rule applied to QQQ-vs-TLT and IWM-vs-TLT pairs with the vol filter (168) — robustness only if cheap.
