@@ -3,9 +3,9 @@
 ## BEHAVIORAL FOCUS (user request 2026-11-20) — do these first
 Already known: index-level fades (gap fade, prior-day reversal) work only in crises (009/011); single-stock gap fade
 is an opening-print artifact (015). New tests use prior-close information only.
-- [ ] 050 Over-reaction vs news (volume split): yesterday's extreme stock moves vs SPY — low-volume moves (no news,
+- [x] 050 Over-reaction vs news (volume split): yesterday's extreme stock moves vs SPY — low-volume moves (no news,
       liquidity/emotion) should reverse; high-volume moves (news) should continue. Campbell-Grossman-Wang; Cooper.
-- [ ] 051 Attention-driven buying (Barber-Odean): stocks with abnormal volume + big up-move yesterday attract retail buy
+- [x] 051 Attention-driven buying (Barber-Odean): stocks with abnormal volume + big up-move yesterday attract retail buy
       orders at the next open → price drifts down open→close. Short attention winners (SPY-hedged).
 - [ ] 052 Streaks / extrapolation: N≥4 consecutive down (up) closes in a stock or sector ETF → next-day open→close reversal.
 - [ ] 053 Fear over-reaction at the index level, structured: SPY close-to-close drop > 2σ / VIX jump > 25% / both →

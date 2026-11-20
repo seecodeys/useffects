@@ -264,3 +264,15 @@ pre-specified in that direction, so only noted. Registry: 181.
 Per-trade P&L by 5-year block (TYX proxy pre-2002-08, TLT after): 1993-94 −16bp (t=−1.7, 23 trades), 1995-99 +14 (0.8),
 2000-04 +22 (1.9), 2005-09 +37 (3.3), 2010-14 −1 (−0.1), 2015-19 +13 (1.8), 2020-24 +26 (2.0), 2025-26 +47 (3.2).
 Positive in 6 of 8 blocks, strongest post-2005, with a dead 2010-14 stretch. results/013_stability.png.
+
+## 050/051 — Over-reaction vs news (volume split) and attention buying, ~95 large caps  ·  2026-11-20
+Behavioral focus begins (user request). Signals from the prior close only (yesterday's return vs SPY, volume vs its
+20-day average); trade next open→close; 2bp/side/leg. 6 registry rows (050b first run barely traded because of a
+≥20-names filter — redone as 050b' with thresholds).
+- 050a reversal of LOW-volume extreme moves: −0.2 / −1.3. 050c plain reversal: −2.3 / −1.4 (losing after costs).
+- 050b' continuation of HIGH-volume moves (>2× volume, |move|>2%): +1.3 / −1.9 — flips sign after 2015.
+- 051 short attention winners (high volume + top-decile move): **−3.1 / −1.8** — wrong way: big-volume winners keep
+  rising a little (high-volume return premium), but 051r (long them) is only +0.6 / −1.1 after costs.
+Verdict: **dead in large caps.** Next-day over-reaction/attention effects among liquid large caps are a few bp at most —
+below 2bp/side costs. These effects are documented mainly in small, retail-heavy stocks, which need a survivorship-free
+universe we don't have for free. Moving to ETF-based behavioral tests (no survivorship issue). Registry: 187.
