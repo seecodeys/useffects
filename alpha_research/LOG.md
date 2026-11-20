@@ -893,3 +893,9 @@ higher-beta index. Confirms 'enter at the open'.
 Signed by 013's signal: 16:00(d−1)→20:00 +3.7bp (t=1.1), 20:00→04:00 −5.5bp (t=−1.3), 04:00→09:30 +1.1bp (t=0.3).
 No consistent pre-open move — the flow starts at the cash open (287/295), so entering at the prior close (127) only adds
 noise. Execution: enter at the open, as specified.
+
+## 297 — OPEX-Friday short, mid-session only (post-hoc refinement of 001; SPX CFD, no holdout)  ·  2026-11-20
+Short 10:30→15:00 on monthly OPEX Fridays: train t=+2.39, valid +1.46, +13.6bp/trade, mean/sd 0.202 vs the full-session
+CFD baseline +1.42 / +1.27, +11.5bp, 0.143. Concentrating on the post-settlement window improves risk-adjusted edge
+~40%, but it's post-hoc and still not significant in 2015-22. Practical note for anyone using the 001 tilt: avoid the
+first hour (settlement noise) and the last hour. Registry: 391 rows.
