@@ -75,6 +75,7 @@
 - [x] 253 Threshold rebalancers — dead.
 - [x] 255 Month-end flow via VIXY — right sign, noisy.
 - [x] 013h Permutation tests — p<0.0001.
+- [x] 256 Month-end curve (TLT−IEF) — weak, right sign.
 - [ ] 183 Retry OpenAlex/Semantic Scholar later (rate limits) for flow papers; Crossref with targeted titles.: web-fetch NBER working-paper search pages (nber.org/papers?q=...) for 'rebalancing',
       'price pressure', 'flows' — empirical asset-pricing papers with daily-testable rules.
 - [x] 179 Month-end rule applied to QQQ-vs-TLT and IWM-vs-TLT pairs with the vol filter (168) — robustness only if cheap.

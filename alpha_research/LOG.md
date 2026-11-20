@@ -695,3 +695,7 @@ the stock-bond-gap signal only works ON the month's last day. Strong, non-parame
 −d in VIXY open→close on the last day: +20bp/trade (2011-14), +37bp (2015-22), t=+0.2 / +0.9 — right sign, too noisy
 (VIXY is ~4-5× SPY's volatility, so a 20-37bp edge is small relative to its swings). Consistent, not tradable alone.
 Registry: 339.
+
+## 256 — Bond side of the month-end rebalance in curve terms (TLT−IEF)  ·  2026-11-20
++sign(stock-bond MTD gap) in TLT−IEF on the last day: +6.9bp/trade gross in both periods, t=+0.9 / +0.8. Right sign,
+small. Weak. Registry: 340.
