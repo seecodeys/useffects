@@ -65,7 +65,7 @@ is an opening-print artifact (015). New tests use prior-close information only.
 
 - [x] 070 DST weekend Mondays (lost sleep) — dead.
 - [x] 072 Lunar phase — dead.
-- [ ] 069 Weather mood (Hirshleifer-Shumway): NYC morning cloud cover (free Open-Meteo archive API, daily since 1940) →
+- [x] 069 Weather mood (Hirshleifer-Shumway): NYC morning cloud cover (free Open-Meteo archive API, daily since 1940) →
       SPY open→close on sunny vs overcast mornings; deseasonalised cloud cover, pre-specified sign (sunny = long).
 - [ ] 067 Retail mood spillover: BTC weekend return (Fri US close → Mon pre-open, from BTC-USD UTC daily bars) →
       Monday SPY/QQQ open→close, 2015+ (crypto as a retail-sentiment gauge).

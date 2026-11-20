@@ -344,3 +344,9 @@ Registry: 216.
 070 short SPY open→close on the first session after each DST change (54 events): +0.4 / −1.6. 072 long the new-moon
 week / short the full-moon week: −0.5 / −0.1. **Both dead** — classic mood anomalies don't show up in SPY open→close.
 Registry: 221.
+
+## 069 — Weather mood: sunny vs cloudy New York mornings (Hirshleifer-Shumway)  ·  2026-11-20
+NYC morning (06-09h) cloud cover from the free Open-Meteo ERA5 archive
+(archive-api.open-meteo.com/v1/archive?latitude=40.71&longitude=-74.01&hourly=cloud_cover&timezone=America/New_York),
+deseasonalised by calendar month (train). H1 long sunniest 20% / short cloudiest 20%: −0.4 / −1.1. H2 −sign(cloud):
+−0.2 / −0.5. **Dead** (if anything wrong-signed). Registry: 223.
