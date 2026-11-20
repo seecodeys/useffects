@@ -731,3 +731,8 @@ markets in 257; too short to judge. 263 long 1306.T open→close after a >0.5% g
 Pooled 4-country rule, trading only when local equity 20d vol > its pre-2015 median: train +1.0, valid **+2.9**
 (vs +2.0 / +3.35 unfiltered). The vol filter doesn't sharpen it abroad. (Importing 257 accidentally re-ran its 5
 registrations; those rows are marked DUPLICATE in the registry.) Registry: 353 rows (348 unique tests).
+
+## 267 — International option-expiry replication of 001  ·  2026-11-20
+Short on local monthly expiry, open→close: Eurex 3rd Fri (EXS1.DE) +0.5 / +0.6; Japan SQ 2nd Fri (1306.T) −0.3 / −2.2
+(Japanese ETF *rises* on SQ days); Canada 3rd Fri (XIU.TO) −0.5 / +0.1. No international support for the OPEX-short tilt
+— 001 looks US-specific (or noise). Registry: 356 rows (351 unique).
