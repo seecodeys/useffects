@@ -14,3 +14,4 @@
 | 013h | Permutation tests of 013 (2002-22) | sign-shuffle p<0.0001; same rule on random non-month-end days: +0.8bp (p≈0.0005) | — | Confirms it's a month-END effect, not a generic stock-bond reversal |
 | 257 | Month-end rule replicated in Canada / UK / Australia / euro area (local equity vs bond ETFs) | all 4 positive in 2015-22, pooled t=+3.35; Canada t=+2.42 | Canada (only gate-passer): t=−0.19, +1.9bp gross | International in 2015-22; Canada failed 2023+ → caution on persistence |
 | 275 | Long TLT over the last 3 sessions of each month (bond index extension / month-end bond buying) | t=+2.32, Sharpe 0.82; 21/21 positive years 2002-22 | t=+0.60, Sharpe 0.31; +2.2/+4.8/+3.8/−5.3% by year | Weak-but-alive; long-running, smaller recently |
+| 276 | Same month-end Treasury bid on IEF and SHY (consistency check) | IEF t=+3.24, SHY t=+3.21 (Sharpe ~1.1) | (not looked) | Effect present across the curve, scales with duration |

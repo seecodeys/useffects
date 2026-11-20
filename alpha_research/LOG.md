@@ -754,3 +754,9 @@ balanced-fund bond buying. b) first 3 sessions: −3.2 / −0.9 (the month-end b
 **Holdout (2023→Nov 2026): Sharpe 0.31, t=+0.60 @1bp; years +2.2% / +4.8% / +3.8% / −5.3% (2026 YTD).** Weak-but-alive:
 same sign 3 of 4 years, much smaller than 2002-22. (Distinct from 031's last-day open→close version, which failed 096's
 holdout check.) Registry: 361 rows.
+
+## 276 — Month-end Treasury bid along the curve (train/valid consistency; no holdout look, as pre-specified)  ·  2026-11-20
+Long over the last 3 sessions of each month: IEF train t=+3.39 / valid +3.24 (Sharpe ~1.0-1.1), gross +2.8%/yr;
+SHY +4.34 / +3.21 (Sharpe ~1.1-1.2), gross +0.9%/yr; vs TLT +3.31 / +2.32, ~+4.4%/yr. Present at every curve point,
+size scaling with duration — the classic month-end Treasury effect (index extension + month-end portfolio buying).
+Robust in 2002-22; its 2023+ strength is only weakly confirmed (275 holdout t=0.6). Registry: 363 rows.
