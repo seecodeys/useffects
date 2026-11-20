@@ -439,3 +439,6 @@ over time; revisit with intraday data or a cleaner LETF-AUM-weighted signal.
 quarter-ends +5.6bp (t=0.7, 61), year-ends +18.6bp (t=1.2, 21). The effect is concentrated in ORDINARY month-ends,
 not the biggest rebalancing dates — consistent with large quarter-end flows being anticipated / spread over prior days
 (or diluted by quad-witching on 3rd Fridays of quarter months). Not a new rule (would be a post-hoc filter). Registry: 257.
+
+## 118 — Quarter-end rebalancing anticipation  ·  2026-11-20
+013 rule applied on days −3 and −2 of quarter-end months: −0.9 / +0.7. No front-running signature. Dead. Registry: 258.

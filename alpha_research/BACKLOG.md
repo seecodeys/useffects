@@ -9,7 +9,7 @@
       overnight (close→open) and next day. Pre-specified reversal.
 - [x] 113 Corporate buyback blackout windows: buybacks pause ~2 weeks before earnings until results; calendar proxy
       (approx. weeks 2-6 after quarter-end = peak blackout) → SPY close→close weaker in blackout vs open window.
-- [ ] 118 Quarter-end rebalancing anticipation: does the stock-bond rebalance at QUARTER-ends show up on the
+- [x] 118 Quarter-end rebalancing anticipation: does the stock-bond rebalance at QUARTER-ends show up on the
       2-3 days BEFORE quarter-end (front-running) rather than the last day? Pre-specified: −sign(gap) on days −3..−2.
 - [ ] 117 LETF rebalancing, sharper: scale the signal by estimated LETF rebalancing demand = (sum of 2x/3x
       SPY/QQQ ETF AUM proxies × leverage×(leverage−1) × day return); test close→open and next-day; 2009+.
