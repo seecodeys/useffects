@@ -25,7 +25,8 @@ Branch: `claude/blissful-mccarthy-mt2shh`. Scheduled check-ins (4 hourly tasks, 
       daemon lock, config ranges, Yahoo adjclose required, source gap tolerance, clamped+winsorised SPRT, 5y calendar
       horizon with daily refresh, monitor NaN/partial-bar fixes. 20 regression tests in tests/test_review_fixes.py
 - [x] Historical replay test (48 sampled month-ends; MET_SLOW=1 for all 291)
-- [ ] Hardening: IBKR adapter mock tests (ib_async objects), reconnect during hold, clock skew check vs IB server time
-- [ ] Hardening: ES+MES mix for large accounts; contract roll edge cases (Dec 31 after Dec expiry)
+- [x] Hardening: IBKR adapter mock tests, reconnect during hold, clock skew check vs IB server time
+- [x] Contract roll tests (Feb/Mar/Jun/Sep/Dec). ES+MES mix: not needed (40 MES ~ $1.5M notional covers the account); documented
 - [x] Weekly status alert (Mondays 08:00 ET)
-- [ ] Monitoring: intraday timing indicators (60m bars)
+- [x] Monitoring: intraday timing indicators (60m bars; first hour / closing bar share; warns if closing share collapses)
+- [ ] Review round 3 once the executor/state review is fixed (fresh agent, whole package)

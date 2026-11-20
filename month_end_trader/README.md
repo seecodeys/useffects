@@ -151,6 +151,8 @@ The NYSE calendar comes from `exchange_calendars` and is refreshed daily, 5 year
 
 ## Known limitations
 
+- **Instrument size:** MES only, capped at `max_contracts` (default 40, about $1.5M notional). Accounts large enough to need ES are not supported yet.
+
 - **Entry and exit prices.** The overlay uses MES at 09:30:01 and 15:59:58. The backtest used SPY's official open and close prints, so expect a small tracking difference; the monitor measures it.
 - **Account currency.** For a non-USD base-currency account, net liquidation is treated as USD-equivalent (the bot warns).
 - **IB Gateway login and 2FA** happen outside the bot. Use IBC, and watch for alerts.

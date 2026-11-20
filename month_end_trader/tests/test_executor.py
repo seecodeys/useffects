@@ -293,3 +293,12 @@ def test_sizing():
     assert size_contracts(20_000, 7340, 5, 2.0, 1.0, 3.0, 40)[0] == 1
     assert size_contracts(15_000, 7340, 5, 2.0, 1.0, 2.0, 40)[0] == 0                # 1 contract would be 2.4x > cap
     assert size_contracts(0, 7340, 5, 2.0, 1.0, 3.0, 40)[0] == 0
+
+
+@pytest.mark.parametrize("T,expect", [(dt.date(2025, 3, 31), "MESM5"), (dt.date(2025, 6, 30), "MESU5"),
+                                      (dt.date(2025, 2, 28), "MESH5"), (dt.date(2025, 9, 30), "MESZ5")])
+def test_contract_roll_by_month(env, T, expect):
+    cfg, clock, b, ex, alerts = env(dt.datetime.combine(cal.previous_session(T), dt.time(15, 0)))
+    run_until(ex, clock, dt.datetime.combine(T, dt.time(17, 0)))
+    s = TradeState(cfg.monitoring.state_dir, str(T))
+    assert s.get("contract_local_symbol") == expect and s.phase == "FLAT"

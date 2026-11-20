@@ -36,3 +36,17 @@ def test_run_report_writes_outputs(tmp_path, data):
     assert res["sprt"]["trades"] == 46 and res["sprt"]["score"] > 1.0
     assert res["size_multiplier"] == 1.0
     assert (tmp_path / "monitor.json").exists() and (tmp_path / "decay_2026-10-31.md").exists()
+
+
+def test_intraday_timing_shares():
+    import pandas as pd
+    from met import calendar as cal
+    from met.monitor import intraday_timing
+    T = dt.date(2025, 9, 30)
+    idx = [dt.datetime(2025, 9, 30, h, m, tzinfo=cal.ET) for h, m in [(9, 30), (10, 30), (11, 30), (12, 30), (13, 30), (14, 30), (15, 30)]]
+    opens = [100, 100.3, 100.3, 100.3, 100.3, 100.3, 100.3]
+    closes = [100.3, 100.3, 100.3, 100.3, 100.3, 100.3, 100.6]
+    bars = pd.DataFrame({"open": opens, "close": closes}, index=idx)
+    led = pd.DataFrame({"direction": [1]}, index=[T])
+    r = intraday_timing(bars, led)
+    assert r["n"] == 1 and r["first_hour_share"] == pytest.approx(0.5, abs=0.01) and r["last_bar_share"] == pytest.approx(0.5, abs=0.01)

@@ -103,6 +103,51 @@ def slope(df):
     return float(b[1]), float(b[1] / se)      # bp of SPY move per 1% of gap; t-stat
 
 
+def intraday_timing(bars: pd.DataFrame, ledger: pd.DataFrame) -> dict | None:
+    """bars: 60-minute SPY bars (index tz-aware ET datetimes, columns open/close). For each month-end in the
+    ledger with intraday data: signed return of the first hour and of the last bar (15:30-16:00), as a share
+    of the signed open->close move. Crowding shows up as the move migrating out of the closing auction."""
+    rows = []
+    for T, r in ledger.iterrows():
+        day = bars[[t.date() == T for t in bars.index]]
+        if len(day) < 5:
+            continue
+        o, c = float(day["open"].iloc[0]), float(day["close"].iloc[-1])
+        first = float(day["close"].iloc[0]) / o - 1
+        last = c / float(day["open"].iloc[-1]) - 1
+        rows.append(dict(date=T, first_bp=r["direction"] * 1e4 * first, last_bp=r["direction"] * 1e4 * last,
+                         total_bp=r["direction"] * 1e4 * (c / o - 1)))
+    if not rows:
+        return None
+    d = pd.DataFrame(rows)
+    tot = d["total_bp"].sum()
+    return dict(n=len(d), first_hour_bp=float(d["first_bp"].mean()), last_bar_bp=float(d["last_bp"].mean()),
+                first_hour_share=float(d["first_bp"].sum() / tot) if tot else float("nan"),
+                last_bar_share=float(d["last_bp"].sum() / tot) if tot else float("nan"))
+
+
+def yahoo_60m(symbol: str) -> pd.DataFrame:
+    import requests, time as _t
+    from .signal import _YH
+    last = None
+    for attempt in range(3):
+        try:
+            r = requests.get(f"https://query1.finance.yahoo.com/v8/finance/chart/{symbol}", headers=_YH, timeout=20,
+                             params={"range": "730d", "interval": "60m"})
+            if r.status_code == 200:
+                res = r.json()["chart"]["result"][0]
+                break
+            last = f"HTTP {r.status_code}"
+        except Exception as e:
+            last = repr(e)
+        _t.sleep(2 * (attempt + 1))
+    else:
+        raise DataError(f"yahoo 60m {symbol}: {last}")
+    q = res["indicators"]["quote"][0]
+    ts = pd.to_datetime(res["timestamp"], unit="s", utc=True).tz_convert(cal.ET)
+    return pd.DataFrame({"open": q["open"], "close": q["close"]}, index=ts).dropna()
+
+
 def live_rows(cfg: Config) -> pd.DataFrame:
     rows = []
     for t in all_trades(cfg.monitoring.state_dir):
@@ -117,6 +162,7 @@ def live_rows(cfg: Config) -> pd.DataFrame:
 
 def run_report(cfg: Config, asof: dt.date | None = None, spy=None, tlt=None, write=True) -> dict:
     m = cfg.monitoring
+    spy_is_live = spy is None
     if spy is None:
         now = dt.datetime.now(cal.ET)
         spy = drop_partial_today(yahoo_daily(cfg.signal.equity, days=365 * 26), now)
@@ -136,6 +182,12 @@ def run_report(cfg: Config, asof: dt.date | None = None, spy=None, tlt=None, wri
         return (float(x.mean()), float(x.mean() / x.std() * math.sqrt(x.count()))) if x.count() > 2 and x.std() > 0 \
             else (float("nan"), float("nan"))
     lead = {k: _mt(last24[k]) for k in ("paper_bp", "gap_in_bp", "t1_oc_bp", "tlt_bp")}
+    timing = None
+    if write and spy_is_live:
+        try:
+            timing = intraday_timing(yahoo_60m(cfg.signal.equity), led)
+        except Exception:
+            timing = None
     live = live_rows(cfg)
     exec_gap = None
     if len(live):
@@ -147,6 +199,8 @@ def run_report(cfg: Config, asof: dt.date | None = None, spy=None, tlt=None, wri
     if lead["gap_in_bp"][1] > 2: warnings.append("overnight gap into T now moves in the signal direction (pre-positioning)")
     if lead["t1_oc_bp"][1] > 2: warnings.append("day before month-end now moves in the signal direction (front-running)")
     if not math.isnan(t_36) and b_36 > -2 and b_all < -2: warnings.append("response slope over the last 36 trades has collapsed")
+    if timing and timing["n"] >= 12 and timing["last_bar_share"] == timing["last_bar_share"] and timing["last_bar_share"] < 0.1:
+        warnings.append(f"closing-bar share of the move fell to {timing['last_bar_share']:.0%} (was ~37% in 2024-26)")
     if exec_gap is not None and exec_gap < -3: warnings.append(f"live fills trail paper by {exec_gap:.1f}bp per trade")
     res = dict(asof=str(asof), status=status, size_multiplier=mult if cfg.guardrails.auto_derisk else 1.0,
                sprt=dict(score=L, upper=A, lower=B, decided=decided, trades=len(live_start), since=m.start,
@@ -156,7 +210,7 @@ def run_report(cfg: Config, asof: dt.date | None = None, spy=None, tlt=None, wri
                           last36_mean_bp=float(led["paper_bp"].tail(36).mean())),
                slope=dict(all=b_all, all_t=t_all, last36=b_36, last36_t=t_36),
                leading_last24={k: dict(mean_bp=v[0], t=v[1]) for k, v in lead.items()},
-               execution_gap_bp=exec_gap, warnings=warnings, skipped_months=[str(d) for d, _ in led.attrs.get("skipped", [])])
+               execution_gap_bp=exec_gap, intraday_timing=timing, warnings=warnings, skipped_months=[str(d) for d, _ in led.attrs.get("skipped", [])])
     res["summary"] = (f"SPRT {L:+.2f} (bounds {B:+.2f}/{A:+.2f}, {len(live_start)} trades since {m.start}) -> size x{res['size_multiplier']:g}. "
                       f"Paper mean last 36: {res['paper']['last36_mean_bp']:+.1f}bp. Slope last 36: {b_36:+.1f}bp per 1% gap (t {t_36:+.1f}). "
                       + (" WARN: " + "; ".join(warnings) if warnings else ""))
@@ -181,6 +235,10 @@ def _write_md(cfg, res, led, live, path, A, B, asof):
     for k, lab in [("gap_in_bp", "Overnight gap into T (signed)"), ("t1_oc_bp", "T-1 open->close (signed)"), ("tlt_bp", "TLT on T, rebalancing direction")]:
         v = res["leading_last24"][k]
         lines.append(f"| {lab}, last 24 | {v['mean_bp']:+.1f}bp (t {v['t']:+.1f}) |")
+    tm = res.get("intraday_timing")
+    if tm:
+        lines.append(f"| Intraday ({tm['n']} month-ends, 60m bars): first hour / last 30 min | "
+                     f"{tm['first_hour_bp']:+.1f} / {tm['last_bar_bp']:+.1f}bp ({tm['first_hour_share']:.0%} / {tm['last_bar_share']:.0%} of move) |")
     eg = res["execution_gap_bp"]
     lines.append("| Live minus paper (execution) | " + ("n/a" if eg is None else f"{eg:+.1f}bp") + " |")
     if res["warnings"]:
