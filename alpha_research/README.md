@@ -3,7 +3,7 @@
 An autonomous research loop that searched for signals to **buy or short US-listed ETFs/stocks at the open and exit at
 the close**. It started from one question: do the rest of the world's markets since the last US close predict the US
 trading day? Every idea was tested under fixed, pre-registered rules (`PROTOCOL.md`), and every variant was logged
-(`results/registry.csv`, 333 tests so far). Later rounds widened the scope to overnight/multi-day holds, behavioral
+(`results/registry.csv`, ~370 tests so far). Later rounds widened the scope to overnight/multi-day holds, behavioral
 signals, participant flows and options.
 
 ## Bottom line
@@ -12,6 +12,7 @@ signals, participant flows and options.
 |---|---|
 | **Original thesis** (Asia closes, Europe at 9:30 ET, overnight FX/gold → US open→close) | **Dead.** With correct timing, all of it is already in the opening gap (000, 003, 005). |
 | **Main finding: month-end stock-bond rebalancing (013)** | **Survived the untouched 2023-2026 holdout:** t=3.3, Sharpe 1.7, +37bp/trade, 67% hit. Confirmed on IWM/QQQ/DIA. |
+| **Second finding: month-end bond bid (275-284)** | Long Treasuries over the last 3 sessions of each month: positive in 21/21 years 2002-22 (TLT), t>3 on IEF/SHY/TIP/MBB in both periods, also IG credit, Canada; weak in munis. Holdout: IEF Sharpe 0.83 (t=1.6), TLT 0.31 — weak-but-alive. Mechanical (index extension), independent of the stock-bond gap. |
 | OPEX-Friday short (001) | Small persistent tilt; about half as strong in holdout (t=0.8). |
 | ADR catch-up (004), single-stock gap reversal (006) | Looked strong, but vanish if you enter 5 minutes after the open → likely opening-print artifacts (015). |
 | **Month-end signal via options (083)** | Selling a same-day ATM option against the signal survived holdout (model-priced): t=3.5, Sharpe 1.8, 80% hit. Model overstates seller edge ~35% (087) → realistic ~+10bp/trade. |
