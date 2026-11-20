@@ -334,3 +334,8 @@ no variant passes the gate.** Not pursued further for now (registry 214, luck t 
 a) long only when SPY is >15% below its 252-day high (17% of days): timing excess −0.2 / +1.3. b) step aside at euphoric
 highs (new high + 21d return > 8%; rare): −0.6 / −1.2. **Dead** — no timing value beyond the equity premium.
 Registry: 216.
+
+## 063/064/065 — Disposition effect, panic-driven country reversal, extrapolation reversal  ·  2026-11-20
+063 long low / short high capital-gains-overhang ETFs (price vs 1-year VWAP), monthly: −0.1 / +0.05. Dead.
+064 country 1-week reversal only when VIX > 30 (12% of days): train +3.0 (2008-09 crisis) → valid +0.4. Dead.
+065 pooled reversal after 63-day extremes (top/bottom 5% of train history) in GLD/TLT/USO/EEM/QQQ, 21-day holds: -0.4 / -0.1. Dead. Registry: 219.
