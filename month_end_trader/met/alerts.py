@@ -1,0 +1,73 @@
+"""Alerting: always logs; optionally Telegram and/or email, configured only through environment variables.
+
+  MET_TELEGRAM_TOKEN, MET_TELEGRAM_CHAT_ID
+  MET_SMTP_HOST, MET_SMTP_PORT (587), MET_SMTP_USER, MET_SMTP_PASSWORD, MET_ALERT_EMAIL_TO
+  MET_HEARTBEAT_URL   (e.g. a healthchecks.io ping URL; pinged by the daemon loop)
+"""
+from __future__ import annotations
+
+import logging
+import os
+import smtplib
+import time
+from email.message import EmailMessage
+
+import requests
+
+log = logging.getLogger("met.alerts")
+LEVELS = {"INFO": logging.INFO, "WARN": logging.WARNING, "CRITICAL": logging.CRITICAL}
+
+
+class Alerter:
+    def __init__(self, mode: str = "paper", sink: list | None = None):
+        self.mode = mode
+        self.sink = sink            # tests capture alerts here
+        self._last_hb = 0.0
+
+    def send(self, level: str, title: str, body: str = ""):
+        text = f"[MET {self.mode.upper()}] {level}: {title}" + (f"\n{body}" if body else "")
+        log.log(LEVELS.get(level, logging.INFO), text.replace("\n", " | "))
+        if self.sink is not None:
+            self.sink.append((level, title, body))
+            return
+        self._telegram(text)
+        if level in ("WARN", "CRITICAL"):
+            self._email(f"[MET {self.mode}] {level}: {title}", text)
+
+    def info(self, t, b=""): self.send("INFO", t, b)
+    def warn(self, t, b=""): self.send("WARN", t, b)
+    def critical(self, t, b=""): self.send("CRITICAL", t, b)
+
+    def heartbeat(self, min_interval_s: int = 300):
+        url = os.environ.get("MET_HEARTBEAT_URL")
+        if not url or self.sink is not None or time.time() - self._last_hb < min_interval_s:
+            return
+        try:
+            requests.get(url, timeout=10); self._last_hb = time.time()
+        except Exception as e:
+            log.warning("heartbeat ping failed: %r", e)
+
+    def _telegram(self, text):
+        tok, chat = os.environ.get("MET_TELEGRAM_TOKEN"), os.environ.get("MET_TELEGRAM_CHAT_ID")
+        if not (tok and chat):
+            return
+        try:
+            requests.post(f"https://api.telegram.org/bot{tok}/sendMessage", timeout=10,
+                          data={"chat_id": chat, "text": text[:4000]})
+        except Exception as e:
+            log.warning("telegram alert failed: %r", e)
+
+    def _email(self, subject, text):
+        host, to = os.environ.get("MET_SMTP_HOST"), os.environ.get("MET_ALERT_EMAIL_TO")
+        if not (host and to):
+            return
+        try:
+            msg = EmailMessage(); msg["Subject"] = subject; msg["To"] = to
+            msg["From"] = os.environ.get("MET_SMTP_USER", to); msg.set_content(text)
+            with smtplib.SMTP(host, int(os.environ.get("MET_SMTP_PORT", "587")), timeout=20) as s:
+                s.starttls()
+                if os.environ.get("MET_SMTP_USER"):
+                    s.login(os.environ["MET_SMTP_USER"], os.environ.get("MET_SMTP_PASSWORD", ""))
+                s.send_message(msg)
+        except Exception as e:
+            log.warning("email alert failed: %r", e)
