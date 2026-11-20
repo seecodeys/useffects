@@ -376,3 +376,20 @@ a) short VIXY for 5 days after VIX > 1.25× its 20-day mean (fear over-shoot): +
 b) short VIXY only in contango (VIX < VIX3M): timing value ≈ 0 (−0.0 / +0.2), but raw Sharpe 2011-22 0.66 vs 0.25 for
 always-short — the rule's benefit is **risk reduction** (it sits out backwardation crashes like Feb-2018/Mar-2020), not
 extra return. Known, not behavioral alpha; noted as a risk overlay. Registry: 233.
+
+## 083 — Month-end signal expressed with same-day SPY options (MODEL-PRICED)  ·  2026-11-20
+Black-Scholes, IV = VIX9D (else VIX) at prior close, ATM struck at the open, expiring at the close, 5% premium haircut.
+- 083a/b raw model: buying looked great (valid t=+2.9) — **a pricing artifact**: calendar-time VIX underprices intraday
+  options (modelled ATM premium 20bp vs 58bp average |open→close| move on month-ends). Rows kept, flagged.
+- Calibration: premiums scaled ×1.69 so a same-day straddle costs 110% of the average realized |open→close| in TRAIN
+  (sanity: a straddle bought every non-month-end day loses −10.8bp/day, i.e. a ~10% vol premium, as intended).
+- 083c BUY the ATM option in the signal's direction (calibrated): +0.2 / +0.7, ~+1-4bp/trade. Not worth it.
+- **083d SELL the ATM option against the signal** (sell the put when the signal says long, the call when short):
+  train t=+5.57, valid t=+2.71, +18 / +11bp per trade → passes the gate on per-trade bp (registry's synthetic-series
+  bp field is per day). Directional edge dominates: the built-in vol premium contributes only ~1.4bp/trade.
+  **Holdout (2023→Nov 2026, one look): Sharpe 1.80, t=+3.53, +15.7bp/trade, 80% hit (46 trades), worst −78bp**
+  vs the stock version on the same days: +37.5bp/trade, 67% hit, worst −109bp.
+Verdict: **survived holdout (model-priced).** Selling a same-day option against the month-end signal is a higher-hit-
+rate, lower-drawdown way to harvest the same flow, at the cost of capped upside. Caveats: model prices (no skew, real
+0DTE IV/spreads differ; VIX1D/VIX9D median 0.86 in 2023+), same-day SPX options broadly listed only since ~2016-2022,
+and assignment/settlement mechanics (use cash-settled SPX/XSP, PM-settled). Registry: 237.

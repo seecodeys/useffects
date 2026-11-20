@@ -6,7 +6,7 @@
       (excess over always-on writing), monthly decision at prior close.
 - [x] 082 Short-vol ETPs after fear over-reaction: short VIXY / long SVXY (−0.5x era) for N days after VIX spikes,
       and when VIX/VIX3M is in contango; behavioral = VIX over-shoots then mean-reverts.
-- [ ] 083 Model-priced SPY options for the month-end signal (013): sell the put (when long signal) / call (when short)
+- [x] 083 Model-priced SPY options for the month-end signal (013): sell the put (when long signal) / call (when short)
       vs buying 1-day ATM options — premium (VIX9D-implied) vs realized edge; is options expression better than stock?
 - [ ] 084 VIX1D (2023+, short sample): 0DTE implied vs realized — descriptive only (no train/valid possible).
 
