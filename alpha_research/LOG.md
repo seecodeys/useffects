@@ -1007,3 +1007,9 @@ exposure-matched long t=+1.38 / +1.88 — **weak but consistent**, fails the gat
 −0.2 / +0.9). C 1-day contrarian sign: −1.9 / −1.1 — consistently wrong-signed, i.e. the day after a hedging spike tends to
 be weak and the rebound comes over the following week (dealer hedge unwind). Post-hoc shape, not chased. No post-2019 free
 data → no holdout possible. Registry: 426 rows.
+
+## 314b — Put/call hedging-spike rule extended through 2022 (CBOE daily JSON, Oct 2019+)  ·  2026-11-20
+Spliced cdn.cboe.com market-statistics JSON (tools/cboe_pc_daily.py) onto the CSV history; the JSON equity ratio runs
+lower (0.58 vs 0.68 around the splice — different product scope), which only affects the 60-day z for ~3 months.
+Same rule as 314A: timing value t 2007-14 +1.36 | 2015-Sep 2019 +1.86 | **Oct 2019-2022 −0.30**; valid 2015-22 overall
+t=+1.23 (was +2.18 to 2019). The lead fades in the new data → downgrade 314A from weak-consistent to dead. Registry: 427.
