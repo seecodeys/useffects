@@ -11,7 +11,7 @@
 - [ ] 085 OPEX-Friday tilt (001) via options: sell a same-day ATM call on monthly OPEX Friday (calibrated model, as 083).
 - [ ] 086 Crash-fear sentiment via CBOE SKEW: high SKEW (tail insurance demand) → subsequent PUT-index / SPY returns
       (contrarian: over-paid tail insurance), monthly.
-- [ ] 087 Model validation: monthly ATM put-write priced with VIX (BS) vs the real CBOE PUT index — mean/correlation of
+- [x] 087 Model validation: monthly ATM put-write priced with VIX (BS) vs the real CBOE PUT index — mean/correlation of
       monthly returns, to bound how wrong the model-pricing in 083/085 could be.
 - [ ] 084 VIX1D (2023+, short sample): 0DTE implied vs realized — descriptive only (no train/valid possible).
 

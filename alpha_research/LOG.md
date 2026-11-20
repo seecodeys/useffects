@@ -393,3 +393,11 @@ Verdict: **survived holdout (model-priced).** Selling a same-day option against 
 rate, lower-drawdown way to harvest the same flow, at the cost of capped upside. Caveats: model prices (no skew, real
 0DTE IV/spreads differ; VIX1D/VIX9D median 0.86 in 2023+), same-day SPX options broadly listed only since ~2016-2022,
 and assignment/settlement mechanics (use cash-settled SPX/XSP, PM-settled). Registry: 237.
+
+## 087 — Model validation: BS-with-VIX monthly ATM put-write vs the real CBOE PUT index  ·  2026-11-20
+Monthly excess returns over T-bills, roll-to-roll (months available in CBOE's file; it has gaps pre-2015):
+1997-2014 model +0.72%/mo vs real +0.50% (corr 0.97); 2015-22 +0.71 vs +0.47 (0.98); 2023+ +1.16 vs +0.75 (0.90).
+The model tracks reality closely but **overstates the seller's edge by ~0.26%/month (~35%)** — VIX embeds OTM skew, so
+it sits above ATM implied vol. Implication for 083 (model-priced short same-day options): real-world results are
+likely lower than modelled — e.g. a 15% lower premium would cut the +15.7bp/trade holdout figure to roughly +10bp.
+Still positive, but treat 083's numbers as an upper bound.

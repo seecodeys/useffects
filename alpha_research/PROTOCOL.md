@@ -60,7 +60,10 @@ existed, so the holdout is slightly contaminated for SPY + overseas-index signal
    gate-passed or holdout-tested.
 5. `git add -A alpha_research && git commit && git push` to the session branch
    after every experiment — the container can disappear at any time.
-6. Continue to the next item until the turn ends. **Never disable the scheduled task** (user's instruction,
+6. Continue to the next item until the turn ends. **Cadence (user, 2026-11-20): work back-to-back** — the scheduled
+   task fires hourly (minimum allowed); at the end of every round also call `send_later(delay_minutes=15)` to start the
+   next round, so work continues until usage limits; the hourly task restarts the chain if it breaks.
+    **Never disable the scheduled task** (user's instruction,
    2026-11-20: "keep going, don't stop the loop"). When the backlog runs low, brainstorm new hypotheses with an
    economic story (flows, scheduled events, structural constraints), add them to BACKLOG.md, and keep testing.
    Stay honest as N grows: prefer few, pre-specified, well-motivated variants over parameter sweeps.
