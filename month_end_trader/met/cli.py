@@ -116,7 +116,15 @@ def main(argv=None):
         print("kill switch:", (Path(cfg.monitoring.state_dir) / "KILL").exists())
         return 0
 
-    broker = _broker(cfg, cli=(a.cmd != "run"), alerter=alerter)
+    if a.cmd in ("test-order", "flatten"):
+        from .state import DaemonLock
+        try:
+            _lk = DaemonLock(cfg.monitoring.state_dir).acquire()
+        except RuntimeError:
+            print("the met daemon is running: stop it first (or use `met kill`, which makes the daemon flatten)")
+            return 2
+
+    broker = _broker(cfg, cli=(a.cmd != "run"), alerter=alerter, connect=(a.cmd != "run"))
     from .executor import Executor
     from .monitor import run_report
     ex = Executor(cfg, broker, alerter, make_fetchers(cfg, broker, broker.now), reporter=lambda d: run_report(cfg))
@@ -161,13 +169,16 @@ def main(argv=None):
         return 0 if plan else 2
 
     if a.cmd == "test-order":
+        from .state import unfinished
         if cfg.mode != "paper":
             print("test-order is paper-only"); return 2
+        if now().date() == cal.next_trade_date(now().date()) or unfinished(cfg.monitoring.state_dir):
+            print("refusing on a trade day or while a trade is unfinished"); return 2
         c = broker.front_future(cfg.strategy.instrument, cfg.strategy.exchange, now().date() + dt.timedelta(days=3))
         print("contract", c.local_symbol, c.expiry, "price", broker.price(c))
-        r1 = broker.market_order(c, "BUY", 1, "MET-test-buy", 30); print("buy:", r1)
+        r1 = broker.market_order(c, "BUY", 1, "TEST-buy", 30); print("buy:", r1)
         broker.sleep(2)
-        r2 = broker.market_order(c, "SELL", r1.filled or 1, "MET-test-sell", 30); print("sell:", r2)
+        r2 = broker.market_order(c, "SELL", r1.filled or 1, "TEST-sell", 30); print("sell:", r2)
         print("position now:", broker.future_position(c)); return 0
 
     if a.cmd == "flatten":

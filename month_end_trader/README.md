@@ -14,49 +14,59 @@ an **MES futures overlay of 2x net liquidation** from the open to the close.
 
 | When | What | State |
 |---|---|---|
-| Previous session close + 25 min | Compute the signal and send a "Tomorrow: LONG/SHORT" alert | announced |
-| Open − 20 min | **Preflight**: all guardrails, sizing, what-if margin | `PLANNED` or `SKIPPED` |
+| Previous session close + 25 min | Compute the signal and send a "Tomorrow: LONG/SHORT" alert. CRITICAL if IB is not connected. Refresh the decay monitor if it is missing or stale | announced |
+| Open − 20 min | **Preflight**: all guardrails, sizing, what-if margin. Transient blockers (data, price, margin query) are retried every minute until 09:27 | `PLANNED` or `SKIPPED` |
 | 09:30:01 | Market order for N MES; no late entries after open + 90 s | `ENTRY_SUBMITTED` → `ENTERED` |
-| While holding | Every 15 s: disaster stop, kill switch, broker-vs-state position check | |
-| Close − 2 s | Opposite market order, retried until flat | `EXIT_SUBMITTED` → `FLAT` |
-| Close + 10 min | Reconcile: the broker must show no position; otherwise flatten and send a CRITICAL alert | reconciled |
+| While holding | Every 15 s, until 45 s before the exit: disaster stop, kill switch, broker-vs-state position check (alert only) | |
+| Close − 2 s | Opposite market order for the quantity the bot owns, retried with backoff until flat | `EXIT_SUBMITTED` → `FLAT` |
+| Close + 10 min | Reconcile. The bot must own nothing; after an uncertain order outcome it adopts and closes a position in its own contract, same direction, no larger than its order. Anything else is CRITICAL-alerted and left alone | reconciled |
 | Close + 2 h | Decay monitor report (SPRT and the other indicators) | reported |
+| Every tick | Earlier-dated unfinished trades are resolved and exited, including after midnight or a weekend | |
 | Every session close + 15 min | Overnight guard: alert if any MES position is open | |
 
-The daemon is a single loop of idempotent `tick()`s over the state saved in `state/trade_<date>.json`. You can kill and restart it at any moment, including mid-trade:
+The daemon is a single loop of idempotent `tick()`s over the state saved in `state/trade_<date>.json`. You can kill and restart it at any moment, including mid-trade, and it starts even while IB is unreachable; it alerts and keeps reconnecting.
 - It never enters twice in one month.
-- It always knows whether it owns an open position.
-- If it crashed between sending and confirming the entry order, it recovers from the position the broker reports.
+- After a crash between sending and confirming an order, it resolves the outcome from the broker's position, on any later day too.
+- **Don't trade MES in the bot's contract yourself on a trade day.** After an uncertain order outcome, a same-direction position up to the bot's order size is treated as the bot's.
 
 ## Guardrails
 
-**Before the trade (preflight blocks it):**
+**Before the trade.** These block the trade:
 - Kill switch (`state/KILL` file or `MET_KILL=1`).
 - Not the last session of the month.
-- Wrong account, or an account that doesn't match the mode. Paper must be `DU…`; live must not be.
-- Paper or live port mismatch.
-- **Live mode without `MET_LIVE_CONFIRM=<account id>` in the environment.**
+- An account that doesn't match the mode. Paper must be `DU…`; live must not be. The account must also be one of the connected session's managed accounts (checked at connect).
+- A port that doesn't match the mode, for the standard ports 4001–4004 and 7496/7497.
+- **Live mode without `MET_LIVE_CONFIRM=<account id>` in the environment**, or with delayed market data.
 - Net liquidation below the minimum.
 - Any existing MES position.
-- Signal sources (IBKR and Yahoo) unavailable or disagreeing on direction.
+- No signal source available. Set `signal.require_all_sources: true` to require both IBKR and Yahoo.
+- Sources disagreeing on direction, or on the gap by more than 15bp.
 - Data missing for the base date or the T−1 date.
-- Contract multiplier mismatch, or a futures price that is implausible compared with SPY.
-- Size rounds to 0, or exceeds `max_leverage` (hard cap 4x) or `max_contracts` (hard cap 200).
-- IBKR what-if margin leaves less than 10% of net liquidation in excess liquidity.
-- The decay monitor says stop (size ×0).
+- Contract multiplier mismatch, or a futures price that is implausible compared with SPY (also blocks if the check can't run).
+- Size rounding to 0 contracts.
+- IBKR what-if margin missing, or leaving less than `margin_buffer_pct` (default 10%) of net liquidation.
+- The decay monitor says stop (size ×0), or its state is unreadable.
 - Optional: SPY core below a minimum weight.
+
+**Size** is capped, with a warning, at `max_leverage` (hard cap 4x) and `max_contracts` (hard cap 200). A non-USD base currency (e.g. SGD) is converted to USD at IBKR's exchange rate.
 
 **During and after the trade:**
 - No entry later than open + 90 s.
 - Partial fills: only the filled quantity is exited.
 - Exits close only the quantity the bot owns (its entry fills minus its exit fills), and never more than the broker shows in that direction, so a stale position read cannot reverse the position.
-- Exit retried until flat with backoff (5 s up to 5 min), no orders while CME is closed, and one MANUAL INTERVENTION alert after 8 failed rounds.
+- Exit retries:
+  - With backoff from 5 s up to 5 min.
+  - No orders while CME equity futures are closed: weekends, the daily 17:00–18:00 halt, and after the early halt on NYSE half days and holidays. Other CME holiday schedules are not modelled.
+  - One MANUAL INTERVENTION alert after 8 failed rounds.
 - Disaster stop: flatten early if the overlay loses 6% of equity, about a 3% SPY move at 2x. Set it to 0 to trade exactly like the backtest.
 - Kill switch during the trade flattens immediately.
-- Position mismatch alerts.
-- Reconcile after the close.
-- Overnight guard every day.
-- The bot never closes positions it didn't open.
+- Position mismatch alerts while holding. The bot never concludes "closed outside the bot" from a position read.
+- Reconcile after the close, and an overnight guard every day.
+- `met flatten` and `met test-order` refuse to run while the daemon holds its lock.
+- **Alerts:**
+  - CRITICAL whenever the broker is unreachable for more than 10 minutes, at most every 3 hours.
+  - On a trade day, CRITICAL immediately.
+  - CRITICAL the evening before if not connected.
 
 ## Monitoring and decay
 
@@ -84,7 +94,7 @@ The daemon is a single loop of idempotent `tick()`s over the state saved in `sta
    - In TWS/Gateway: Configure → API → enable ActiveX/Socket clients, untick Read-Only API, trusted IP 127.0.0.1.
    - **Operational settings that matter:**
      - Turn on "Bypass Order Precautions for API orders" under Global Configuration → API → Precautions. Otherwise a multi-contract market order can be rejected at 09:30:01 (error 201/383).
-     - Set the IB Gateway/TWS auto-restart **outside 09:00–16:30 ET**. It is set in the machine's local time: in Singapore, avoid 21:00–05:30 SGT (Nov–Mar) or 20:00–04:30 SGT (Mar–Nov).
+     - Set the IB Gateway/TWS auto-restart **outside 09:00–16:30 ET**. It is set in the machine's local time, and US daylight saving moves it relative to Asia. In Singapore, pick a time between **06:00 and 20:30 SGT**, which is safe all year. The Docker setup instead sets the Gateway's timezone to ET (`AUTO_RESTART_TIME=11:45 PM`).
      - Use a **dedicated second IBKR username** for the API (free in Client Portal). Logging into TWS or the Mobile app with the same username either blocks market data (error 10197) or logs the Gateway out.
      - US equity market data, so SPY/TLT `ADJUSTED_LAST` daily bars are available for the signal.
      - The machine's clock must be NTP-synced. The bot alerts if it is more than 5 s off IB server time.
@@ -155,5 +165,4 @@ The NYSE calendar comes from `exchange_calendars` and is refreshed daily, 5 year
 - **Instrument size:** MES only, capped at `max_contracts` (default 40, about $1.5M notional). Accounts large enough to need ES are not supported yet.
 
 - **Entry and exit prices.** The overlay uses MES at 09:30:01 and 15:59:58. The backtest used SPY's official open and close prints, so expect a small tracking difference; the monitor measures it.
-- **Account currency.** For a non-USD base-currency account, net liquidation is treated as USD-equivalent (the bot warns).
 - **IB Gateway login and 2FA** happen outside the bot. Use IBC, and watch for alerts.

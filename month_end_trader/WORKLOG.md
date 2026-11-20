@@ -29,4 +29,10 @@ Branch: `claude/blissful-mccarthy-mt2shh`. Scheduled check-ins (4 hourly tasks, 
 - [x] Contract roll tests (Feb/Mar/Jun/Sep/Dec). ES+MES mix: not needed (40 MES ~ $1.5M notional covers the account); documented
 - [x] Weekly status alert (Mondays 08:00 ET)
 - [x] Monitoring: intraday timing indicators (60m bars; first hour / closing bar share; warns if closing share collapses)
-- [ ] Review round 3 once the executor/state review is fixed (fresh agent, whole package)
+- [x] Review round 3 (whole package, 13 findings + README inaccuracies) fixed: adoption of late/unreported fills in the bot's
+      own contract (same direction, <= order size) at reconcile, no 'external close' inference while holding, ENTRY_SUBMITTED
+      resolved on later days, daemon starts with IB down and alerts (any day >10 min; T-1 evening), CLI flatten/test-order
+      refuse while daemon runs, preflight retries transient blockers to 09:27, require_all_sources option, CME half-day /
+      holiday halts, 45s guard quiet window, monitor refreshed if stale, config validation, README corrected. 159 tests
+- [ ] Review round 4: fresh agent on the round-3 diff (adoption logic is the riskiest new code)
+- [ ] End-to-end 'paper rehearsal' script: replays 27-30 Nov 2026 with a synthetic path and prints the exact alert timeline

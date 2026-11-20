@@ -291,3 +291,95 @@ def test_dead_is_sticky():
     L, _, A, B, d = sprt([0.0] * 100 + [15.0], 20, 78, 0.1, 0.1)
     assert L > B and size_multiplier(L, A, B, d, was_dead=True)[0] == 0.0
     assert size_multiplier(L, A, B, d, was_dead=False)[0] == 0.5
+
+
+# ---------------------------------------------------------------- review round 3 (whole package)
+FRI = dt.date(2025, 10, 31)
+
+
+def test_stale_zero_after_entry_fill_not_abandoned(env):
+    cfg, clock, b, ex, alerts = env(dt.datetime(2025, 10, 30, 8, 0))
+    b.stale_after_fill = 4                         # entry fill, then several stale 0 reads
+    run_until(ex, clock, dt.datetime(2025, 10, 31, 19, 0))
+    s = st(cfg, FRI)
+    assert b.fut_pos == 0 and s.phase == "FLAT" and s.get("exit_reason") == "scheduled close"
+
+
+def test_late_entry_fill_with_stale_read_is_adopted(env):
+    cfg, clock, b, ex, alerts = env(dt.datetime(2025, 10, 30, 8, 0))
+    b.late_fill_next = 1                           # entry reported Timeout/0 but fills
+    b.pos_glitch_reads = 2                         # and the next two position reads miss it
+    run_until(ex, clock, dt.datetime(2025, 10, 31, 19, 0))
+    assert b.fut_pos == 0, "late fill held overnight"
+
+
+def test_crash_in_entry_submitted_resolved_next_week(env):
+    cfg, clock, b, ex, alerts = env(dt.datetime(2025, 10, 31, 9, 29))
+    run_until(ex, clock, dt.datetime(2025, 10, 31, 9, 29, 30))
+    s = st(cfg, FRI); assert s.phase == "PLANNED"
+    clock.advance(35)
+    c = b.front_future("MES", "CME", FRI + dt.timedelta(days=3))
+    b.connect(); b.market_order(c, s.get("plan")["action"], s.get("qty_planned"), "x", 5)
+    s.update(clock.now().isoformat(), "ENTRY_SUBMITTED", note="crash")
+    clock.t = dt.datetime(2025, 11, 3, 9, 0, tzinfo=cal.ET)              # daemon back on Monday
+    b.disconnect()
+    ex2 = Executor(cfg, b, ex.alert, ex.fetchers, None)
+    run_until(ex2, clock, dt.datetime(2025, 11, 3, 10, 0))
+    assert b.fut_pos == 0 and st(cfg, FRI).phase == "FLAT"
+
+
+def test_daemon_starts_while_ib_down_and_alerts(env):
+    cfg, clock, b, ex, alerts = env(dt.datetime(2025, 10, 20, 8, 0))
+    b.connect_fail = 10_000
+    run_until(ex, clock, dt.datetime(2025, 10, 20, 9, 0))
+    assert any("unreachable" in t for t in crit(alerts))
+
+
+def test_preflight_retries_transient_blockers(env):
+    cfg, clock, b, ex, alerts = env(dt.datetime(2025, 9, 30, 9, 0))
+    b.price_unavailable = True
+    run_until(ex, clock, dt.datetime(2025, 9, 30, 9, 15))
+    assert st(cfg).phase is None and st(cfg).get("preflight_attempts", 0) >= 1
+    b.price_unavailable = False
+    run_until(ex, clock, dt.datetime(2025, 9, 30, 19, 0))
+    assert st(cfg).phase == "FLAT"
+
+
+def test_require_all_sources(env):
+    cfg, clock, b, ex, alerts = env()
+    cfg.signal.require_all_sources = True
+    def down(sym): raise RuntimeError("HTTP 429")
+    ex.fetchers["yahoo"] = down
+    run_until(ex, clock, dt.datetime(2025, 9, 30, 19, 0))
+    assert st(cfg).phase == "SKIPPED" and b.orders == []
+
+
+def test_futures_open_half_day_and_holiday():
+    from met.executor import futures_open
+    E = cal.ET
+    assert futures_open(dt.datetime(2025, 11, 28, 12, 59, tzinfo=E))
+    assert not futures_open(dt.datetime(2025, 11, 28, 13, 20, tzinfo=E))
+    assert not futures_open(dt.datetime(2025, 11, 27, 14, 0, tzinfo=E))     # Thanksgiving afternoon
+    assert futures_open(dt.datetime(2025, 11, 27, 19, 0, tzinfo=E))
+    assert not futures_open(dt.datetime(2025, 11, 1, 12, 0, tzinfo=E))      # Saturday
+
+
+def test_cli_flatten_refuses_while_daemon_runs(tmp_path, monkeypatch):
+    from met import cli
+    (tmp_path / "c.yaml").write_text(f"ib: {{account: DU1}}\nmonitoring: {{state_dir: {tmp_path}/s}}\n")
+    lk = DaemonLock(str(tmp_path / "s")).acquire()
+    monkeypatch.setattr(cli, "_broker", lambda *a, **k: (_ for _ in ()).throw(AssertionError("must not connect")))
+    try:
+        assert cli.main(["flatten", "--config", str(tmp_path / "c.yaml"), "--yes"]) == 2
+    finally:
+        lk.release()
+
+
+def test_config_validation_round3():
+    from met.config import Config, ConfigError
+    for f in [lambda c: setattr(c.guardrails, "margin_buffer_pct", 0.0),
+              lambda c: setattr(c.guardrails, "min_net_liq", 0),
+              lambda c: setattr(c.monitoring, "start", "2026-11-01")]:
+        c = Config(); c.ib.account = "DU1"; f(c)
+        with pytest.raises(ConfigError):
+            c.validate()

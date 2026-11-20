@@ -48,6 +48,7 @@ class SignalConfig:
     sources: list = field(default_factory=lambda: ["ibkr", "yahoo"])
     require_agreement: bool = True   # if both sources available and the sign differs -> skip
     max_source_gap_diff: float = 0.0015  # sources' gaps must agree within 15bp, else treat as a data error
+    require_all_sources: bool = False    # True: skip the month unless every source (IBKR and Yahoo) answers
 
 
 @dataclass
@@ -62,7 +63,6 @@ class GuardrailConfig:
     core_min_weight: float = 0.5     # SPY value / net liq expected at least this
     core_policy: str = "warn"        # warn | block | ignore
     auto_derisk: bool = True         # size x0.5 / x0 from the SPRT decay monitor
-    max_data_age_sessions: int = 0   # signal data must end exactly at the prior session
 
 
 @dataclass
@@ -131,6 +131,15 @@ class Config:
             errs.append("strategy.roll_min_days must be in [1, 20]")
         if not (0 <= self.signal.max_source_gap_diff <= 0.01):
             errs.append("signal.max_source_gap_diff must be in [0, 0.01]")
+        if not (0.02 <= g.margin_buffer_pct <= 0.9):
+            errs.append("guardrails.margin_buffer_pct must be in [0.02, 0.9]")
+        if g.min_net_liq < 2_000:
+            errs.append("guardrails.min_net_liq must be >= 2000")
+        if s.exit_lead_s > 60:
+            errs.append("strategy.exit_lead_s must be <= 60")
+        import re as _re
+        if not _re.fullmatch(r"\d{4}-\d{2}", self.monitoring.start):
+            errs.append("monitoring.start must be YYYY-MM")
         if g.core_policy not in ("warn", "block", "ignore"):
             errs.append("guardrails.core_policy must be warn|block|ignore")
         if not (0 <= g.disaster_stop_pct_equity < 1):

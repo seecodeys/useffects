@@ -112,7 +112,7 @@ def drop_partial_today(df: pd.DataFrame, now_et: dt.datetime) -> pd.DataFrame:
 
 
 def signals_from_sources(trade_date: dt.date, fetchers: dict, equity: str, bond: str,
-                         require_agreement: bool = True, max_gap_diff: float = 0.0015
+                         require_agreement: bool = True, max_gap_diff: float = 0.0015, min_sources: int = 1
                          ) -> tuple[Signal | None, list[str], list[Signal]]:
     """fetchers: {name: callable(symbol) -> pd.Series of adjusted closes}. Returns (signal, problems, all_signals).
     signal is None when no usable/consistent signal could be produced."""
@@ -124,6 +124,8 @@ def signals_from_sources(trade_date: dt.date, fetchers: dict, equity: str, bond:
             problems.append(f"signal source {name} failed: {e}")
     if not sigs:
         return None, problems + ["no signal source available"], sigs
+    if len(sigs) < min_sources:
+        return None, problems + [f"only {len(sigs)} of the required {min_sources} signal sources available"], sigs
     if len(sigs) > 1:
         spread = max(s.gap for s in sigs) - min(s.gap for s in sigs)
         if spread > max_gap_diff:

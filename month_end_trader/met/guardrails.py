@@ -90,8 +90,9 @@ def preflight(cfg: Config, broker: Broker, trade_date: dt.date, fetchers: dict) 
         blockers.append(f"connected account {acct.account} != configured {cfg.ib.account}")
     if (cfg.mode == "paper") != acct.account.upper().startswith("DU"):
         blockers.append(f"account {acct.account} does not match mode={cfg.mode}")
-    if acct.currency != "USD":
-        warnings.append(f"account base currency {acct.currency}: net liquidation treated as USD-equivalent")
+    base_cur = getattr(acct, "base_currency", acct.currency)
+    if base_cur != "USD":
+        warnings.append(f"account base currency {base_cur}: values converted to USD at IBKR's rate")
     if acct.net_liquidation < g.min_net_liq:
         blockers.append(f"net liquidation {acct.net_liquidation:,.0f} below minimum {g.min_net_liq:,.0f}")
 
@@ -108,7 +109,8 @@ def preflight(cfg: Config, broker: Broker, trade_date: dt.date, fetchers: dict) 
             (blockers if g.core_policy == "block" else warnings).append(msg)
 
     sig, sig_problems, all_sigs = signals_from_sources(trade_date, fetchers, cfg.signal.equity, cfg.signal.bond,
-                                                       cfg.signal.require_agreement, cfg.signal.max_source_gap_diff)
+                                                       cfg.signal.require_agreement, cfg.signal.max_source_gap_diff,
+                                                       len(fetchers) if cfg.signal.require_all_sources else 1)
     if sig is None:
         blockers.extend(sig_problems)
     else:
