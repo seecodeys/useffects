@@ -219,3 +219,7 @@ in sign, the gap rule still earns +18bp/trade (59% hit).
 Interpretation: the **bond leg carries more of the signal** — when Treasuries rallied over the month, balanced funds
 sell bonds / buy equities into month-end. The combined gap (013) remains the best single specification.
 Registry: 163.
+
+## 026 — Holiday-adjacent sessions (SPY long)  ·  2026-11-20
+4 variants, 15-27 events each: day after Thanksgiving, Dec 24, last and first trading day of the year — all |t| < 1.
+**Dead** (and underpowered). Registry: 167.
