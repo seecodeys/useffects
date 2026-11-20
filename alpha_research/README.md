@@ -81,7 +81,7 @@ SPY leg is holdout-confirmed; the IEF leg is weak-but-alive in 2023+ (Sharpe 0.8
 2. **Direction:** stocks beat bonds month-to-date → short SPY for the day; stocks lagged → buy SPY. The sign is
    computed from the prior close, so it's known before the open.
 3. **Execution:** enter with a market-on-open order (or at the 9:30 auction), exit with market-on-close. In 2010-22 1-min
-   data (287) most of the edge accrues in the morning (09:30-12:00: +8bp of ~17bp), so enter at the open and hold to the close.
+   data (287) most of the edge accrues in the morning (09:30-12:00: +8bp of ~17bp), so enter at the open and hold to the close. Entering up to 30 minutes late still keeps ~85-90% of the edge (309), so it is not an opening-print artifact.
 4. **Sizing:** risk per trade is big compared with the edge. 2002-22: worst trade −176bp, 5th percentile −108bp, up to
    7 losses in a row, average |move| 58bp vs a mean edge of ~17-37bp. Size so that a −2% day is tolerable. Size up
    on high-volatility month-ends (168: ~+44-62bp/trade historically) and down on calm ones.

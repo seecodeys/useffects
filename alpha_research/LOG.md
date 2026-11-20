@@ -971,3 +971,8 @@ Paper idea (de Roon-Nijman-Veld 2000; Bessembinder 1992). WTI→USO, gold→GLD,
 after the Friday release; equal-weight, 2bp/side. A fade managed-money crowding (|z|>1): −0.2 / −0.2 (timing t −0.5);
 B follow producer hedging pressure: +0.5 / −1.6 (timing t −0.7). No leg consistent across periods. Dead — the classic
 hedging-pressure premium doesn't show up at a weekly horizon in liquid commodity ETFs since 2009. Registry: 414 rows.
+
+## 309 — Month-end trade (013): delayed-entry execution check (SPX/NSX CFD, 2010-22, descriptive)  ·  2026-11-20
+Signed bp to 16:00 by entry time, S&P: 09:30 +17.1 (t=2.8) | 09:35 +15.8 (2.7) | 09:45 +15.4 (2.7) | 10:00 +14.2 (2.4);
+Nasdaq-100: +22.1 | +20.0 | +17.9 | +16.5. Entering 5-30 minutes late keeps ~85-90% of the edge — **not an opening-print
+artifact** (unlike 004/006, which vanished at 09:35). Execution needn't rely on the opening auction. Not registered.
