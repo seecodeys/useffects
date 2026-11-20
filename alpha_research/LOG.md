@@ -611,3 +611,9 @@ rule would barely clear 2bp/side costs. b) USDJPY 09:29→11:05 NY across the fi
 ## 205 — Credit-fund outflow pressure (HYG/LQD vs IEF after bad weeks)  ·  2026-11-20
 Short HYG (LQD) / long IEF for 5 sessions after a bottom-decile 5-day return: HYG −0.9 / −0.3; LQD −0.3 / +0.2. Dead —
 no outflow-driven continuation in credit ETFs. Registry: 311.
+
+## 206 — Quarter-end damping / JPM collar (descriptive, ≤2022, not registered)  ·  2026-11-20
+|open→close| relative to recent 20d vol: quarter-end days 0.74 (2005-15) / 0.80 (2016-22) vs other month-ends 0.85 / 0.92
+and other days 0.87 / 0.84. Quarter-end sessions are systematically calmer in BOTH eras, so it isn't specific to the JPM
+Hedged Equity collar's growth (2016+); more likely general quarter-end pinning (large quarterly option OI). Explains why
+013's edge is smaller at quarter-ends (116). No trade.
