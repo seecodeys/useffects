@@ -39,7 +39,9 @@ outperformed, they sell stocks into the close, and the reverse when stocks lagge
 | **Holdout 2023-Nov 2026** | **+3.30** | **1.68** | **+37.5** (46 trades, 67% hit) |
 | Holdout at 2bp/side costs | +3.09 | 1.57 | +34.5 |
 
-Limits: 12 trades a year, so about +2.6%/yr at 1× notional (capital is idle the other days). Even good results
+Limits: back-cast to 1993-2002 (never-seen data, bond leg proxied by the 30y yield) it is only weakly positive
+(t=0.6, +6.6bp/trade), so the effect looks **era-dependent** (likely tied to the growth of rebalancing-driven assets
+after ~2006) rather than permanent. Also: 12 trades a year, so about +2.6%/yr at 1× notional (capital is idle the other days). Even good results
 from 46 holdout trades leave a wide uncertainty band. It's also a published, known effect, so it could be traded away.
 
 Check the current state with `python alpha_research/signals.py`. `--backtest` plots it combined with the OPEX tilt.

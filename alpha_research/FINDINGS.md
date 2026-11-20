@@ -7,3 +7,4 @@
 | 006 | Large-cap overnight-gap reversal (decile L/S vs SPY gap, price ≥ $20) | @1bp: t=+2.10, Sharpe 0.74 | @1bp: t=+1.0, Sharpe 0.51; @2bp: 0. Edge all in open→10:30 | **Downgraded (015):** gone by 9:35-9:40 entry → likely opening-print artifact |
 | **013** | **Month-end rebalancing: on the last trading day, SPY open→close = −sign(SPY MTD − TLT MTD)** | t=+2.01, Sharpe 0.71, +17bp/trade | **t=+3.30, Sharpe 1.68, +37.5bp/trade, 67% hit (46 trades); @2bp t=+3.09** | **Survived holdout.** Dose-response in |gap|. 12 trades/yr |
 | 013c | Same month-end rule on IWM / QQQ / DIA (1bp/side) | t=+2.38 / +2.07 / +2.03 | t=+2.77 / +3.55 / +2.39; +38 / +48 / +26bp/trade | Confirms 013 across equity ETFs; last hour 81% hit (MOC flows) |
+| 040 | 013 rule back-cast to 1993-2002 (TYX bond proxy, never-seen data) | — | t=+0.60, Sharpe 0.20, +6.6bp/trade (114 trades) | **Caveat:** weak before 2002 → era-dependent flow effect |

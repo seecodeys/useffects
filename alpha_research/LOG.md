@@ -242,3 +242,13 @@ since 2015 (consistent with the literature's post-publication decay). Registry: 
 037 short USO open→close on business days 5-9 (GSCI-style roll window), 2bp/side: train t=−0.1, valid +1.2. Dead.
 038 follow the gap on |gap| > 1% days (LETF rebalancing in the move's direction): SPY +1.3/+0.0, QQQ −0.8/+0.3. Dead —
 whatever LETF flow exists at the close doesn't show up as open→close continuation on daily data. Registry: 177.
+
+## 040 — Month-end rule back-cast to 1993-2002 (fresh pre-sample, never examined)  ·  2026-11-20
+Bond leg proxied by the 30y yield (bond MTD ≈ −17 × Δyield); proxy validated on 2002-26: 94% sign agreement with the
+TLT-based gap, corr 1.00. Exact 013 rule on Feb 1993 → Jul 2002 (114 month-ends), SPY open→close @0.5bp:
+**Sharpe 0.20, t=+0.60, +6.6bp/trade, hit 55%** — right sign, but weak; volatile years (1994 −381bp, 1998 −305bp).
+Logged in holdout_log as a one-look out-of-sample test.
+Interpretation: the effect is **era-dependent** — much weaker before 2002 than in 2002-2026 (train t=3.3, valid 2.0,
+holdout 3.3). A plausible (post-hoc) reason is the growth of rebalancing-driven assets (balanced/target-date funds,
+especially after the 2006 Pension Protection Act); but it also means the edge depends on a flow regime that can change.
+This lowers confidence somewhat: still the best finding, but not a timeless law.
