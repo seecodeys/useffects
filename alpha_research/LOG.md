@@ -940,3 +940,9 @@ all trades +20.0 / +17.2 / +4.7; short-side (stocks led) +25.3 / +22.0 / +19.2; 
 +13.3 / +8.4 / **−19.4** (n=21). The buy-side month-ends fail when real money is already heavily long equity futures —
 plausible (less under-weight to refill), but n≈20 per cell and post-hoc. Not adopted as a filter; noted as a watch item
 (would need a pre-registered test on new data). Not registered.
+
+## 304 — "Fed net liquidity" (WALCL − TGA − RRP) as a weekly SPY signal  ·  2026-11-20
+FRED weekly data, available from the Friday after the Wednesday level (first used at Monday's close). A sign of 4-week
+change +1.5 / +0.9 (timing value t=1.2, 2003-22); B 13-week −/+ +1.3 / +0.2; C long only when 4w change > 0:
+Sharpe 0.59 / 0.61, t +2.0 / +1.7 — but its timing value over an exposure-matched long is only t=1.2. Fails the gate.
+The popular liquidity narrative has the right sign but is mostly just "be long more often". Weak. Registry: 404 rows.
