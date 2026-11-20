@@ -7,6 +7,7 @@
   python -m met.cli test-order --config config.yaml      PAPER ONLY: buy 1 contract and sell it immediately
   python -m met.cli flatten    --config config.yaml      close any open position the bot owns (asks first)
   python -m met.cli resolve DATE --config ...            record a manual close the bot cannot see (daemon stopped)
+  python -m met.cli alert-test --config config.yaml      send a test alert on every configured channel
   python -m met.cli kill | unkill                         create / remove the kill switch file
   python -m met.cli report     --config config.yaml      run the decay monitor now
   python -m met.cli dry-run    [--months N]              full daemon run against the simulated broker
@@ -73,6 +74,12 @@ def main(argv=None):
     if a.cmd in ("kill", "unkill"):
         cfg = load_config(a.config, require_account=False)
         p = (Path(cfg.monitoring.state_dir) / "KILL").resolve()
+        try:
+            return _kill(a.cmd, p)
+        except OSError as e:
+            print(f"cannot write {p}: {e}\nRun this as the daemon's user, or inside the container:\n"
+                  f"  docker compose -f deploy/docker-compose.yml exec trader python -m met.cli {a.cmd} --config /app/config.yaml")
+            return 2
         if a.cmd == "kill":
             p.write_text(dt.datetime.now().isoformat())
             print(f"kill switch ON: {p}\n(the daemon must use the same state_dir; it alerts when it sees the switch)")
@@ -84,6 +91,11 @@ def main(argv=None):
     setup_logging(cfg.monitoring.log_dir, a.v)
     alerter = Alerter(cfg.mode)
     now = lambda: dt.datetime.now(tz=cal.ET)
+
+    if a.cmd == "alert-test":
+        ok = alerter.self_test()
+        print("alert delivered" if ok else "NO alert channel delivered (check MET_TELEGRAM_* / MET_SMTP_* and logs)")
+        return 0 if ok else 2
 
     if a.cmd == "report":
         from .monitor import run_report
@@ -98,9 +110,10 @@ def main(argv=None):
         except Exception as e:
             print(f"(IBKR unavailable: {e}; Yahoo only)"); broker = None
         fx = make_fetchers(cfg, broker, now)
+        prov = now() < cal.session_open_close(cal.previous_session(T))[1] + dt.timedelta(minutes=20)
         sig, problems, sigs = signals_from_sources(T, fx, cfg.signal.equity, cfg.signal.bond,
                                                    cfg.signal.require_agreement, cfg.signal.max_source_gap_diff,
-                                                   len(fx) if cfg.signal.require_all_sources else 1)
+                                                   len(fx) if cfg.signal.require_all_sources else 1, provisional=prov)
         print(f"Next trade date: {T} (early close: {cal.is_early_close(T)})")
         for s in sigs:
             print(f"  {s.source:<6} through {s.signal_through}: {cfg.signal.equity} {s.equity_mtd:+.2%}  "
@@ -116,13 +129,20 @@ def main(argv=None):
         T = cal.next_trade_date_after(now())
         for d in unfinished(cfg.monitoring.state_dir):
             print(f"!! unfinished trade state {d}: check the broker / run `met flatten`")
-        st = TradeState(cfg.monitoring.state_dir, str(T))
+        try:
+            st = TradeState(cfg.monitoring.state_dir, str(T))
+        except Exception as e:
+            print(f"!! trade state for {T} is unreadable: {e}"); return 2
         o, c = cal.session_open_close(T)
         print(f"mode={cfg.mode} account={cfg.ib.account} leverage={cfg.strategy.leverage}x {cfg.strategy.instrument}")
         print(f"next trade date {T}: open {o:%H:%M} ET, exit {c:%H:%M} ET minus {cfg.strategy.exit_lead_s}s; state={st.phase}")
         mp = Path(cfg.monitoring.state_dir) / "monitor.json"
         if mp.exists():
-            m = json.loads(mp.read_text()); print("monitor:", m.get("summary"))
+            try:
+                m = json.loads(mp.read_text())
+                print(f"monitor (as of {m.get('asof')}): {m.get('summary')}")
+            except Exception as e:
+                print(f"monitor.json UNREADABLE ({e}): run `met report`")
         print("kill switch:", (Path(cfg.monitoring.state_dir) / "KILL").exists())
         return 0
 
@@ -172,7 +192,8 @@ def main(argv=None):
         for p in broker.positions():
             print(f"  position {p.sec_type} {p.local_symbol or p.symbol} {p.quantity:+g} value {p.market_value:,.0f}")
         # the check runs as if today were the trade date's preflight
-        plan, blockers, warnings = preflight(cfg, broker, T, ex.fetchers)
+        prov = now() < cal.session_open_close(cal.previous_session(T))[1] + dt.timedelta(minutes=20)
+        plan, blockers, warnings = preflight(cfg, broker, T, ex.fetchers, provisional=prov)
         print(f"preflight for {T}:", "OK" if plan else "BLOCKED")
         for b in blockers: print("  BLOCK:", b)
         for w in warnings: print("  warn:", w)
@@ -250,6 +271,15 @@ def main(argv=None):
         print("done. Broker futures positions:", broker.all_future_positions(cfg.strategy.instrument)); return 0
 
     ap.error(f"unknown command {a.cmd}")
+
+
+def _kill(cmd, p):
+    if cmd == "kill":
+        p.write_text(dt.datetime.now().isoformat())
+        print(f"kill switch ON: {p}\n(the daemon must use the same state_dir; it alerts when it sees the switch)")
+    else:
+        p.unlink(missing_ok=True); print(f"kill switch OFF: {p}")
+    return 0
 
 
 def _broker(cfg, connect=True, cli=False, alerter=None):

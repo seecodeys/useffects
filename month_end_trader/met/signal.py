@@ -41,8 +41,10 @@ class Signal:
         d = asdict(self); d["side"] = self.side; return d
 
 
-def compute_signal(trade_date: dt.date, equity: pd.Series, bond: pd.Series, source: str = "") -> Signal:
-    """equity/bond: adjusted closes indexed by datetime.date (or Timestamp). Requires exact base and T-1 closes."""
+def compute_signal(trade_date: dt.date, equity: pd.Series, bond: pd.Series, source: str = "",
+                   provisional: bool = False) -> Signal:
+    """equity/bond: adjusted closes indexed by datetime.date (or Timestamp). Requires exact base and T-1 closes.
+    provisional=True (CLI checks before T-1 has closed): use the latest common close after the base instead."""
     if not cal.is_last_session_of_month(trade_date):
         raise DataError(f"{trade_date} is not the last session of its month")
     t1 = cal.previous_session(trade_date)
@@ -50,6 +52,12 @@ def compute_signal(trade_date: dt.date, equity: pd.Series, bond: pd.Series, sour
     if t1 <= base:
         raise DataError(f"{trade_date}: no month-to-date sessions before the trade date")
     e = _as_date_index(equity); b = _as_date_index(bond)
+    if provisional and (t1 not in e.index or t1 not in b.index):
+        common = sorted(set(e.index) & set(b.index))
+        later = [d for d in common if base < d < t1]
+        if later:
+            t1 = later[-1]
+            source = f"{source} (provisional, through {t1})"
     for name, s in (("equity", e), ("bond", b)):
         for d in (base, t1):
             if d not in s.index or pd.isna(s.loc[d]):
@@ -112,14 +120,14 @@ def drop_partial_today(df: pd.DataFrame, now_et: dt.datetime) -> pd.DataFrame:
 
 
 def signals_from_sources(trade_date: dt.date, fetchers: dict, equity: str, bond: str,
-                         require_agreement: bool = True, max_gap_diff: float = 0.0015, min_sources: int = 1
-                         ) -> tuple[Signal | None, list[str], list[Signal]]:
+                         require_agreement: bool = True, max_gap_diff: float = 0.0015, min_sources: int = 1,
+                         provisional: bool = False) -> tuple[Signal | None, list[str], list[Signal]]:
     """fetchers: {name: callable(symbol) -> pd.Series of adjusted closes}. Returns (signal, problems, all_signals).
     signal is None when no usable/consistent signal could be produced."""
     sigs, problems = [], []
     for name, fetch in fetchers.items():
         try:
-            sigs.append(compute_signal(trade_date, fetch(equity), fetch(bond), source=name))
+            sigs.append(compute_signal(trade_date, fetch(equity), fetch(bond), source=name, provisional=provisional))
         except Exception as e:
             problems.append(f"signal source {name} failed: {e}")
     if not sigs:

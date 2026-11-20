@@ -10,6 +10,7 @@ from met import calendar as cal
 from met.executor import Executor
 from met.monitor import sprt, size_multiplier, paper_ledger
 from met.signal import signals_from_sources, yahoo_daily, DataError, compute_signal
+from met.config import Config
 from met.state import TradeState, DaemonLock, unfinished
 from conftest import run_until
 
@@ -690,3 +691,39 @@ def test_disagreement_flag_resets_when_sources_agree(env):
     b.pos_glitch_reads = 4                         # one disagreeing round
     run_until(ex, clock, dt.datetime(2025, 9, 30, 16, 5))
     assert b.fut_pos == 0 and not st(cfg).get("disagree_rounds")
+
+
+# ---------------------------------------------------------------- review round 9
+def test_provisional_signal_before_t1_close(data):
+    spy, tlt = data
+    cut = dt.date(2026, 10, 20)                       # mid-month: T-1 (29 Oct) not available yet
+    e = spy["adjclose"][[d <= cut for d in spy.index]]
+    b = tlt["adjclose"][[d <= cut for d in tlt.index]]
+    with pytest.raises(DataError):
+        compute_signal(dt.date(2026, 10, 30), e, b)
+    s = compute_signal(dt.date(2026, 10, 30), e, b, provisional=True)
+    assert "provisional" in s.source and s.signal_through == str(cut)
+
+
+def test_alert_failure_releases_dedupe(monkeypatch):
+    from met import alerts as A
+    al = A.Alerter("paper")
+    calls = []
+    monkeypatch.setattr(al, "_telegram", lambda text: calls.append(text) or False)
+    monkeypatch.setattr(A.time, "sleep", lambda s: None)
+    monkeypatch.setenv("MET_TELEGRAM_TOKEN", "x"); monkeypatch.setenv("MET_TELEGRAM_CHAT_ID", "y")
+    al._recent["t"] = A.time.time()
+    assert al._deliver("CRITICAL", "t", "body") is False and "t" not in al._recent and len(calls) == 3
+
+
+def test_edge_dead_persists_without_autoderisk(tmp_path, data):
+    import json
+    spy, tlt = data
+    cfg = Config(); cfg.ib.account = "DU1"
+    cfg.monitoring.state_dir = cfg.monitoring.report_dir = str(tmp_path); cfg.monitoring.start = "2023-01"
+    cfg.guardrails.auto_derisk = False
+    (tmp_path / "monitor.json").write_text(json.dumps({"size_multiplier": 1.0, "edge_dead": True}))
+    from met.monitor import size_multiplier as sm
+    assert sm(-1.5, 2.2, -2.2, None, was_dead=True)[0] == 0.0
+    assert sm(-0.5, 2.2, -2.2, None, was_dead=True)[0] == 0.5
+    assert sm(0.5, 2.2, -2.2, None, was_dead=True)[0] == 1.0

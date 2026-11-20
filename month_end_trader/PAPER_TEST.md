@@ -16,12 +16,12 @@ Run everything on the always-on machine against your **paper** account (DU…). 
 ```bash
 python -m met.cli signal --config config.yaml
 ```
-- [ ] Both `ibkr` and `yahoo` lines are printed and agree (it says LONG for 30 Nov if the gap stays negative).
+- [ ] Both `ibkr` and `yahoo` lines are printed (marked "provisional" before Friday's close) and agree. It says LONG for 30 Nov if the gap stays negative.
 
 ```bash
 python -m met.cli check --config config.yaml
 ```
-- [ ] Prints `preflight for 2026-11-30: OK` and a plan. "Not the last session" is expected if you run it earlier.
+- [ ] Prints `preflight for 2026-11-30: OK` and a plan. Before Friday 27 Nov's close it says **PROVISIONAL**: the signal uses the latest close, and nothing is traded.
 - [ ] Any other BLOCK line has been read and resolved.
 
 ```bash
@@ -51,7 +51,7 @@ python -m met.cli test-order --config config.yaml
   ```
 
 **Alerts**
-- [ ] Telegram/email alerts arrive. Start the daemon briefly and check you receive "met daemon started", then stop it with Ctrl-C.
+- [ ] `python -m met.cli alert-test --config config.yaml` prints `alert delivered`, and the message arrives on your phone or email.
 
 ## B. Start the daemon (by Friday 27 Nov, 13:00 ET)
 
@@ -62,6 +62,13 @@ sudo cp deploy/met.service /etc/systemd/system/ && sudo systemctl daemon-reload 
 docker compose -f deploy/docker-compose.yml up -d
 python -m met.cli status --config config.yaml
 ```
+**Docker users:** run CLI commands inside the container, so they share its state and environment. For example:
+```bash
+docker compose -f deploy/docker-compose.yml exec trader python -m met.cli status --config /app/config.yaml
+docker compose -f deploy/docker-compose.yml exec trader python -m met.cli kill --config /app/config.yaml
+```
+**systemd users:** load the daemon's environment first, `set -a; . /etc/met.env; set +a` (or put `ib.account` in config.yaml).
+
 **Important:** run every `met` command, especially `kill`, from the same folder and as the same user as the daemon (`/opt/month_end_trader`, user `met`), so they share the same `state/` folder. Otherwise the daemon won't see the kill switch.
 - [ ] The daemon is running.
 - [ ] `status` shows `next trade date 2026-11-30` and no unfinished trades.

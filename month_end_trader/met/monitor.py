@@ -84,6 +84,8 @@ def sprt(x_bp, h1_bp, sd_bp, alpha, beta, winsor_sd=2.0):
 def size_multiplier(L, A, B, decided, was_dead=False):
     if decided == "edge dead" or L <= B or (was_dead and L <= B / 2):
         return 0.0, "edge dead (SPRT lower boundary; stays stopped until the score recovers above half the bound)"
+    if was_dead and L < 0:
+        return 0.5, "recovering from 'edge dead': half size until the score is back above 0"
     if L <= B / 2:
         return 0.5, "weakening (SPRT past half the lower boundary): half size"
     if decided == "edge alive" or L >= A:
@@ -122,8 +124,8 @@ def intraday_timing(bars: pd.DataFrame, ledger: pd.DataFrame) -> dict | None:
     d = pd.DataFrame(rows)
     tot = d["total_bp"].sum()
     return dict(n=len(d), first_hour_bp=float(d["first_bp"].mean()), last_bar_bp=float(d["last_bp"].mean()),
-                first_hour_share=float(d["first_bp"].sum() / tot) if tot else float("nan"),
-                last_bar_share=float(d["last_bp"].sum() / tot) if tot else float("nan"))
+                first_hour_share=float(d["first_bp"].sum() / tot) if tot > 0 else float("nan"),
+                last_bar_share=float(d["last_bp"].sum() / tot) if tot > 0 else float("nan"))
 
 
 def yahoo_60m(symbol: str) -> pd.DataFrame:
@@ -160,6 +162,14 @@ def live_rows(cfg: Config) -> pd.DataFrame:
     return pd.DataFrame(rows).set_index("date") if rows else pd.DataFrame(columns=["live_bp"])
 
 
+def _atomic_write(path: Path, text: str):
+    import os, tempfile
+    fd, tmp = tempfile.mkstemp(dir=path.parent, prefix=".tmp_", suffix=".json")
+    with os.fdopen(fd, "w") as f:
+        f.write(text); f.flush(); os.fsync(f.fileno())
+    os.replace(tmp, path)
+
+
 def run_report(cfg: Config, asof: dt.date | None = None, spy=None, tlt=None, write=True) -> dict:
     m = cfg.monitoring
     spy_is_live = spy is None
@@ -176,7 +186,8 @@ def run_report(cfg: Config, asof: dt.date | None = None, spy=None, tlt=None, wri
     was_dead = False
     if prev.exists():
         try:
-            was_dead = json.loads(prev.read_text()).get("size_multiplier", 1.0) == 0.0
+            pj = json.loads(prev.read_text())
+            was_dead = bool(pj.get("edge_dead", pj.get("size_multiplier", 1.0) == 0.0))
         except Exception:
             was_dead = True
     mult, status = size_multiplier(L, A, B, decided, was_dead)
@@ -210,6 +221,7 @@ def run_report(cfg: Config, asof: dt.date | None = None, spy=None, tlt=None, wri
         warnings.append(f"closing-bar share of the move fell to {timing['last_bar_share']:.0%} (was ~37% in 2024-26)")
     if exec_gap is not None and exec_gap < -3: warnings.append(f"live fills trail paper by {exec_gap:.1f}bp per trade")
     res = dict(asof=str(asof), status=status, size_multiplier=mult if cfg.guardrails.auto_derisk else 1.0,
+               edge_dead=(mult == 0.0),
                sprt=dict(score=L, upper=A, lower=B, decided=decided, trades=len(live_start), since=m.start,
                          score_since_2023=L23),
                paper=dict(trades=len(led), mean_bp=float(led["paper_bp"].mean()),
@@ -223,7 +235,7 @@ def run_report(cfg: Config, asof: dt.date | None = None, spy=None, tlt=None, wri
                       + (" WARN: " + "; ".join(warnings) if warnings else ""))
     if write:
         Path(m.state_dir).mkdir(parents=True, exist_ok=True)
-        (Path(m.state_dir) / "monitor.json").write_text(json.dumps(res, indent=2, default=str))
+        _atomic_write(Path(m.state_dir) / "monitor.json", json.dumps(res, indent=2, default=str))
         led.to_csv(Path(m.report_dir) / "paper_ledger.csv")
         _write_md(cfg, res, led, live, path, A, B, asof)
     return res

@@ -39,10 +39,24 @@ class Alerter:
         # network delivery never blocks the trading loop
         threading.Thread(target=self._deliver, args=(level, title, text), daemon=True).start()
 
-    def _deliver(self, level, title, text):
-        self._telegram(text)
+    def _deliver(self, level, title, text) -> bool:
+        ok = False
+        for attempt in range(3):
+            ok = self._telegram(text)
+            if ok is not False:
+                break
+            time.sleep(2 * (attempt + 1))
         if level in ("WARN", "CRITICAL"):
-            self._email(f"[MET {self.mode}] {level}: {title}", text)
+            ok = self._email(f"[MET {self.mode}] {level}: {title}", text) or ok
+        if ok is False:
+            self._recent.pop(title, None)        # not delivered: let the next identical alert through
+        return bool(ok)
+
+    def self_test(self) -> bool:
+        if not (os.environ.get("MET_TELEGRAM_TOKEN") or os.environ.get("MET_SMTP_HOST")):
+            log.warning("no alert channel configured (MET_TELEGRAM_* / MET_SMTP_*)")
+            return False
+        return self._deliver("WARN", "alert self-test", f"[MET {self.mode.upper()}] alert self-test")
 
     def info(self, t, b=""): self.send("INFO", t, b)
     def warn(self, t, b=""): self.send("WARN", t, b)
@@ -64,17 +78,22 @@ class Alerter:
     def _telegram(self, text):
         tok, chat = os.environ.get("MET_TELEGRAM_TOKEN"), os.environ.get("MET_TELEGRAM_CHAT_ID")
         if not (tok and chat):
-            return
+            return None
         try:
-            requests.post(f"https://api.telegram.org/bot{tok}/sendMessage", timeout=10,
-                          data={"chat_id": chat, "text": text[:4000]})
+            r = requests.post(f"https://api.telegram.org/bot{tok}/sendMessage", timeout=10,
+                              data={"chat_id": chat, "text": text[:4000]})
+            ok = r.status_code == 200 and r.json().get("ok", False)
+            if not ok:
+                log.warning("telegram alert rejected: HTTP %s %s", r.status_code, r.text[:200])
+            return ok
         except Exception as e:
             log.warning("telegram alert failed: %r", e)
+            return False
 
     def _email(self, subject, text):
         host, to = os.environ.get("MET_SMTP_HOST"), os.environ.get("MET_ALERT_EMAIL_TO")
         if not (host and to):
-            return
+            return None
         try:
             msg = EmailMessage(); msg["Subject"] = subject; msg["To"] = to
             msg["From"] = os.environ.get("MET_SMTP_USER", to); msg.set_content(text)
@@ -83,5 +102,7 @@ class Alerter:
                 if os.environ.get("MET_SMTP_USER"):
                     s.login(os.environ["MET_SMTP_USER"], os.environ.get("MET_SMTP_PASSWORD", ""))
                 s.send_message(msg)
+            return True
         except Exception as e:
             log.warning("email alert failed: %r", e)
+            return False

@@ -69,7 +69,8 @@ def read_derisk(cfg: Config) -> tuple[float | None, str]:
         return None, f"monitor.json unreadable: {e}"
 
 
-def preflight(cfg: Config, broker: Broker, trade_date: dt.date, fetchers: dict) -> tuple[Plan | None, list, list]:
+def preflight(cfg: Config, broker: Broker, trade_date: dt.date, fetchers: dict,
+              provisional: bool = False) -> tuple[Plan | None, list, list]:
     """Returns (plan, blockers, warnings). plan is None iff blockers is non-empty."""
     blockers, warnings = [], []
     g, s = cfg.guardrails, cfg.strategy
@@ -78,6 +79,8 @@ def preflight(cfg: Config, broker: Broker, trade_date: dt.date, fetchers: dict) 
         blockers.append("kill switch active")
     if not cal.is_last_session_of_month(trade_date):
         blockers.append(f"{trade_date} is not the last NYSE session of its month")
+    if provisional:
+        warnings.append("PROVISIONAL check: the signal uses the latest close, not the T-1 close; nothing is traded")
     if cfg.mode == "live" and not cfg.live_confirmed():
         blockers.append("live mode requires env MET_LIVE_CONFIRM=<account id>")
     if blockers:
@@ -110,7 +113,8 @@ def preflight(cfg: Config, broker: Broker, trade_date: dt.date, fetchers: dict) 
 
     sig, sig_problems, all_sigs = signals_from_sources(trade_date, fetchers, cfg.signal.equity, cfg.signal.bond,
                                                        cfg.signal.require_agreement, cfg.signal.max_source_gap_diff,
-                                                       len(fetchers) if cfg.signal.require_all_sources else 1)
+                                                       len(fetchers) if cfg.signal.require_all_sources else 1,
+                                                       provisional=provisional)
     if sig is None:
         blockers.extend(sig_problems)
     else:
