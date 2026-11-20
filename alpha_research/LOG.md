@@ -741,3 +741,8 @@ Short on local monthly expiry, open→close: Eurex 3rd Fri (EXS1.DE) +0.5 / +0.6
 013 signal on the session that is the settlement lag before month-end: T+3 era (pre-Sep-2017) day −3: +23.0bp/trade
 (train t=+2.78); T+2 era (Sep-2017..2022) day −2: +3.2bp (valid t=+0.4). Partial support in the old regime only; under
 T+2 the flow concentrates on the last day itself (013), not the settlement-lag day. Not a rule. Registry: 357 rows.
+
+## 274 — Month-end country rebalancing by global funds (20 country ETFs)  ·  2026-11-20
+Last day: long 4 MTD-loser countries / short 4 winners, open→close: +1.0 / −0.6 (+2.4 / −1.6bp per trade net). Dead —
+like sectors (016a), cross-sectional rebalancing within equities leaves no footprint; only the stock-bond leg does.
+Registry: 358 rows.

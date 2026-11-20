@@ -83,6 +83,7 @@
       robustness on train/valid only.
 - [x] 267 International OPEX replication — none.
 - [x] 268 Settlement-lag rebalancing day — partial (T+3 era only).
+- [x] 274 Country month-end rebalancing — dead.
 - [ ] 183 Retry OpenAlex/Semantic Scholar later (rate limits) for flow papers; Crossref with targeted titles.: web-fetch NBER working-paper search pages (nber.org/papers?q=...) for 'rebalancing',
       'price pressure', 'flows' — empirical asset-pricing papers with daily-testable rules.
 - [x] 179 Month-end rule applied to QQQ-vs-TLT and IWM-vs-TLT pairs with the vol filter (168) — robustness only if cheap.
