@@ -276,3 +276,10 @@ Behavioral focus begins (user request). Signals from the prior close only (yeste
 Verdict: **dead in large caps.** Next-day over-reaction/attention effects among liquid large caps are a few bp at most —
 below 2bp/side costs. These effects are documented mainly in small, retail-heavy stocks, which need a survivorship-free
 universe we don't have for free. Moving to ETF-based behavioral tests (no survivorship issue). Registry: 187.
+
+## 052/053 — Streaks (26 ETFs) and fear over-reaction (SPY)  ·  2026-11-20
+052 long after ≥4 down closes: +1.8 / +0.1; short after ≥4 up closes: +1.2 / −1.5. 053 long SPY next open→close after
+a < −2σ day: +1.5 / +0.1 (219 events); after a VIX +25% day: +1.7 / −0.1 (65); both: +1.6 / −0.1 (61).
+By decade the fear rebound was large in the 2000s (+74…+83bp/trade after VIX spikes), ~0 in the 2010s, +26bp in the
+2020s — positive overall but erratic and never significant. **Dead** as tradable rules; same "worked before ~2010" shape.
+Registry: 192 (luck t ≈ 3.2).

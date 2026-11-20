@@ -7,8 +7,8 @@ is an opening-print artifact (015). New tests use prior-close information only.
       liquidity/emotion) should reverse; high-volume moves (news) should continue. Campbell-Grossman-Wang; Cooper.
 - [x] 051 Attention-driven buying (Barber-Odean): stocks with abnormal volume + big up-move yesterday attract retail buy
       orders at the next open → price drifts down open→close. Short attention winners (SPY-hedged).
-- [ ] 052 Streaks / extrapolation: N≥4 consecutive down (up) closes in a stock or sector ETF → next-day open→close reversal.
-- [ ] 053 Fear over-reaction at the index level, structured: SPY close-to-close drop > 2σ / VIX jump > 25% / both →
+- [x] 052 Streaks / extrapolation: N≥4 consecutive down (up) closes in a stock or sector ETF → next-day open→close reversal.
+- [x] 053 Fear over-reaction at the index level, structured: SPY close-to-close drop > 2σ / VIX jump > 25% / both →
       next-day open→close; by era (retail dip-buying post-2020?).
 - [ ] 054 Anchoring to the 52-week high (George-Hwang): stocks that closed at a new 52w high yesterday → continuation
       next day (investors anchor and under-react); and 52w lows.
