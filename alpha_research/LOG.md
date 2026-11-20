@@ -629,3 +629,10 @@ not low there in SPY (if anything slightly positive). Dead.
 211 FOMC cycle (Cieslak-Morse-Vissing-Jorgensen, JF 2019): long SPY in even FOMC-cycle weeks, timing value: train **+2.6**
 → valid +0.4. Strong in-sample (the paper's era), faded after 2015 — consistent with post-publication decay. Dead.
 Registry: 315.
+
+## 212/213 — Intraday momentum (hedging demand); target-date-fund rebalancing lag  ·  2026-11-20
+212 (descriptive, Yahoo 1h Dec 2023-Nov 2026): last half-hour in the direction of prev close→10:30: SPY −0.4bp (48% hit),
+QQQ −0.4bp — the documented intraday momentum is absent recently (consistent with the 2611.09286 end-of-day-reversal
+finding and our 121).
+213 −sign(prior month SPY − AGG) over the first 3 sessions of the new month: −1.7 / +1.7 (sign flips). Dead — the
+rebalancing footprint is on the month's LAST day (013), not the first days after. Registry: 316.

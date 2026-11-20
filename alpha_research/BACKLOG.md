@@ -58,9 +58,9 @@
 - [x] 209 Treasury coupon reinvestment — dead (train-only).
 - [x] 210 Dash for cash (pre-month-end selling) — dead.
 - [x] 211 FOMC-cycle even weeks — train-only, dead.
-- [ ] 212 Intraday momentum / hedging demand (Gao-Han-Li-Zhou 2018; Baltussen et al. 2021): prev close→10:30 return predicts
+- [x] 212 Intraday momentum / hedging demand (Gao-Han-Li-Zhou 2018; Baltussen et al. 2021): prev close→10:30 return predicts
       15:30→close, Yahoo 1h bars 2023-26 → descriptive only (holdout era).
-- [ ] 213 Target-date-fund contrarian flows (Parker-Schoar-Sun, JF 2023): TDFs rebalance after equity moves; monthly signal =
+- [x] 213 Target-date-fund contrarian flows (Parker-Schoar-Sun, JF 2023): TDFs rebalance after equity moves; monthly signal =
       −sign(SPY 1-month return − AGG 1-month return) applied over the first 3 sessions of the next month (TDF rebalancing
       lag) — distinct from 013's last-day window.
 - [ ] 183 Retry OpenAlex/Semantic Scholar later (rate limits) for flow papers; Crossref with targeted titles.: web-fetch NBER working-paper search pages (nber.org/papers?q=...) for 'rebalancing',
