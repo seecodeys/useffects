@@ -805,3 +805,7 @@ TIPS (FX noise in BWX; EMB partly tracks the US-dollar index-extension bid). Reg
 ## 285 — Controls for the month-end bond bid (assets without bond-index extension)  ·  2026-11-20
 Last-3-session timing value: GLD −0.1 / −1.7; SPY +0.2 / −0.5; UUP +0.1 / −1.1. No month-end bid outside bonds — the
 effect is specific to index-tracked bonds, as the index-extension mechanism predicts. Registry: 378 rows.
+
+## 028 — Japanese fiscal year/half-year end (EWJ)  ·  2026-11-20
+Long EWJ on the last day of Mar/Sep: +0.5 / +1.1 (+14.5bp/trade valid, 46 events); short first 3 sessions of Apr/Oct:
+−0.1 / +0.3. Right-signed but underpowered. Dead/weak. Registry: 380 rows.
