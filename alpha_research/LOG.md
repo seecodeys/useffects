@@ -685,3 +685,8 @@ Registry: 336.
 ## 253 — Threshold rebalancers (first |MTD stock-bond gap| > 5% / 4% in a month → next day)  ·  2026-11-20
 5%: −0.1 / +1.0 (154 events); 4%: −0.4 / +0.2. No threshold-rebalancing footprint intra-month — the observable flow
 is calendar (month-end) rebalancing. Dead. Registry: 338.
+
+## 013h — Permutation tests of the month-end rule (2002-22, holdout untouched)  ·  2026-11-20
+Actual +21.0bp/trade over 245 month-ends. Sign permutation (10,000 shuffles, long/short counts preserved): p < 0.0001.
+Same rule on 245 random NON-month-end days (2,000 draws): mean +0.8bp, 95th pct +10.2bp, share ≥ actual 0.0005 —
+the stock-bond-gap signal only works ON the month's last day. Strong, non-parametric support for 013 as a calendar flow.

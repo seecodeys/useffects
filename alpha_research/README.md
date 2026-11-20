@@ -49,6 +49,9 @@ Refinements that also survived holdout: the SPY−TLT pair version (013g: +39bp/
 month-end family has now had ~8 holdout looks (013, 013c×3, 013d, 013g, 083, 168), so treat these as one finding
 with variants, not independent confirmations.
 
+Non-parametric check (013h, 2002-22): shuffling the trade signs never matches the real +21bp/trade (p<0.0001), and
+the same rule on random non-month-end days earns +0.8bp (p≈0.0005) — the effect is tied to the last trading day.
+
 Extra detail: the edge sits in ORDINARY month-ends (+27bp/trade, t=4.1 in 2002-22) more than quarter-ends (+5.6bp)
 or year-ends (+18.6bp) (116); it is a last-day effect (no mid-month, day −2/−3 or first-day-unwind effect).
 
