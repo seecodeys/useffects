@@ -3,7 +3,7 @@
 An autonomous research loop that searched for signals to **buy or short US-listed ETFs/stocks at the open and exit at
 the close**. It started from one question: do the rest of the world's markets since the last US close predict the US
 trading day? Every idea was tested under fixed, pre-registered rules (`PROTOCOL.md`), and every variant was logged
-(`results/registry.csv`, 270 tests so far). Later rounds widened the scope to overnight/multi-day holds, behavioral
+(`results/registry.csv`, 333 tests so far). Later rounds widened the scope to overnight/multi-day holds, behavioral
 signals, participant flows and options.
 
 ## Bottom line
@@ -58,6 +58,24 @@ after ~2006) rather than permanent. Also: 12 trades a year, so about +2.6%/yr at
 from 46 holdout trades leave a wide uncertainty band. It's also a published, known effect, so it could be traded away.
 
 Check the current state with `python alpha_research/signals.py`. `--backtest` plots it combined with the OPEX tilt.
+
+
+## Month-end playbook (how the surviving signal would actually be traded)
+
+1. **Day before the last trading day, after the close:** run `python alpha_research/signals.py`. It reports SPY and TLT
+   month-to-date returns, the stock-bond gap, the date of the next month-end, and whether SPY's 20-day volatility is above
+   its 2002-14 median.
+2. **Direction:** stocks beat bonds month-to-date → short SPY for the day; stocks lagged → buy SPY. The sign is
+   computed from the prior close, so it's known before the open.
+3. **Execution:** enter with a market-on-open order (or at the 9:30 auction), exit with market-on-close. In backtests
+   the edge is spread across the day with a strong last hour (81% hit), so don't exit early.
+4. **Sizing:** risk per trade is big compared with the edge. 2002-22: worst trade −176bp, 5th percentile −108bp, up to
+   7 losses in a row, average |move| 58bp vs a mean edge of ~17-37bp. Size so that a −2% day is tolerable. Size up
+   on high-volatility month-ends (168: ~+44-62bp/trade historically) and down on calm ones.
+5. **Variants:** the SPY−TLT pair (013g) gives a higher hit rate with the same edge; selling a same-day option against the
+   signal (083) is smoother but model-priced, so treat it as an upper bound.
+6. **Caveats:** it's one finding with ~8 holdout looks across variants; it was weak before 2002 and in 2010-14; it's
+   published, and crowding could erode it. Paper-trade it for a few months first.
 
 ## What didn't work, and why it matters
 

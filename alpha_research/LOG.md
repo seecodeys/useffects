@@ -667,3 +667,6 @@ premium reported for QE2/QE3 doesn't hold up out of sample. Registry: 329.
 ## 234 — SPY dividend reinvestment on pay-date month-ends  ·  2026-11-20
 Long SPY open→close on the last day of Jan/Apr/Jul/Oct: −0.6 / −1.0; other month-ends −0.7 / −0.6. No unconditional
 month-end buying (direction comes from the stock-bond gap, as in 013). Dead. Registry: 331.
+
+## 245 — Overnight into the monthly SPX AM settlement (Thu close → OPEX Fri open)  ·  2026-11-20
+Direction from train: SPY −0.1 / +1.6; QQQ −0.1 / +0.1. Dead. Registry: 333.
