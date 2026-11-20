@@ -760,3 +760,8 @@ Long over the last 3 sessions of each month: IEF train t=+3.39 / valid +3.24 (Sh
 SHY +4.34 / +3.21 (Sharpe ~1.1-1.2), gross +0.9%/yr; vs TLT +3.31 / +2.32, ~+4.4%/yr. Present at every curve point,
 size scaling with duration — the classic month-end Treasury effect (index extension + month-end portfolio buying).
 Robust in 2002-22; its 2023+ strength is only weakly confirmed (275 holdout t=0.6). Registry: 363 rows.
+
+## 277/278 — Month-end bond bid in credit and abroad (train/valid consistency; no holdout looks)  ·  2026-11-20
+Long over the last 3 sessions of each month: LQD +1.75 / +2.67; HYG +1.16 / +1.68; UK gilts IGLT.L +0.5 / +1.0;
+Canada XBB.TO +1.95 / +2.64; euro govts EUNH.DE +0.9 / +0.8. Right sign in all 10 period-instrument pairs; strongest in
+US Treasuries/IG credit and Canadian bonds. Supports a broad month-end bond-index-extension bid. Registry: 368 rows.

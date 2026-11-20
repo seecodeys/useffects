@@ -87,6 +87,9 @@
 - [x] 275 Bond turn-of-month (TLT last 3 sessions) — gate passed, holdout weak-positive.
 - [x] 276 Bond month-end extension by curve point (IEF/SHY t>3 both periods): IEF/SHY last-3-session longs (extension buying should be largest in
       long duration) — consistency check on train/valid only.
+- [x] 277/278 Month-end bond bid in credit & international bonds — right sign everywhere.
+- [ ] 279 Survivor portfolio v2: 013 (SPY month-end, vol-tilted) + 276 IEF last-3-sessions bid + 062b country reversal;
+      construction on 2002-22, report correlation/Sharpe (no new holdout looks).
 - [ ] 183 Retry OpenAlex/Semantic Scholar later (rate limits) for flow papers; Crossref with targeted titles.: web-fetch NBER working-paper search pages (nber.org/papers?q=...) for 'rebalancing',
       'price pressure', 'flows' — empirical asset-pricing papers with daily-testable rules.
 - [x] 179 Month-end rule applied to QQQ-vs-TLT and IWM-vs-TLT pairs with the vol filter (168) — robustness only if cheap.
