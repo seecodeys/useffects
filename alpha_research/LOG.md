@@ -210,3 +210,12 @@ Summary of method, all verdicts, the 013 finding and caveats.
 ## 025 — Jobs-report days (first Friday)  ·  2026-11-20
 4 variants. Gaps are ~20% larger on jobs days (news lands pre-open), but neither fading the gap (SPY t=−0.7/−0.3;
 QQQ −0.9/−1.6, i.e. slight continuation, not significant) nor a blanket long (−0.3/+1.3) works. **Dead.** Registry: 161.
+
+## 027 — What drives the month-end effect? Equity leg vs bond leg (train+valid only)  ·  2026-11-20
+2 registered variants + diagnostics (holdout untouched). L1 −sign(SPY MTD) alone: train t=+2.5, valid +0.6.
+L2 +sign(TLT MTD) alone: train +1.5, valid +2.3. HAC regression on 245 last days 2002-22:
+oc = −0.023·SPY_MTD (t=−1.3) + 0.057·TLT_MTD (t=+2.9). On the 56 days where SPY MTD and the stock-bond gap disagree
+in sign, the gap rule still earns +18bp/trade (59% hit).
+Interpretation: the **bond leg carries more of the signal** — when Treasuries rallied over the month, balanced funds
+sell bonds / buy equities into month-end. The combined gap (013) remains the best single specification.
+Registry: 163.
