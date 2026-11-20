@@ -576,3 +576,7 @@ EFA close→next open +0.4/−0.4. Dead (78 events each). Registry: 296.
 ## 180 — Quad-witching / S&P quarterly rebalance close → next open  ·  2026-11-20
 Fade the quad-witching day's move from the close to the next open: SPY +0.4 / −1.2, IWM +0.1 / −0.3. Dead.
 Registry: 298 (luck t ≈ 3.4).
+
+## 179 — Robustness: month-end pair + vol filter on QQQ-TLT and IWM-TLT (train/valid only, no holdout look)  ·  2026-11-20
+QQQ−TLT: train t=+2.14 (+42bp/trade), valid +2.51 (+58bp). IWM−TLT: +3.02 (+65bp), +2.74 (+59bp). The high-vol
+month-end rebalancing effect is consistent across equity sleeves; higher-beta sleeves move more. Registry: 300.

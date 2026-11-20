@@ -47,7 +47,7 @@
 - [x] 180 Quad-witching close reversal — dead.
 - [ ] 181 Third paper-sourcing round: web-fetch NBER working-paper search pages (nber.org/papers?q=...) for 'rebalancing',
       'price pressure', 'flows' — empirical asset-pricing papers with daily-testable rules.
-- [ ] 179 Month-end rule applied to QQQ-vs-TLT and IWM-vs-TLT pairs with the vol filter (168) — robustness only if cheap.
+- [x] 179 Month-end rule applied to QQQ-vs-TLT and IWM-vs-TLT pairs with the vol filter (168) — robustness only if cheap.
 - [x] 167 Month-end flow in *credit* — dead: HYG−IEF spread on the last day by stock-bond gap (balanced funds' credit sleeve)?
 - [x] 168 Month-end signal strength (survived holdout as a vol filter) by equity-vs-bond volatility regime (when bonds are volatile the rebalance is
       bigger in $ terms): interaction on TRAIN+VALID only, then a single pre-specified filter if it's strong.: have a web-fetch agent read free strategy summaries (e.g. Quantpedia's free
