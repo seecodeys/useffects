@@ -670,3 +670,8 @@ month-end buying (direction comes from the stock-bond gap, as in 013). Dead. Reg
 
 ## 245 — Overnight into the monthly SPX AM settlement (Thu close → OPEX Fri open)  ·  2026-11-20
 Direction from train: SPY −0.1 / +1.6; QQQ −0.1 / +0.1. Dead. Registry: 333.
+
+## 250 — Quarterly / annual rebalancers (QTD and YTD stock-bond gaps)  ·  2026-11-20
+a) quarter-end, −sign(SPY QTD − TLT QTD): +1.2 / +0.5 (+13 / +7bp/trade). b) year-end, YTD gap: −0.6 / +1.3 (20 events).
+Weaker than the MTD version even at quarter-ends — the flow keys on month-to-date drift (monthly rebalancing schedules
+dominate), consistent with 116/206. Dead. Registry: 335.
