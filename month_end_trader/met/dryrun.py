@@ -42,7 +42,8 @@ def make_env(start: dt.datetime, state_dir: str, spy, tlt, cash=20_000.0, core_s
     if core_shares is None:
         core_shares = int(100_000 / first_px)
     b = FakeBroker(clock, cash=cash, core_shares=core_shares, spy_price=first_px, fut_price=first_px * 10,
-                   closes={"SPY": pd.Series(spy["adjclose"]), "TLT": pd.Series(tlt["adjclose"])}, **kw)
+                   closes={"SPY": pd.Series(spy["adjclose"]), "TLT": pd.Series(tlt["adjclose"])},
+                   raw_closes={"SPY": pd.Series(spy["close"]), "TLT": pd.Series(tlt["close"])}, **kw)
     for d in spy.index:
         if d >= start.date():
             b.day_path[d] = (float(spy.at[d, "open"]) * 10, float(spy.at[d, "close"]) * 10, [])

@@ -31,7 +31,7 @@ class FakeClock:
 
 class FakeBroker(Broker):
     def __init__(self, clock: FakeClock, account="DU1234567", cash=20_000.0, core_shares=110, spy_price=733.0,
-                 fut_price=7340.0, multiplier=5.0, closes: dict | None = None):
+                 fut_price=7340.0, multiplier=5.0, closes: dict | None = None, raw_closes: dict | None = None):
         self.clock = clock
         self.account = account
         self.cash = cash
@@ -44,7 +44,8 @@ class FakeBroker(Broker):
         self.realised = 0.0
         self.connected = False
         self.orders = []
-        self.closes = closes or {}        # symbol -> pd.Series adjusted closes
+        self.closes = closes or {}        # symbol -> pd.Series adjusted closes (adjusted as of the data end)
+        self.raw_closes = raw_closes or {}  # symbol -> pd.Series unadjusted closes, to re-base like live data
         # behaviour knobs
         self.day_path = {}                # date -> (open_px, close_px, shock: list[(seconds_after_open, px)])
         self.slippage_ticks = 1
@@ -142,7 +143,7 @@ class FakeBroker(Broker):
     def what_if(self, contract, action, qty):
         self._need()
         nl = self.account_snapshot().net_liquidation
-        init = qty * 2_900.0
+        init = qty * self.fut_price_now() * self.multiplier * 0.079   # ~$2,900 per MES at 7,340
         if self.whatif_excess is not None:
             return MarginCheck(nl - self.whatif_excess, nl, init * 0.9)
         return MarginCheck(init, nl, init * 0.9)
@@ -182,4 +183,7 @@ class FakeBroker(Broker):
             s = s[[pd.Timestamp(i).date() < today for i in s.index]]
         else:
             s = s[[pd.Timestamp(i).date() <= today for i in s.index]]
+        raw = self.raw_closes.get(symbol)
+        if raw is not None and len(s) and s.index[-1] in raw.index:
+            s = s * (float(raw.loc[s.index[-1]]) / float(s.iloc[-1]))   # live adjusted series end at the raw price
         return s
