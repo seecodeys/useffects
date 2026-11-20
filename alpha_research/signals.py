@@ -22,10 +22,15 @@ def nyse_closed(d):
     d = pd.Timestamp(d).normalize()
     if d.dayofweek >= 5:
         return True
-    gf = pd.Timestamp(easter(d.year)) - pd.Timedelta(days=2)
-    memorial = max(x for x in pd.date_range(f"{d.year}-05-01", f"{d.year}-05-31") if x.dayofweek == 0)
-    fixed = {(1, 1), (6, 19), (7, 4), (12, 25)}
-    return d == gf or d == memorial or (d.month, d.day) in fixed    # month-end-relevant holidays only
+    y = d.year
+    nth = lambda m, wd, n: [x for x in pd.date_range(f"{y}-{m:02d}-01", periods=31) if x.month == m and x.dayofweek == wd][n]
+    gf = pd.Timestamp(easter(y)) - pd.Timedelta(days=2)
+    floating = {gf, nth(1, 0, 2), nth(2, 0, 2), nth(5, 0, -1), nth(9, 0, 0), nth(11, 3, 3)}   # MLK, Presidents, Memorial, Labor, Thanksgiving
+    def observed(m, dd):
+        x = pd.Timestamp(y, m, dd)
+        return x - pd.Timedelta(days=1) if x.dayofweek == 5 else (x + pd.Timedelta(days=1) if x.dayofweek == 6 else x)
+    fixed = {observed(1, 1), observed(6, 19), observed(7, 4), observed(12, 25)}
+    return d in floating or d in fixed
 
 
 def last_trading_day(year, month):
