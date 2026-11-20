@@ -188,3 +188,9 @@ Long SPY open→close after the bottom 5% of overseas sessions (global_avg ≤ �
 valid t=+1.2, +20bp/trade, 305 events. With prior VIX > 25: +1.9/+1.0, +25bp/trade. Right sign and sizeable per
 trade in both periods, but never significant — volatile crisis days. **Weak, fails gate.** Same crisis-rebound family
 as 009 H2/H4; parked. Registry: 151.
+
+## 021 — OPEX-week structure (SPY/QQQ)  ·  2026-11-20
+6 variants. Long Mon-Thu of OPEX week: t<1.2 both. Short day after OPEX: nothing (wrong sign in valid).
+Short quarterly OPEX Friday: SPY train t=+2.48, valid +2.03, +45bp/trade → gate passed (a subset of 001's rule, so
+not independent). **Holdout: Sharpe 0.17, t=+0.34, +6.7bp/trade (14 trades)** — weak, consistent with 001's
+half-strength holdout. Verdict: **OPEX effects are a small, fading tilt; nothing new.** Registry: 157.
