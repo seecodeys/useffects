@@ -817,3 +817,11 @@ to any other 3-day window — strong non-parametric support.
 
 ## 286 — Mid-month Treasury cash flows (IEF, 3 sessions into the 15th)  ·  2026-11-20
 +1.1 / +0.5. Dead — the bond bid is a month-END (index rebalancing) effect, not a coupon-date effect. Registry: 381 rows.
+
+## Status note — idea saturation  ·  2026-11-20 14:35 UTC
+~375 unique tests. Robust findings: (1) month-end stock-bond rebalancing in SPY (holdout t=3.3, permutation p<0.0001,
+international 2015-22 support, vol-scaled); (2) month-end bond bid in index-tracked bonds (21/21 years 2002-22, t>3 on
+IEF/SHY/TIP/MBB, permutation p<0.0002, controls null; holdout IEF Sharpe 0.83). Free daily-data flow ideas, arXiv, and
+strategy catalogs are largely exhausted; OpenAlex/Semantic Scholar rate-limited. Highest-value next steps need data we
+don't have for free: intraday/auction data (opening/closing imbalance, MOC flows), fund holdings/flows, options open
+interest. Rounds continue per the user's instruction, prioritising robustness work on the two findings.
