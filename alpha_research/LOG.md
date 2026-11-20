@@ -888,3 +888,8 @@ partial unwind overnight (right sign, growing), not significant. Weak. Registry:
 141 month-ends, signed bp: 09:30-12:00 +13.6 (t=2.7), 12:00-15:00 +5.1 (t=1.3), 15:00-15:50 +1.4, 15:50-16:00 +1.9.
 Same profile as the S&P (287): the month-end rebalancing move is front-loaded into the morning, larger for the
 higher-beta index. Confirms 'enter at the open'.
+
+## 296 — Does the month-end flow start overnight? (SPX CFD, 2010-22, descriptive)  ·  2026-11-20
+Signed by 013's signal: 16:00(d−1)→20:00 +3.7bp (t=1.1), 20:00→04:00 −5.5bp (t=−1.3), 04:00→09:30 +1.1bp (t=0.3).
+No consistent pre-open move — the flow starts at the cash open (287/295), so entering at the prior close (127) only adds
+noise. Execution: enter at the open, as specified.
