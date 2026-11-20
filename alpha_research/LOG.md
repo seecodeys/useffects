@@ -859,3 +859,11 @@ mechanical calendar flow. (So the weaker 2023+ TLT result isn't explained by the
 snapshot in 013c suggested a strong last hour — that was a short-sample impression). Registered variant 'last hour only
 (15:00→16:00)': +0.2 / +0.9 — weak. Execution conclusion: hold the full session from the open (as 013 specifies).
 Registry: 382 rows.
+
+## 288-290 — Intraday flow patterns on 15 years of 1-min S&P data (HistData SPX CFD)  ·  2026-11-20
+Gross bp/day 2010-14 / 2015-22; net t (0.5bp/side) train / valid:
+- 288 intraday momentum (prev close→10:00 predicts 15:30→16:00): +0.2 / +0.3bp gross; −1.3 / −1.0 net. Dead after costs.
+- 289 LETF pre-positioning (prev close→15:00 predicts 15:00→16:00): +1.6 / +1.7bp gross, consistent in both periods;
+  +0.7 / +0.8 net. Small and below significance after 1bp round-trip costs — the documented effect exists but is tiny.
+- 290 end-of-day reversal (09:30→15:30 reversed in the last half-hour): +0.3 / −0.3 gross; dead.
+Registry: 385 rows.
