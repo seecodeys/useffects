@@ -1,5 +1,23 @@
 # Backlog (top = next). Mark `[x]` when done, `[~]` in progress.
 
+## BEHAVIORAL FOCUS (user request 2026-11-20) — do these first
+Already known: index-level fades (gap fade, prior-day reversal) work only in crises (009/011); single-stock gap fade
+is an opening-print artifact (015). New tests use prior-close information only.
+- [ ] 050 Over-reaction vs news (volume split): yesterday's extreme stock moves vs SPY — low-volume moves (no news,
+      liquidity/emotion) should reverse; high-volume moves (news) should continue. Campbell-Grossman-Wang; Cooper.
+- [ ] 051 Attention-driven buying (Barber-Odean): stocks with abnormal volume + big up-move yesterday attract retail buy
+      orders at the next open → price drifts down open→close. Short attention winners (SPY-hedged).
+- [ ] 052 Streaks / extrapolation: N≥4 consecutive down (up) closes in a stock or sector ETF → next-day open→close reversal.
+- [ ] 053 Fear over-reaction at the index level, structured: SPY close-to-close drop > 2σ / VIX jump > 25% / both →
+      next-day open→close; by era (retail dip-buying post-2020?).
+- [ ] 054 Anchoring to the 52-week high (George-Hwang): stocks that closed at a new 52w high yesterday → continuation
+      next day (investors anchor and under-react); and 52w lows.
+- [ ] 055 Lottery demand (MAX effect): stocks with the largest single-day return in the last month → overpriced →
+      negative open→close drift; and round-number price psychology (closes just below $X0/$X00).
+- [ ] 056 Sector herding: sector ETF extreme residual move yesterday → next-day open→close reversal (cross-section of 9 SPDRs + industry ETFs).
+- [ ] 057 Monday mood / weekend rumination: big Friday drop → Monday open→close; by era.
+
+
 ## Overseas / cross-market signals (core theme)
 - [x] 001 Calendar & baseline anomalies for SPY/QQQ/IWM open→close (day-of-week, turn-of-month, pre-holiday, FOMC days, OPEX). Establishes baselines other signals must beat.
 - [x] 002 Country/sector ETF universe (EWJ, EWG, EWU, FXI, EWT, EWY, SMH, XLE, XLK, XLF, …): does each ETF's open→close depend on its *home* market's move since the last US close vs. its own gap (catch-up / over-reaction per ETF)? Cross-sectional long/short across ETFs.

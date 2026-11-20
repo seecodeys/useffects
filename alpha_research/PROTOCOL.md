@@ -8,6 +8,9 @@ Find signals for **US-listed instruments, entered at the open and exited at the
 close (long or short)**, that survive honest out-of-sample testing after costs.
 Original motivation: use how the rest of the world traded since the last US close.
 Broader intraday (open→close) signals are in scope too.
+**Current focus (user, 2026-11-20): behavioral / psychological effects — people over-reacting, attention, fear,
+extrapolation, anchoring.** Lesson from 004/006/015: build signals from information known at the PRIOR CLOSE (returns,
+volume, streaks), never from the opening print itself, which carries bid/ask-bounce artifacts.
 
 ## Data periods (never change these)
 | Period | Dates | Use |
