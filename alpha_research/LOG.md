@@ -965,3 +965,9 @@ Last-3-session timing value over always-long: XLU +0.9 / +0.1, VNQ +1.5 / +0.3, 
 don't share the bid in 2015-22 (where IEF has t=3.2) → it's specific to index-tracked bonds, not a general month-end
 rates move. Consistent with 285 (GLD/SPY/UUP controls). Registry: 412 rows.
 (Also tried: S&P 500 deletion-rebound test — blocked, Wikipedia no longer carries the historical changes table.)
+
+## 308 — Commodity hedging pressure / speculator crowding (CFTC disaggregated COT)  ·  2026-11-20
+Paper idea (de Roon-Nijman-Veld 2000; Bessembinder 1992). WTI→USO, gold→GLD, nat gas→UNG, silver→SLV; weekly, first used
+after the Friday release; equal-weight, 2bp/side. A fade managed-money crowding (|z|>1): −0.2 / −0.2 (timing t −0.5);
+B follow producer hedging pressure: +0.5 / −1.6 (timing t −0.7). No leg consistent across periods. Dead — the classic
+hedging-pressure premium doesn't show up at a weekly horizon in liquid commodity ETFs since 2009. Registry: 414 rows.
