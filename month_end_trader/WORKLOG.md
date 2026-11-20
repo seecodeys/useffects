@@ -35,4 +35,5 @@ Branch: `claude/blissful-mccarthy-mt2shh`. Scheduled check-ins (4 hourly tasks, 
       refuse while daemon runs, preflight retries transient blockers to 09:27, require_all_sources option, CME half-day /
       holiday halts, 45s guard quiet window, monitor refreshed if stale, config validation, README corrected. 159 tests
 - [ ] Review round 4: fresh agent on the round-3 diff (adoption logic is the riskiest new code)
-- [ ] End-to-end 'paper rehearsal' script: replays 27-30 Nov 2026 with a synthetic path and prints the exact alert timeline
+- [x] End-to-end 'paper rehearsal' script (met rehearse): replays 27-30 Nov 2026 with a synthetic path and prints the exact alert timeline
+- [ ] Sizing: floor rounding gives 1.78x on ~$120k (6 MES); consider nearest-contract rounding capped by max_leverage (ask user before changing behaviour)

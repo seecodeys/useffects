@@ -9,6 +9,7 @@
   python -m met.cli kill | unkill                         create / remove the kill switch file
   python -m met.cli report     --config config.yaml      run the decay monitor now
   python -m met.cli dry-run    [--months N]              full daemon run against the simulated broker
+  python -m met.cli rehearse                              alert timeline of the next trade on the simulator
   python -m met.cli validate-data --config config.yaml   compare IBKR ADJUSTED_LAST with Yahoo adjclose (run once)
 """
 from __future__ import annotations
@@ -58,6 +59,10 @@ def main(argv=None):
     ap.add_argument("-v", action="store_true")
     a = ap.parse_args(argv)
 
+    if a.cmd == "rehearse":
+        from .rehearsal import rehearse
+        rehearse()
+        return 0
     if a.cmd == "dry-run":
         from .dryrun import dry_run
         dry_run(months=a.months)

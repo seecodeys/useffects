@@ -383,3 +383,13 @@ def test_config_validation_round3():
         c = Config(); c.ib.account = "DU1"; f(c)
         with pytest.raises(ConfigError):
             c.validate()
+
+
+def test_rehearsal_next_trade():
+    from met.rehearsal import rehearse
+    s, b, stamped = rehearse(dt.date(2026, 11, 30), verbose=False)
+    titles = [t for _, _, t, _ in stamped]
+    assert s.phase == "FLAT" and [o["action"] for o in b.orders] in (["BUY", "SELL"], ["SELL", "BUY"])
+    assert any("Tomorrow (2026-11-30)" in t for t in titles)
+    ann = next(ts for ts, _, t, _ in stamped if "Tomorrow" in t)
+    assert ann.date() == dt.date(2026, 11, 27) and ann.time() == dt.time(13, 25)     # half-day T-1
