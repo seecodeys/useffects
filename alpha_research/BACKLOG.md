@@ -63,6 +63,15 @@ is an opening-print artifact (015). New tests use prior-close information only.
 - [x] 065 Extrapolation in sentiment-driven assets: GLD/TLT/USO after 3-month extreme moves (top/bottom 5% of history)
       → next-month reversal (time-series), hold 21 days.
 
+- [x] 070 DST weekend Mondays (lost sleep) — dead.
+- [x] 072 Lunar phase — dead.
+- [ ] 069 Weather mood (Hirshleifer-Shumway): NYC morning cloud cover (free Open-Meteo archive API, daily since 1940) →
+      SPY open→close on sunny vs overcast mornings; deseasonalised cloud cover, pre-specified sign (sunny = long).
+- [ ] 067 Retail mood spillover: BTC weekend return (Fri US close → Mon pre-open, from BTC-USD UTC daily bars) →
+      Monday SPY/QQQ open→close, 2015+ (crypto as a retail-sentiment gauge).
+- [ ] 071 Sports-sentiment style: big national events are hard to source; instead US equity reaction on the day after
+      large single-day crypto crashes (BTC < −10% UTC day) → QQQ/ARKK open→close (retail risk appetite shock).
+
 ## Flow-driven ideas (the 013 theme is the only robust winner so far)
 - [x] 016 Quarter-end window-dressing vs rebalancing: last day of quarter, sector/style winners vs losers MTD (XLK vs XLU etc.) — does the losing sleeve get bought? (cross-sectional sector version of 013).
 - [x] 017 Month-end rebalancing in other markets with US-listed vehicles: EFA/EEM vs TLT; small-cap vs large-cap (IWM vs SPY) month-to-date gap on last day.

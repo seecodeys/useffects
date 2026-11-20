@@ -339,3 +339,8 @@ Registry: 216.
 063 long low / short high capital-gains-overhang ETFs (price vs 1-year VWAP), monthly: −0.1 / +0.05. Dead.
 064 country 1-week reversal only when VIX > 30 (12% of days): train +3.0 (2008-09 crisis) → valid +0.4. Dead.
 065 pooled reversal after 63-day extremes (top/bottom 5% of train history) in GLD/TLT/USO/EEM/QQQ, 21-day holds: -0.4 / -0.1. Dead. Registry: 219.
+
+## 070/072 — Mood anomalies: DST "lost sleep" Mondays, lunar phases  ·  2026-11-20
+070 short SPY open→close on the first session after each DST change (54 events): +0.4 / −1.6. 072 long the new-moon
+week / short the full-moon week: −0.5 / −0.1. **Both dead** — classic mood anomalies don't show up in SPY open→close.
+Registry: 221.
