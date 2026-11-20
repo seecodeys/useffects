@@ -84,6 +84,9 @@
 - [x] 267 International OPEX replication — none.
 - [x] 268 Settlement-lag rebalancing day — partial (T+3 era only).
 - [x] 274 Country month-end rebalancing — dead.
+- [x] 275 Bond turn-of-month (TLT last 3 sessions) — gate passed, holdout weak-positive.
+- [ ] 276 Bond month-end extension by curve point: IEF/SHY last-3-session longs (extension buying should be largest in
+      long duration) — consistency check on train/valid only.
 - [ ] 183 Retry OpenAlex/Semantic Scholar later (rate limits) for flow papers; Crossref with targeted titles.: web-fetch NBER working-paper search pages (nber.org/papers?q=...) for 'rebalancing',
       'price pressure', 'flows' — empirical asset-pricing papers with daily-testable rules.
 - [x] 179 Month-end rule applied to QQQ-vs-TLT and IWM-vs-TLT pairs with the vol filter (168) — robustness only if cheap.

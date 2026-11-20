@@ -746,3 +746,11 @@ T+2 the flow concentrates on the last day itself (013), not the settlement-lag d
 Last day: long 4 MTD-loser countries / short 4 winners, open→close: +1.0 / −0.6 (+2.4 / −1.6bp per trade net). Dead —
 like sectors (016a), cross-sectional rebalancing within equities leaves no footprint; only the stock-bond leg does.
 Registry: 358 rows.
+
+## 275 — Bond turn-of-month: long TLT over the last 3 sessions of each month  ·  2026-11-20
+a) last 3 sessions: train t=+3.31 (Sharpe 0.94), valid +2.32 (0.82) → gate passed; **positive in 21/21 years 2002-22**
+(~+4.4%/yr at full exposure, ex-best-3-years +65% of +92%). Mechanism: Treasury index month-end duration extension and
+balanced-fund bond buying. b) first 3 sessions: −3.2 / −0.9 (the month-end bid partly reverses early next month).
+**Holdout (2023→Nov 2026): Sharpe 0.31, t=+0.60 @1bp; years +2.2% / +4.8% / +3.8% / −5.3% (2026 YTD).** Weak-but-alive:
+same sign 3 of 4 years, much smaller than 2002-22. (Distinct from 031's last-day open→close version, which failed 096's
+holdout check.) Registry: 361 rows.
