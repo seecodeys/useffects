@@ -959,3 +959,9 @@ Registry: 406 rows.
 BTC-USD Friday→Sunday (UTC closes), known before Monday's open. Correlation with Monday's SPY gap +0.09, with Monday
 open→close −0.01 (2015-22). Follow the weekend crypto move on Monday open→close: SPY valid t −0.7, QQQ −0.9; QQQ only
 when |BTC weekend| > 5%: +0.6. Dead (and no 2000-14 sample exists). Registry: 409 rows.
+
+## 307 — Bond-proxy control for the month-end bond bid  ·  2026-11-20
+Last-3-session timing value over always-long: XLU +0.9 / +0.1, VNQ +1.5 / +0.3, IYR +1.5 / +0.4. Rate-sensitive equities
+don't share the bid in 2015-22 (where IEF has t=3.2) → it's specific to index-tracked bonds, not a general month-end
+rates move. Consistent with 285 (GLD/SPY/UUP controls). Registry: 412 rows.
+(Also tried: S&P 500 deletion-rebound test — blocked, Wikipedia no longer carries the historical changes table.)

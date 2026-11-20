@@ -263,3 +263,4 @@ is an opening-print artifact (015). New tests use prior-close information only.
 - [x] 304 Fed net liquidity (WALCL−TGA−RRP) — weak, fails gate.
 - [x] 305 Tax-date TGA drain — dead.
 - [x] 306 Weekend crypto → Monday open→close — dead.
+- [x] 307 Bond-proxy control (XLU/VNQ/IYR) — no bid; bond-index specific.  - [~] S&P deletions: no free changes list.
