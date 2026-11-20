@@ -44,6 +44,11 @@ outperformed, they sell stocks into the close, and the reverse when stocks lagge
 | **Holdout 2023-Nov 2026** | **+3.30** | **1.68** | **+37.5** (46 trades, 67% hit) |
 | Holdout at 2bp/side costs | +3.09 | 1.57 | +34.5 |
 
+Refinements that also survived holdout: the SPY−TLT pair version (013g: +39bp/trade, 76% hit) and a volatility filter
+(168: trade only when SPY's 20-day vol is above its 2002-14 median → +61.5bp/trade, 78% hit, 18 trades). Caveat: the
+month-end family has now had ~8 holdout looks (013, 013c×3, 013d, 013g, 083, 168), so treat these as one finding
+with variants, not independent confirmations.
+
 Extra detail: the edge sits in ORDINARY month-ends (+27bp/trade, t=4.1 in 2002-22) more than quarter-ends (+5.6bp)
 or year-ends (+18.6bp) (116); it is a last-day effect (no mid-month, day −2/−3 or first-day-unwind effect).
 

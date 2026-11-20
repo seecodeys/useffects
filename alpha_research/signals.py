@@ -57,6 +57,10 @@ def status():
     print(f"  Next month-end (last trading day): {ltd.date()}  -> if the gap keeps this sign at the prior close: "
           f"{'SHORT' if gap > 0 else 'LONG'} SPY open->close")
     print(f"  (historical edge grows with |gap|: ~+5bp small, +18bp mid, +39bp large tercile; |gap| median ~3.6%)")
+    v20 = spy["cc"].rolling(20).std().loc[asof]
+    med = spy["cc"].rolling(20).std().loc["2002":"2014"].median()
+    print(f"  SPY 20d vol {v20*100:.2f}%/day vs 2002-14 median {med*100:.2f}% -> "
+          f"{'HIGH-vol month-end: edge historically ~+44-62bp/trade (168) -> full size' if v20 > med else 'low-vol month-end: edge historically small (~0-13bp) -> reduced size'}")
     t = third_friday(asof.year, asof.month)
     if t <= asof:
         n = asof + pd.offsets.MonthBegin(1); t = third_friday(n.year, n.month)
