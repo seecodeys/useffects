@@ -302,3 +302,15 @@ neither of which this setup captures. Logical next steps: (a) allow overnight/mu
 VIX9D > VIX (short-term panic): +0.8 / +0.2. 059 long QQQ when the bearish 3× ETF (SQQQ) takes an unusually large
 share of TQQQ+SQQQ dollar volume (z>2): +0.3 / +0.8, +13bp/trade. All right-signed (contrarian works a little), none
 significant. **Weak/dead.** Registry: 199.
+
+## 058 — Behavioral signals with overnight / multi-day holds (close→close)  ·  2026-11-20
+First tests under the relaxed holding rule (user OK). 9 variants; lag-1 = realistic (avoids trading on the signal's
+own closing print).
+- A 1-day residual reversal: ETFs train t=+5.2 (best-case lag0) / +2.2 (lag1) → valid +0.3 / −0.7. Large caps: −0.9 /
+  +1.5 → −1.5 / −2.4.
+- B 5-day residual reversal, overlapping 5-day holds (lag1): ETFs +3.1 → +0.4; large caps +3.3 → +0.4. Gross edge by
+  5-year block: 6-7bp/day (2000-04) → 3-5 (2005-09) → ~1-2bp/day since 2010, vs ~0.35-0.7bp/day turnover costs.
+- C SPY fear rebound (after a −2σ day) held 1 day: +1.7 / +0.7; held 5 days: 0 / −0.3.
+- D ETF streak reversal held 1 day: +1.5 / −0.7.
+Verdict: **dead/weak.** Allowing overnight/multi-day holds doesn't rescue the classic short-term over-reaction
+(reversal) effects in liquid US assets: they were large in 2000-09 and have decayed to ~1-2bp/day gross. Registry: 208.

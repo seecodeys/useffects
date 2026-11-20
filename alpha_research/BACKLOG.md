@@ -42,12 +42,18 @@ is an opening-print artifact (015). New tests use prior-close information only.
 - [~] 014 Earnings-season intensity: SPY/QQQ intraday during heavy mega-cap earnings weeks vs not (needs earnings dates — Yahoo events or skip).
 - [x] 015 Execution reality check for 004/006 (first-hour open-print reversals): document what evidence would confirm them (MOO paper fills, TAQ-like data); test robustness to entering at 9:35 using Yahoo 5m bars (60 days) — descriptive only.
 
-- [ ] 058 (needs user OK to relax open→close) Behavioral signals with close→next-close or close→open holds: short-term
+- [x] 058 (user OK given to relax open→close) Behavioral signals with close→next-close or close→open holds: short-term
       reversal of extreme residual moves, fear rebounds, attention reversal — where the literature says the effect lives.
 - [x] 059 Retail-attention proxies available free: Google-Trends-like? (not free/clean) → instead: abnormal volume in
       leveraged/meme-adjacent ETFs (TQQQ/SQQQ volume share) as a crowd-sentiment gauge → SPY next-day open→close (contrarian).
 - [x] 060 Put/call-style sentiment from free data: VIX vs realized vol spread (fear premium), VIX9D/VIX inversion as panic
       gauge → contrarian SPY open→close.
+
+- [ ] 061 Behavioral, longer horizon (user OK on holds): post-crash over-reaction at the market level — after SPY
+      drawdowns of >10% from a 52w high, 20-day forward returns vs normal (sentiment capitulation); and investor-attention
+      'news-driven' vs 'no-news' monthly reversal at ETF level (country ETFs, 1-month reversal, survivorship-free).
+- [ ] 062 Over-reaction to macro surprises across countries: country ETFs after their worst week vs world (EFA/EEM
+      components), hold 1-4 weeks (country-level reversal, Balvers-Wu-Gilliland style mean reversion).
 
 ## Flow-driven ideas (the 013 theme is the only robust winner so far)
 - [x] 016 Quarter-end window-dressing vs rebalancing: last day of quarter, sector/style winners vs losers MTD (XLK vs XLU etc.) — does the losing sleeve get bought? (cross-sectional sector version of 013).
