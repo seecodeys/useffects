@@ -899,3 +899,11 @@ Short 10:30→15:00 on monthly OPEX Fridays: train t=+2.39, valid +1.46, +13.6bp
 CFD baseline +1.42 / +1.27, +11.5bp, 0.143. Concentrating on the post-settlement window improves risk-adjusted edge
 ~40%, but it's post-hoc and still not significant in 2015-22. Practical note for anyone using the 001 tilt: avoid the
 first hour (settlement noise) and the last hour. Registry: 391 rows.
+
+## 298 — Does the month-end bond bid scale with Treasury coupon issuance? (dose-response, 2002-22)  ·  2026-11-20
+Monthly note/bond/TIPS issuance (fiscaldata, by issue month) relative to its trailing 12-month mean, terciles cut on
+2002-14. IEF last-3-session bp, low/mid/high issuance: 2002-14 +26.0 / +18.3 / +24.1; 2015-22 +33.0 / +17.9 / +21.2;
+correlation with the window return 0.006 (TLT 0.019). **No dose-response** — the bid is not proportional to new supply,
+so it looks more like a generic month-end portfolio/benchmark bid (or extension driven by aging/maturities, which this
+proxy misses) than a pure "new issues enter the index" effect. Sized variant (0.5/1/1.5 by tercile) is no better than
+flat (IEF +3.15 / +2.88 vs +3.39 / +3.24). Keep the flat bond-bid leg. Registry: 392 rows.

@@ -254,3 +254,4 @@ is an opening-print artifact (015). New tests use prior-close information only.
 - OPEX-week structure follow-up to 001 (Mon-Thu before OPEX, Monday after, quarterly-only, VIX-expiry Wednesdays). Lower priority: each new test raises N.
 - Earnings-season effects on SPY intraday; month-end rebalancing flows; quad witching.
 - Treasury ETF (TLT) / credit (HYG) gaps as signals for SPY intraday.
+- [x] 298 Bond-bid dose-response on coupon issuance — none; keep flat leg.
