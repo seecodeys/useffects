@@ -350,3 +350,10 @@ NYC morning (06-09h) cloud cover from the free Open-Meteo ERA5 archive
 (archive-api.open-meteo.com/v1/archive?latitude=40.71&longitude=-74.01&hourly=cloud_cover&timezone=America/New_York),
 deseasonalised by calendar month (train). H1 long sunniest 20% / short cloudiest 20%: −0.4 / −1.1. H2 −sign(cloud):
 −0.2 / −0.5. **Dead** (if anything wrong-signed). Registry: 223.
+
+## 067/071 — Crypto as a retail-mood gauge  ·  2026-11-20
+BTC-USD starts 2014-09, so TRAIN is essentially empty; judged on VALID (2015-22).
+067 follow BTC's weekend move (|move|>3%) on Monday open→close: QQQ valid t=+0.3, ARKK +0.1. Dead.
+071 short the next US session after a BTC day < −10% (44 events): QQQ −1.5, ARKK −0.8 — i.e. tech/ARKK tend to *bounce*
+(~+28bp) after crypto crashes, the opposite of the pre-specified shock direction; not significant, noted only.
+Registry: 227.
