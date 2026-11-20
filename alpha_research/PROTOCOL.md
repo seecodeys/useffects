@@ -12,6 +12,11 @@ Broader intraday (open→close) signals are in scope too.
 (close→close, close→open, k-day). Use `lib.backtest_weights` (turnover-based costs). Because a signal computed from
 today's close and traded AT that close can pick up closing-print bounce, always report a **lag-1** version (signal
 from close t, position from close t+1) as the realistic one; the same-close version is labelled best-case.
+**Options are in scope (user, 2026-11-20).** Free data options: CBOE strategy-index histories (cdn.cboe.com/api/global/
+us_indices/daily_prices/<NAME>_History.csv — PUT, BXM, CNDR, BFLY, WPUT, PPUT …; follow redirects), VIX-family indices
+(^VIX, ^VIX9D, ^VIX1D 2023+, ^VVIX, ^SKEW), VIX ETPs (VIXY/SVXY 2011+, VXX 2018+; watch SVXY's 2018 leverage change),
+and model-priced SPY options (Black-Scholes with VIX/VIX9D as implied vol — no skew, no real spreads: haircut premium
+≥5% per side and label results 'model-priced').
 **Current focus (user, 2026-11-20): behavioral / psychological effects — people over-reacting, attention, fear,
 extrapolation, anchoring.** Lesson from 004/006/015: build signals from information known at the PRIOR CLOSE (returns,
 volume, streaks), never from the opening print itself, which carries bid/ask-bounce artifacts.
