@@ -324,3 +324,13 @@ Long 3 worst / short 3 best countries by past-N-day return vs the cross-section,
 Verdict: weekly over-reaction dead; **monthly country reversal = weak-but-stable** (doesn't decay like the short-horizon
 effects; plausible story: country-level herding/over-reaction to macro news over weeks). Candidate for refinement with
 pre-specified variants (e.g. skip-week, vol-scaling) — but each adds to N. Registry: 211.
+
+## 062b — Country reversal refinements (pre-specified)  ·  2026-11-20
+d) skip-week (t−21..t−5): +0.5 / +1.7. e) vol-scaled: +0.6 / +1.8. f) 30-country universe: +1.1 / +1.2.
+All share the same profile: ~0 gross in 2000-09, ~1-1.5bp/day gross since 2010, never significant. **Weak-but-stable;
+no variant passes the gate.** Not pursued further for now (registry 214, luck t ≈ 3.3).
+
+## 061 — Market capitulation / euphoria timing (SPY, excess over exposure-matched buy-and-hold)  ·  2026-11-20
+a) long only when SPY is >15% below its 252-day high (17% of days): timing excess −0.2 / +1.3. b) step aside at euphoric
+highs (new high + 21d return > 8%; rare): −0.6 / −1.2. **Dead** — no timing value beyond the equity premium.
+Registry: 216.

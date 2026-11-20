@@ -49,11 +49,19 @@ is an opening-print artifact (015). New tests use prior-close information only.
 - [x] 060 Put/call-style sentiment from free data: VIX vs realized vol spread (fear premium), VIX9D/VIX inversion as panic
       gauge → contrarian SPY open→close.
 
-- [ ] 061 Behavioral, longer horizon (user OK on holds): post-crash over-reaction at the market level — after SPY
+- [x] 061 Behavioral, longer horizon (user OK on holds): post-crash over-reaction at the market level — after SPY
       drawdowns of >10% from a 52w high, 20-day forward returns vs normal (sentiment capitulation); and investor-attention
       'news-driven' vs 'no-news' monthly reversal at ETF level (country ETFs, 1-month reversal, survivorship-free).
 - [x] 062 Over-reaction to macro surprises across countries: country ETFs after their worst week vs world (EFA/EEM
       components), hold 1-4 weeks (country-level reversal, Balvers-Wu-Gilliland style mean reversion).
+
+- [ ] 063 Disposition effect proxy at ETF level: capital-gains overhang ≈ price vs 252-day volume-weighted average
+      price (VWAP of the last year); ETFs far above their 'average cost' face profit-taking → lower next-month returns?
+      Cross-section of 26 ETFs, monthly rebalance, survivorship-free.
+- [ ] 064 Herding across countries during global stress: when VIX > 30, do the countries that fell most in the last
+      week rebound more (fear-driven indiscriminate selling)? Conditional version of 062a.
+- [ ] 065 Extrapolation in sentiment-driven assets: GLD/TLT/USO after 3-month extreme moves (top/bottom 5% of history)
+      → next-month reversal (time-series), hold 21 days.
 
 ## Flow-driven ideas (the 013 theme is the only robust winner so far)
 - [x] 016 Quarter-end window-dressing vs rebalancing: last day of quarter, sector/style winners vs losers MTD (XLK vs XLU etc.) — does the losing sleeve get bought? (cross-sectional sector version of 013).
