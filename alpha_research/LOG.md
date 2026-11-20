@@ -237,3 +237,8 @@ Dates fetched by a web-fetch agent from the Fed's per-year historical pages + cu
 long SPY on FOMC day train t=+1.7 → valid −0.4; QQQ +1.0/−0.2; day-before (pre-FOMC drift) +1.0/−0.3; long TLT on
 FOMC day −0.7/+2.0. **Dead** — the documented pre-FOMC/FOMC-day equity premium has not survived in open→close terms
 since 2015 (consistent with the literature's post-publication decay). Registry: 174 (luck t ≈ 3.2).
+
+## 037 — Commodity index roll; 038 — Leveraged-ETF rebalancing proxy  ·  2026-11-20
+037 short USO open→close on business days 5-9 (GSCI-style roll window), 2bp/side: train t=−0.1, valid +1.2. Dead.
+038 follow the gap on |gap| > 1% days (LETF rebalancing in the move's direction): SPY +1.3/+0.0, QQQ −0.8/+0.3. Dead —
+whatever LETF flow exists at the close doesn't show up as open→close continuation on daily data. Registry: 177.
