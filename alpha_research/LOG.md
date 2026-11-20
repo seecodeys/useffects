@@ -550,3 +550,13 @@ dead). Others need non-free data (13F holdings, fund returns, commodity futures 
 ## 165 — Mid-month payday (16th)  ·  2026-11-20
 Long SPY close→close on the first session ≥ the 16th (timing value): +0.8 / +0.4. Dead (as the source itself notes it
 weakened after 2010). Registry: 287.
+
+## 167/168 — Month-end flow in credit; month-end edge vs volatility  ·  2026-11-20
+167 HYG−IEF spread on the last day by the stock-bond gap: +0.9 / +0.6. Dead (no credit-sleeve footprint).
+168 descriptive (2002-22): 013 per-trade bp by prior-day 20d vol tercile — SPY vol: train 13/21/34, valid −2/8/49;
+TLT vol: train 14/13/40, valid 11/20/25. Monotone in both periods → one pre-specified filter registered:
+**trade 013 only when SPY 20d vol > its train median**: train t=+2.64 (Sharpe 0.75, +30bp/trade), valid +2.53 (0.90,
++44bp), ~6 trades/yr → gate passed. **Holdout: Sharpe 1.47, t=+2.90, +61.5bp/trade, 78% hit, 18 trades, max DD −0.5%.**
+Survived — the rebalancing price impact is larger in volatile markets (bigger $ imbalances, thinner liquidity).
+Use as a sizing tilt (bigger on high-vol month-ends) rather than a hard filter, since the unfiltered rule also works.
+Registry: 289.
