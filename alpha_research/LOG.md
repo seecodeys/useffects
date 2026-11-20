@@ -157,3 +157,13 @@ second-to-last day alone: train t=−1.1 — effect is a last-day phenomenon. E4
 +1.0 — TLT (long duration, what balanced funds' bond sleeves move most) is the better proxy.
 E2 sizing by |gap| (clip at 2× train median): passed gate (valid t=+2.21); **holdout t=+2.52, Sharpe 1.28 — lower than
 the plain sign rule (t=3.30)**, so sizing adds nothing out-of-sample; keep the binary rule. Registry: 139.
+
+## 015 — Execution reality check for 004/006: delayed entry with 5-min bars  ·  2026-11-20
+Descriptive only (Yahoo 5m, 59 sessions Aug-Nov 2026; not registered). Gross L/S bp/day by entry time → close:
+| Signal | open | 9:35 | 9:40 | 10:00 |
+|---|---|---|---|---|
+| 004 ADR XS catch-up (≥$20) | +21.7 (t=2.2) | +3.2 | +0.8 | +4.9 |
+| 006 large-cap gap reversal | +13.2 (t=1.3) | +5.0 | −2.1 | −6.7 |
+The edge is gone within 5-10 minutes of the open. Verdict: **004 and 006 downgraded to "opening-print artifact unless
+proven otherwise".** They could only be real if MOO orders actually fill at the printed opening-auction price with
+negligible impact; a 5-minute delay already erases them. Not worth more research without auction-fill evidence.
