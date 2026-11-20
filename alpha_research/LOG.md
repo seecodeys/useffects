@@ -917,3 +917,9 @@ C TLT contrarian to leveraged funds in 10y notes +1.2 / +1.5 (timing value t=1.8
 +0.8 / −0.1; E TLT contrarian to lev funds in bonds −0.8 / +0.8; F SPY follow dealers +0.6 / +1.2.
 Dead — weekly positioning doesn't time SPY/TLT. C (fade crowded leveraged 10y positioning) is the only same-sign pair,
 far from the gate. Registry: 398 rows.
+
+## 300 — Month-end bond bid vs asset managers' Treasury-futures length (mechanism check, 2009-22, descriptive)  ·  2026-11-20
+Terciles of asset managers' net long in 10y futures (share of OI, z vs 3 years; last release before the window):
+IEF +18.5 / +32.2 / +17.6bp, TLT +38.3 / +57.8 / +26.6bp; correlation ≈ +0.05. No dose-response. Together with 298
+(no link to new issuance), the bid looks like a broad month-end benchmark/cash-deployment effect that can't be pinned
+on one measurable flow with free data. Doesn't change the trade (flat, every month). Not registered (descriptive).

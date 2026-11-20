@@ -256,3 +256,4 @@ is an opening-print artifact (015). New tests use prior-close information only.
 - Treasury ETF (TLT) / credit (HYG) gaps as signals for SPY intraday.
 - [x] 298 Bond-bid dose-response on coupon issuance — none; keep flat leg.
 - [x] 299 CFTC TFF positioning (lev funds / asset mgrs / dealers; ES, TY, US) — dead (C weakly consistent).
+- [x] 300 Bond bid vs asset-manager futures length — no dose-response (descriptive).
