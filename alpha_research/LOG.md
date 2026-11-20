@@ -1032,3 +1032,9 @@ No equity month-end rebalancing effect before 2002 (with 040's weak 1993-2002 re
 is present from 1983. 013 is a modern effect, consistent with the post-2000s growth of target-date/balanced/risk-parity
 assets that rebalance mechanically; it could also fade if those flows change. The cruder proxy (close→close, yield-based
 bond leg) is noisier than the real 013 in 2015-22. Not registered.
+
+## 317 — Month-end bid back-cast in corporate yields (Moody's Aaa/Baa daily, FRED, 1983+; descriptive)  ·  2026-11-20
+Yield decline over the last 3 sessions (bp, t): Aaa 1983-92 +0.5 (0.7) | 1993-01 +1.8 (2.0) | 2002-22 +2.3 (4.1);
+Baa +1.8 (2.5) | +1.8 (2.1) | +2.4 (4.5). Pre-2002 permutation p = 0.03 (Aaa), <0.001 (Baa). The month-end bid shows up
+in investment-grade corporate yields too, from the 1980s-90s on, matching LQD (277) — consistent with a broad
+bond-index extension bid (part of it is the Treasury move these yields embed). Not registered.
