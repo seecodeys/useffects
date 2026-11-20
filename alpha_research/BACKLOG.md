@@ -136,7 +136,7 @@ is an opening-print artifact (015). New tests use prior-close information only.
 - [x] 095 Retail-heavy ETF over-reaction: ARKK / TQQQ / SMH big prior-day moves (|z|>2) → next-day close→close reversal
       (lag-1) vs the same rule on SPY (institutional) — does over-reaction concentrate where retail is?
 
-- [ ] 107 Update README.md: behavioral round (050-095) and options round (080-087) results, revised 'edges found' table.
+- [x] 107 Update README.md: behavioral round (050-095) and options round (080-087) results, revised 'edges found' table.
 - [x] 096 Portfolio of survivors: 013 (SPY month-end) + 031 (TLT month-end long) + 062b (monthly country reversal) —
       combined daily P&L, correlation, Sharpe, drawdown by period (construction only; no new signal search).
 - [x] 103 Micro-cap over-reaction at ETF level (IWC 2005+, IJR): reverse |z|>2 prior-day moves, lag-1 close→close;

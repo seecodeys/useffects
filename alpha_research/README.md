@@ -3,7 +3,8 @@
 An autonomous research loop that searched for signals to **buy or short US-listed ETFs/stocks at the open and exit at
 the close**. It started from one question: do the rest of the world's markets since the last US close predict the US
 trading day? Every idea was tested under fixed, pre-registered rules (`PROTOCOL.md`), and every variant was logged
-(`results/registry.csv`, 157 tests so far).
+(`results/registry.csv`, 270 tests so far). Later rounds widened the scope to overnight/multi-day holds, behavioral
+signals, participant flows and options.
 
 ## Bottom line
 
@@ -13,7 +14,11 @@ trading day? Every idea was tested under fixed, pre-registered rules (`PROTOCOL.
 | **Main finding: month-end stock-bond rebalancing (013)** | **Survived the untouched 2023-2026 holdout:** t=3.3, Sharpe 1.7, +37bp/trade, 67% hit. Confirmed on IWM/QQQ/DIA. |
 | OPEX-Friday short (001) | Small persistent tilt; about half as strong in holdout (t=0.8). |
 | ADR catch-up (004), single-stock gap reversal (006) | Looked strong, but vanish if you enter 5 minutes after the open → likely opening-print artifacts (015). |
-| Everything else (calendar, VIX regime, credit, relative gaps, vol-target, Russell…) | Dead or too weak. |
+| **Month-end signal via options (083)** | Selling a same-day ATM option against the signal survived holdout (model-priced): t=3.5, Sharpe 1.8, 80% hit. Model overstates seller edge ~35% (087) → realistic ~+10bp/trade. |
+| Weak but consistent (never passed the gate) | Monthly country reversal (062b, ~1-1.5bp/day gross since 2010); leveraged-ETF overnight reversal after >2% days (112, growing since 2009); Treasury auction cycle on TLT (133, passes gate but concentrated in 2009-10/2020). |
+| Behavioral / psychology round (050-095) | 30+ variants (over-reaction, attention, streaks, fear, anchoring, lottery, mood, weather, DST, lunar…): none survive in liquid US assets after ~2010. |
+| Flow round (110-134) and paper-sourced ideas (120-123) | Turn-of-month, buyback blackout, futures roll, Ponzi-fund flows, LETF pre-positioning, vol-control, LETF trend: dead or risk overlays only. |
+| Everything else (calendar, VIX regime, credit, relative gaps, vol-target, Russell, FOMC, jobs days…) | Dead or too weak. |
 
 ## The month-end rebalancing signal
 
@@ -38,6 +43,9 @@ outperformed, they sell stocks into the close, and the reverse when stocks lagge
 | Valid 2015-2022 | +2.01 | 0.71 | +17 |
 | **Holdout 2023-Nov 2026** | **+3.30** | **1.68** | **+37.5** (46 trades, 67% hit) |
 | Holdout at 2bp/side costs | +3.09 | 1.57 | +34.5 |
+
+Extra detail: the edge sits in ORDINARY month-ends (+27bp/trade, t=4.1 in 2002-22) more than quarter-ends (+5.6bp)
+or year-ends (+18.6bp) (116); it is a last-day effect (no mid-month, day −2/−3 or first-day-unwind effect).
 
 Limits: back-cast to 1993-2002 (never-seen data, bond leg proxied by the 30y yield) it is only weakly positive
 (t=0.6, +6.6bp/trade), so the effect looks **era-dependent** (likely tied to the growth of rebalancing-driven assets
