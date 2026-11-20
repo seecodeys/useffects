@@ -883,3 +883,8 @@ Registry: 388 rows.
 ## 294 — Overnight unwind after the month-end equity flow  ·  2026-11-20
 −d from the last day's close to the next open: +4.9bp/trade gross (2002-14), +11.3bp (2015-22); t=+0.7 / +1.3. Some
 partial unwind overnight (right sign, growing), not significant. Weak. Registry: 389 rows.
+
+## 295 — Month-end intraday timing replicated on the Nasdaq-100 CFD (2010-22, descriptive)  ·  2026-11-20
+141 month-ends, signed bp: 09:30-12:00 +13.6 (t=2.7), 12:00-15:00 +5.1 (t=1.3), 15:00-15:50 +1.4, 15:50-16:00 +1.9.
+Same profile as the S&P (287): the month-end rebalancing move is front-loaded into the morning, larger for the
+higher-beta index. Confirms 'enter at the open'.

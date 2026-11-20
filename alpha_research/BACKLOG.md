@@ -98,7 +98,7 @@
 - [x] 287 Month-end intraday timing (SPX CFD 1-min) — edge mostly in the morning; last-hour variant weak.
 - [x] 288-290 Intraday momentum / LETF pre-positioning / EOD reversal on SPX 1-min — tiny or dead.
 - [ ] 288b (skip) Same intraday timing study for the bond bid using HistData? (no Treasury series on HistData) — skip unless a source appears.
-- [ ] 295 Replicate 287 (month-end intraday timing) on Nasdaq-100 CFD (HistData NSXUSD, downloading) — descriptive.
+- [x] 295 Replicate 287 (month-end intraday timing) on Nasdaq-100 CFD (HistData NSXUSD, downloading) — descriptive.
 - [ ] 183 Retry OpenAlex/Semantic Scholar later (rate limits) for flow papers; Crossref with targeted titles.: web-fetch NBER working-paper search pages (nber.org/papers?q=...) for 'rebalancing',
       'price pressure', 'flows' — empirical asset-pricing papers with daily-testable rules.
 - [x] 179 Month-end rule applied to QQQ-vs-TLT and IWM-vs-TLT pairs with the vol filter (168) — robustness only if cheap.
