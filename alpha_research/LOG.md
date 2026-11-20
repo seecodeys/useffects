@@ -847,3 +847,8 @@ close 4 sessions before month-end, exit at the month-end close), as specified in
 Gross Sharpe of the daily series by window (last k sessions): IEF k=2 1.11, k=3 1.12, k=4 0.95, k=5 0.99, k=7 0.87;
 TLT 0.93 / 0.94 / 0.72 / 0.79 / 0.75. Mean bp/session falls as the window widens (IEF 9.0 → 3.8). The pre-specified
 3-session window sits at the plateau — no evidence the choice was lucky; 2-3 sessions is where the bid concentrates.
+
+## 276i — Bond bid vs month-to-date rate direction (descriptive, 2002-22)  ·  2026-11-20
+IEF last-3-session sum when 10y yields ROSE month-to-date (to the window start): +22.0bp (t=3.5, n=128); when they FELL:
++24.5bp (t=4.1, n=117). Regime-independent — the bid doesn't depend on recent rate moves, again pointing to a
+mechanical calendar flow. (So the weaker 2023+ TLT result isn't explained by the rate direction alone.)
