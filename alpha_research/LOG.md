@@ -842,3 +842,8 @@ the SPY leg is solidly holdout-confirmed (IEF holdout Sharpe 0.83). Not advice; 
 Last-3-session mean bp per session: IEF overnight +3.7 (t=3.7), intraday +4.0 (t=3.8); TLT +6.2 / +7.0 (t=3.1 each) vs
 all-day ~0.7-1.3. The bid is split evenly across overnight and trading hours → hold through the window (enter at the
 close 4 sessions before month-end, exit at the month-end close), as specified in 275/276.
+
+## 276h — Bond-bid window length (descriptive, 2002-22)  ·  2026-11-20
+Gross Sharpe of the daily series by window (last k sessions): IEF k=2 1.11, k=3 1.12, k=4 0.95, k=5 0.99, k=7 0.87;
+TLT 0.93 / 0.94 / 0.72 / 0.79 / 0.75. Mean bp/session falls as the window widens (IEF 9.0 → 3.8). The pre-specified
+3-session window sits at the plateau — no evidence the choice was lucky; 2-3 sessions is where the bid concentrates.
