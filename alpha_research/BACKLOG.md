@@ -42,7 +42,7 @@
       descriptive 2023-26 only (holdout-era → descriptive) — already seen in 013c (last hour 81% hit); skip unless new data.
 - [x] 176 Quarter-end bank balance-sheet (TLT) — dead.
 - [x] 177 Tax-deadline flows — weak.
-- [ ] 178 MSCI index review effective days (last business day of Feb/May/Aug/Nov): EEM/EFA vs SPY open→close and
+- [x] 178 MSCI index review effective days (last business day of Feb/May/Aug/Nov): EEM/EFA vs SPY open→close and
       close→next open (global index-fund rebalancing); direction from train.
 - [ ] 179 Month-end rule applied to QQQ-vs-TLT and IWM-vs-TLT pairs with the vol filter (168) — robustness only if cheap.
 - [x] 167 Month-end flow in *credit* — dead: HYG−IEF spread on the last day by stock-bond gap (balanced funds' credit sleeve)?

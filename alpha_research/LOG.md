@@ -568,3 +568,7 @@ Registry: 291.
 
 ## 177 — Tax-deadline flows (short SPY 3 sessions into Jan/Apr/Jun/Sep/Dec 15)  ·  2026-11-20
 +0.5 / +1.2 — right sign, not significant. Weak/dead. Registry: 292.
+
+## 178 — MSCI index-review effective days (EEM/EFA vs SPY)  ·  2026-11-20
+4 variants (direction from train): EEM open→close +1.5/−0.4; EEM close→next open +0.6/+1.3; EFA open→close +0.4/+1.0;
+EFA close→next open +0.4/−0.4. Dead (78 events each). Registry: 296.
