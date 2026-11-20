@@ -431,3 +431,11 @@ returns: −2.0 / +0.5 (sign flips). 095 reversal of |z|>2 days in retail-heavy 
 start 2009, logged as such): 2009-14 t=+0.8 (+7bp/trade), valid +2.0 (+32bp/trade) → fails gate. **Weak lead**, growing
 over time; revisit with intraday data or a cleaner LETF-AUM-weighted signal.
 113 buyback-blackout proxy (flat days 14-45 after quarter-end): −0.3 / −0.9. Dead. Registry: 255.
+
+## 114/115/116 — Dividend flows (parked), futures roll week, month-end size interaction  ·  2026-11-20
+114 parked: aggregate dividend *payment* dates aren't available from free data (Yahoo gives ex-dates only).
+115 long SPY / IWM in the index-futures roll week (timing value): +0.1 / −1.1 and 0.0 / −1.1. Dead.
+116 (descriptive, 2002-22 only): 013's per-trade edge by month type — ordinary month-ends +27bp (t=4.1, 163),
+quarter-ends +5.6bp (t=0.7, 61), year-ends +18.6bp (t=1.2, 21). The effect is concentrated in ORDINARY month-ends,
+not the biggest rebalancing dates — consistent with large quarter-end flows being anticipated / spread over prior days
+(or diluted by quad-witching on 3rd Fridays of quarter months). Not a new rule (would be a post-hoc filter). Registry: 257.

@@ -9,13 +9,15 @@
       overnight (close→open) and next day. Pre-specified reversal.
 - [x] 113 Corporate buyback blackout windows: buybacks pause ~2 weeks before earnings until results; calendar proxy
       (approx. weeks 2-6 after quarter-end = peak blackout) → SPY close→close weaker in blackout vs open window.
+- [ ] 118 Quarter-end rebalancing anticipation: does the stock-bond rebalance at QUARTER-ends show up on the
+      2-3 days BEFORE quarter-end (front-running) rather than the last day? Pre-specified: −sign(gap) on days −3..−2.
 - [ ] 117 LETF rebalancing, sharper: scale the signal by estimated LETF rebalancing demand = (sum of 2x/3x
       SPY/QQQ ETF AUM proxies × leverage×(leverage−1) × day return); test close→open and next-day; 2009+.
-- [ ] 114 Dividend reinvestment flows (Hartzmark-Solomon): days with large aggregate dividend payments see price
+- [~] 114 Dividend reinvestment (parked: no free pay-date data) flows (Hartzmark-Solomon): days with large aggregate dividend payments see price
       pressure up; proxy with SPY/large-cap pay-date clustering (quarter's last-business-day pay dates) close→close.
-- [ ] 115 Equity index futures quarterly roll week (week before 3rd-Friday of Mar/Jun/Sep/Dec): calendar-spread arbitrage
+- [x] 115 Equity index futures quarterly roll week (week before 3rd-Friday of Mar/Jun/Sep/Dec): calendar-spread arbitrage
       flows → SPY/IWM returns in roll week.
-- [ ] 116 Quarter-end vs month-end rebalancing size: does 013's edge scale with fund size proxies (e.g. calendar
+- [x] 116 Quarter-end vs month-end rebalancing size: does 013's edge scale with fund size proxies (e.g. calendar
       quarter-ends, year-end) — interaction test.
 
 ## OPTIONS (user request 2026-11-20) — behavioral angle: people overpay for insurance after fear spikes
