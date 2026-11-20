@@ -504,3 +504,8 @@ Seven queries (Treasury auctions, closing auction, index reconstitution, month-e
 redemption, calendar anomalies): no new daily-testable ETF ideas — arXiv is thin on empirical asset pricing (mostly
 theory/microstructure). Partial fits: index-addition liquidity provision (2506.21775, single stocks) → spawned 140 below.
 Next sourcing rounds should target NBER/SSRN-style abstracts if fetchable.
+
+## 142 — Fed/Treasury 'net liquidity' (WALCL − TGA − RRP, FRED)  ·  2026-11-20
+Long SPY the week after a weekly net-liquidity increase (position from the Friday close after Thursday's release),
+flat after decreases; timing value: −1.1 / +1.1. **Dead** — the popular liquidity narrative has no weekly timing value.
+FRED CSVs (no key) at fred.stlouisfed.org/graph/fredgraph.csv?id=<SERIES> saved to data/. Registry: 275.

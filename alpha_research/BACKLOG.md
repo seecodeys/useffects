@@ -33,6 +33,7 @@
 - [x] 134 Auction cycle conditional on rate volatility: run 133c only when TLT 20d realized vol > its trailing 1y median
       (dealer stress regime) — pre-specified; also on IEF with 10y auctions only.
 - [x] 135 Second paper-sourcing round (nothing new on arXiv)
+- [x] 142 Fed net-liquidity weekly timing — dead.
 - [ ] 140 S&P 500 index additions (flow from index funds at the effective-date close): effective dates from Wikipedia's
       'List of S&P 500 companies' changes table; short added stock vs SPY from the effective-date close for 5 sessions
       (post-inclusion reversal); event study of the run-up into the effective date.
