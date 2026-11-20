@@ -982,3 +982,8 @@ IEF bp (t): 3rd-last session overnight +5.3 (2.9) / intraday −0.1; 2nd-last +1
 (all-day averages +0.7 / +0.8). TLT same shape (+9.4 / −0.8; +1.6 / +9.0; +7.7 / +12.7). The first chunk of the bid
 arrives overnight into the 3rd-last session, so **enter at the close of the 4th-last session (MOC), not the next open**
 — waiting for the open gives up ~20% of the window. Exit at the last day's close. Not registered.
+
+## 311 — Does the OPEX-Friday weakness extend to weekly expiries? (SPX CFD, 2011-22)  ·  2026-11-20
+Short on non-monthly Fridays: 10:30→15:00 −1.8 / +0.6 (−1.1bp/trade); 09:30→16:00 −0.5 / −0.2; Thursday control 10:30→15:00
+−1.0 / −1.3. No weekly-expiry effect. If 001/297's tilt is real it is tied to the large monthly open interest, not to
+expiry per se — no support from this out-of-sample angle. Registry: 417 rows.
