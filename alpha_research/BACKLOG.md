@@ -255,3 +255,4 @@ is an opening-print artifact (015). New tests use prior-close information only.
 - Earnings-season effects on SPY intraday; month-end rebalancing flows; quad witching.
 - Treasury ETF (TLT) / credit (HYG) gaps as signals for SPY intraday.
 - [x] 298 Bond-bid dose-response on coupon issuance — none; keep flat leg.
+- [x] 299 CFTC TFF positioning (lev funds / asset mgrs / dealers; ES, TY, US) — dead (C weakly consistent).

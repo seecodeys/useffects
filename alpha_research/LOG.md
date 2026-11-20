@@ -907,3 +907,13 @@ correlation with the window return 0.006 (TLT 0.019). **No dose-response** — t
 so it looks more like a generic month-end portfolio/benchmark bid (or extension driven by aging/maturities, which this
 proxy misses) than a pure "new issues enter the index" effect. Sized variant (0.5/1/1.5 by tercile) is no better than
 flat (IEF +3.15 / +2.88 vs +3.39 / +3.24). Keep the flat bond-bid leg. Registry: 392 rows.
+
+## 299 — CFTC futures positioning (TFF report; new data source)  ·  2026-11-20
+Source: CFTC public reporting API (publicreporting.cftc.gov/resource/gpe5-46if.json, filter cftc_contract_market_code;
+ES 13874A, 10y 043602, bond 020601; weekly 2006-2026). Signal applied from the first close after the Friday release,
+held one week; 2009-14 train (needs 2y of z-score history). Six pre-specified variants (train t / valid t):
+A SPY contrarian to leveraged-fund z>|1| +1.0 / −0.8; B SPY follow asset-manager 4w change −1.8 / +0.7;
+C TLT contrarian to leveraged funds in 10y notes +1.2 / +1.5 (timing value t=1.8, 2009-22); D TLT follow asset managers
++0.8 / −0.1; E TLT contrarian to lev funds in bonds −0.8 / +0.8; F SPY follow dealers +0.6 / +1.2.
+Dead — weekly positioning doesn't time SPY/TLT. C (fade crowded leveraged 10y positioning) is the only same-sign pair,
+far from the gate. Registry: 398 rows.
