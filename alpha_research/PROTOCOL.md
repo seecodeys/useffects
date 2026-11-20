@@ -8,6 +8,10 @@ Find signals for **US-listed instruments, entered at the open and exited at the
 close (long or short)**, that survive honest out-of-sample testing after costs.
 Original motivation: use how the rest of the world traded since the last US close.
 Broader intraday (open→close) signals are in scope too.
+**Holding periods (user OK, 2026-11-20):** for behavioral signals, overnight and multi-day holds are allowed
+(close→close, close→open, k-day). Use `lib.backtest_weights` (turnover-based costs). Because a signal computed from
+today's close and traded AT that close can pick up closing-print bounce, always report a **lag-1** version (signal
+from close t, position from close t+1) as the realistic one; the same-close version is labelled best-case.
 **Current focus (user, 2026-11-20): behavioral / psychological effects — people over-reacting, attention, fear,
 extrapolation, anchoring.** Lesson from 004/006/015: build signals from information known at the PRIOR CLOSE (returns,
 volume, streaks), never from the opening print itself, which carries bid/ask-bounce artifacts.

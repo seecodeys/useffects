@@ -159,3 +159,14 @@ def n_tests():
 
 def fmt(row, keys=("train_sharpe", "train_t", "valid_sharpe", "valid_t", "valid_bp_per_trade", "valid_traded_%")):
     return "  ".join(f"{k}={row[k]:+.2f}" for k in keys)
+
+
+def backtest_weights(W, R, cost_bp, lag=0):
+    """Daily-rebalanced portfolio. W: target weights decided at close t (DataFrame, dates x assets).
+    R: close-to-close returns (cc) of the same assets. Position held over (t, t+1] earns R at t+1.
+    lag=1 delays implementation one extra day (signal at close t, position from close t+1) to avoid trading on the
+    same closing print that generated the signal. Costs = turnover * cost_bp per side. Returns a daily net series."""
+    W = W.reindex(R.index).fillna(0.0).shift(1 + lag).fillna(0.0)     # weights applied to next day's return
+    gross = (W * R.reindex(W.index).fillna(0.0)).sum(axis=1)
+    turnover = W.diff().abs().sum(axis=1).fillna(W.abs().sum(axis=1))
+    return gross - turnover * cost_bp / 1e4
