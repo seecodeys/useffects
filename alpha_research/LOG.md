@@ -560,3 +560,11 @@ TLT vol: train 14/13/40, valid 11/20/25. Monotone in both periods → one pre-sp
 Survived — the rebalancing price impact is larger in volatile markets (bigger $ imbalances, thinner liquidity).
 Use as a sizing tilt (bigger on high-vol month-ends) rather than a hard filter, since the unfiltered rule also works.
 Registry: 289.
+
+## 176 — Quarter-end bank balance-sheet window dressing (TLT)  ·  2026-11-20
+Short TLT last 3 sessions of the quarter / long first 3 of the next: **−3.7** / −0.6 (Treasuries actually rally into
+quarter-ends — the month-end index-extension/rebalancing bid of 031 dominates); year-end only: −2.8 / +0.4. Dead.
+Registry: 291.
+
+## 177 — Tax-deadline flows (short SPY 3 sessions into Jan/Apr/Jun/Sep/Dec 15)  ·  2026-11-20
++0.5 / +1.2 — right sign, not significant. Weak/dead. Registry: 292.
