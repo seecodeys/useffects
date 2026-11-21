@@ -90,6 +90,10 @@ Treasury bid, long ZN over the last 3 sessions). Backtest with IBKR costs: backt
       equivalent, +1 behaviour-equivalent bound) -> 21 new tests in tests/test_b8_new.py (bond adoption conditions,
       exit sizing with user positions on either side, leg-A priority window + peer wiring, retry schedule, sync contract
       filter, entry deadline, hard caps, vol/threshold boundary, source-spread rule, daemon error rate limit)
+- [x] Review round B9 (mutation testing 2: calendar, signal, monitors, ibkr helpers, market hours, CLI): 61 mutants,
+      28 killed, 33 survived -> 23 new tests (25 cases) in tests/test_b9_new.py; no equivalent mutants. Known behaviour
+      (documented, not changed): closing the bot's position in TWS WITHOUT the -manual ref and then opening your own
+      position in the same contract lets the exit (sized min(|owned|, |position|)) close your contracts - use the ref
 - [ ] Paper-verify MTN: IB symbol/exchange (MTN @ CBOT), localSymbol, lastTradeDateOrContractMonth = termination day,
       liquidity at 15:55 ET (thin: consider a marketable limit instead of a market order)
 - [ ] Optional: bond.instrument 10Y (yield-quoted, SELL = long bonds, monthly, 2nd month over month-end) if the user prefers it
