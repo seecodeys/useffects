@@ -26,3 +26,5 @@
 - 2026-11-20 (315): the month-end bond bid replicates on never-used FRED yield data back to 1962: absent 1962-82 (before
   bond indexing), present at ~2-3bp of yield decline per month-end in 1983-92, 1993-2001 and 2002-22 (pre-2002 permutation
   p = 0.006-0.03 across 2y/10y/30y). Timeline matches the index-extension mechanism.
+- 2026-11-21 (318): control — 3-month bills (outside the >1y bond indices) show no meaningful month-end bid (pre-2002 p=0.44)
+  while 2y notes do (p=0.006); the effect follows index eligibility.

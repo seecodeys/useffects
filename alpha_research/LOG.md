@@ -1043,3 +1043,10 @@ bond-index extension bid (part of it is the Treasury move these yields embed). N
 tools/paper_ledger.py + results/paper_trades.csv: pre-committed trades for each month-end, written before the event.
 November 2026 (planned with data through 2026-11-20): EQ LONG SPY 2026-11-30 open→close, full size (high vol;
 gap −8.66%, provisional until the 11-27 close); BOND long IEF 2026-11-24 close → 2026-11-30 close (final).
+
+## 318 — Index-eligibility control for the bond bid: bills vs notes (FRED, 1973-2022, descriptive)  ·  2026-11-21
+Yield decline over the last 3 sessions (bp, t), 1983-92 / 1993-01 / 2002-22, and pre-2002 permutation p:
+3m bills (outside bond indices) +1.6 (1.5) / +0.3 (0.4) / +0.75 (1.9), p=0.44; 1y (edge of eligibility) +2.4 (2.1) /
++0.8 (0.8) / +1.2 (3.2), p=0.39; 2y (inside) +3.0 (2.7) / +2.3 (2.0) / +2.8 (5.7), p=0.006.
+The bid fades sharply below the 1-year index cut-off — bills show little or nothing (small 2002-22 drift plausibly from
+money-fund month-end flows). Another mechanism check consistent with bond-index extension. Not registered.

@@ -274,3 +274,4 @@ is an opening-print artifact (015). New tests use prior-close information only.
 - [x] 315 Bond-bid back-cast to 1962 (FRED yields) — absent pre-1983, present every decade since. Strong support.
 - [x] 316 013 back-cast to 1962 — absent pre-2002 (modern effect).
 - [x] 317 Corporate-yield back-cast (Moody's) — bid present 1983+.
+- [x] 318 Bill vs note control — bid follows index eligibility.
