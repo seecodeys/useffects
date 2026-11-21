@@ -319,3 +319,4 @@ is an opening-print artifact (015). New tests use prior-close information only.
 - [x] 355 FOMC/CPI event-vol premium (agent) — V1 short VIXY on FOMC day weak-consistent; rest dead.
 - [x] 358 SNB sight deposits (agent) — dead.
 - [x] 360 Pension LDI flattener (agent) — dead.
+- [x] 359 GLD holdings flows (agent) — dead.

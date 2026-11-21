@@ -1295,3 +1295,13 @@ SNB data portal (cube snbgwdchfsgw, domestic banks' sight deposits, weekly 2009+
 Month-end FS proxy = 3m SPY − 3m TLT; position TLT − 1.9×IEF next month, lag-1, 1bp/side (raw + timing value, 8 rows).
 Top-tercile FS −0.3 / −0.6; FRED 20s−10s proxy (1994+) +2.0 / +0.1 (fading 1994-99 → valid); Oct-Mar only +0.1 / −0.7;
 continuous z +0.4 / +0.4. Dead.
+
+## 359 — GLD bullion-holdings flows (agent-run; results/agent_359.md)  ·  2026-11-21
+SPDR public historical-archive XLSX (daily tonnes 2004+, kept only in the uncommitted data/ cache per its terms), lag-1.
+5-day continuation in GLD −0.4 / −1.1; GDX−GLD −1.8 / −0.5; reversal over sessions 6-20 +1.3 / +0.1 (2008-driven);
+1-day >1% moves +0.8 / −2.5 (sign flip). Dead.
+
+## Idea-scout lists exhausted  ·  2026-11-21
+All cards in results/ideas_behaviour.md, ideas_papers.md, ideas_crossasset.md and ideas_options_etf.md that were
+testable with free data have now been run (321-360). Nothing passed the gate; registry 616. Remaining untested cards
+need data we can't get freely (NDX reconstitution list, HKMA episodes, bond-index tranche dates — descriptive only).
