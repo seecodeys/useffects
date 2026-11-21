@@ -1383,3 +1383,9 @@ instrument tied to them follows (bills <1y don't, 318). Not a gate test (consist
 Each exchange's own last 3 sessions, 2bp/side. BNDX (USD-hedged intl) +1.1 / +1.0; IAF.AX (Australia) +2.4 / +1.7
 (valid Sharpe 0.61, timing t 1.9 / 1.5; −433bp in 2021); 2510.T (Japan, data from 2017) valid −1.1; EMLC−β·CEW −1.2 / −1.9.
 Pooled V1-V3 +2.5 / +1.0. The bid is strongest in USD and Canadian bonds (277/278); weak/absent elsewhere. Weak.
+
+## 373 — Fallen angels at investment-grade index exit (idea E5; agent-run, results/agent_373.md)  ·  2026-11-21
+ANGL−0.27·HYG (ANGL from 2012 → 32 train month-ends), 2bp/side/leg. Short over the last 3 sessions −0.9 / −2.4 (wrong
+sign); long over the first 3 sessions of the next month +0.8 / +2.8 (valid Sharpe 0.97, 7/8 valid years, 2020 ≈60%);
+after credit sell-offs only 17 events; LQD−IEF relief −0.8 / −0.9. A month-start rebound without month-end weakness —
+half the mechanism; mostly ANGL credit beta. Weak; fails gate (short train).
