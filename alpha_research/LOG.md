@@ -1164,3 +1164,8 @@ Wrong-signed and underpowered. Dead.
 VIXY 2011-22, 2bp/side per leg, 8 rows (raw + timing value). Short overnight only +1.0 / −0.1 raw (timing −1.4 / −1.9);
 long intraday −1.4 / −1.9; both legs −0.6 / −1.5; overnight short in contango only +0.0 / +0.2. VIXY decays as much
 intraday as overnight, so the day/night split doesn't translate to the ETP. Dead.
+
+## 335 — European-open overnight drift, 02:00-03:00 ET (Boyarchenko-Larsen-Whelan; agent-run, results/agent_335.md)  ·  2026-11-21
+SPX CFD (clock-corrected), 0.5bp/side: long every day −0.0 / −1.2; after a negative 15:00-16:00 hour +1.0 / +0.3;
+−sign(last hour) −0.4 / −1.5; NSX after a weak last hour +0.6 / +0.5. The drift exists (02-03h ≈ +0.9 / +0.6bp vs
+~0.1bp other hours) but can't pay a 1bp round trip. Dead.

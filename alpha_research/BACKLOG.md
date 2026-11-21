@@ -297,3 +297,4 @@ is an opening-print artifact (015). New tests use prior-close information only.
 - [x] 339 Broker-dealer capital shocks (agent) — dead.
 - [x] 338 Risk-parity correlation flip (agent) — dead.
 - [x] 336 VIXY day/night split (agent) — dead.
+- [x] 335 European-open drift (agent) — real but sub-cost; dead.
