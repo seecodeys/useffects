@@ -1190,3 +1190,8 @@ Signs flip between periods (valid gains = 2022); holdings trend down after 2014.
 Sector SPDRs + IWM + 20 country ETFs; long YTD bottom fifth / short top fifth (rank at Oct 20), lag-1, 2bp/side.
 Oct-end→Nov-end −1.0 / +1.8; selling leg Oct 20→31 −0.8 / +0.6; first 10 Nov sessions −1.1 / +2.2; June placebo +0.2 / −0.3.
 Wrong sign in train (losers lagged in 11/15 Novembers); valid gain is 2020+2022. Dead.
+
+## 344 — Same-half-hour return persistence (Heston-Korajczyk-Sadka; agent-run, results/agent_344.md)  ·  2026-11-21
+SPX/NSX CFD 2010-22, trade a half-hour when the same slot's lag-1 and lag-5 returns agree, 0.5bp/side per trade.
+SPX all 13 slots −3.2 / −4.9; 3 best train slots +1.6 / −0.3; NSX all −2.1 / −4.5; 3 best +1.1 / −0.4. Gross ≈ 0 for
+all slots in valid; the chosen midday slots keep ~0.85bp gross, below the 1bp round trip. Dead.
