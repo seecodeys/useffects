@@ -1427,3 +1427,9 @@ cost drag. Wrong sign (the 1st Wednesday sits in the turn-of-month window). Dead
 Short SPY / long vol-matched TLT or AGG, calendar-known. First 5 January sessions (TLT) −1.5 / −0.3; first 10 +0.1 / +0.4;
 AGG −0.3 / −0.4; first 5 sessions of every quarter −1.7 / −1.5. Early January favours stocks, not bonds, and the effect
 gets worse (not better) as target-date AUM grew after 2010. Dead.
+
+## 378 — MSCI index review windows (agent-run; results/agent_378.md)  ·  2026-11-21
+Last business day of Feb/May/Aug/Nov; spreads hedged vs SPY (rolling β), calendar-known. EEM into the review day
++0.1 / −1.7; EEM close D→D+2 May/Nov +1.4 / +1.8; EFA same +2.8 / +1.9 (16 valid events, 2020 = 58%); placebo on
+ordinary month-ends +1.3 / +0.2. MSCI-vs-ordinary month-end difference Welch t +0.7 / +1.6. Continuation, not reversal;
+weak. Fails gate.
