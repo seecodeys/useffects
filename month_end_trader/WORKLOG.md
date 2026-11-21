@@ -51,7 +51,8 @@ Branch: `claude/blissful-mccarthy-mt2shh`. Scheduled check-ins (4 hourly tasks, 
       30s post-reconnect grace, strict BOT/SLD, FA accounts refused; FakeBroker executions expire at midnight ET. 181 tests
 - [x] Paper-test checklist for the user (PAPER_TEST.md) (exact commands for 30 Nov: check, validate-data, test-order, verify reqExecutions after a Gateway restart, MET-manual ref test)
 - [x] End-to-end 'paper rehearsal' script (met rehearse): replays 27-30 Nov 2026 with a synthetic path and prints the exact alert timeline
-- [ ] Sizing: floor rounding gives 1.78x on ~$120k (6 MES); consider nearest-contract rounding capped by max_leverage (ask user before changing behaviour)
+- [x] Sizing: opt-in `strategy.sizing_rounding: nearest` (closest contract count, still capped by max_leverage/max_contracts);
+      default stays `floor` (6 MES, 1.78x on ~$120k) until the user chooses. 192 tests
 - [x] Test for `met resolve` CLI
 - [x] Review round 7 (12 findings) fixed: reversal/after-exit late fills close immediately, CLI flatten/resolve sync first and
       resolve requires a price, alert texts for fills-vs-broker disagreement (never 'close it in TWS' when broker is flat),
@@ -66,4 +67,4 @@ Branch: `claude/blissful-mccarthy-mt2shh`. Scheduled check-ins (4 hourly tasks, 
       failure + `met alert-test`, provisional signal/check before T-1's close, atomic monitor.json + robust `status`,
       explicit edge_dead flag + half-size recovery, kill/unkill permission errors explained (docker exec), intraday shares
       only for positive totals, PAPER_TEST updated. 192 tests
-- [ ] Waiting on user: sizing (floor vs nearest contract); whether to pause the 15-min check-ins until after the 30 Nov paper run
+- [ ] Waiting on user: set sizing_rounding (floor vs nearest); whether to pause the 15-min check-ins until after the 30 Nov paper run

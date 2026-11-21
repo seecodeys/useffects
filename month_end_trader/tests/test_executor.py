@@ -293,6 +293,12 @@ def test_sizing():
     assert size_contracts(20_000, 7340, 5, 2.0, 1.0, 3.0, 40)[0] == 1
     assert size_contracts(15_000, 7340, 5, 2.0, 1.0, 2.0, 40)[0] == 0                # 1 contract would be 2.4x > cap
     assert size_contracts(0, 7340, 5, 2.0, 1.0, 3.0, 40)[0] == 0
+    # nearest rounding: 6.54 -> 7 contracts (2.14x), still capped by max_leverage
+    assert size_contracts(120_000, 7340, 5, 2.0, 1.0, 3.0, 40, "nearest")[0] == 7
+    assert size_contracts(120_000, 7340, 5, 2.0, 1.0, 2.1, 40, "nearest")[0] == 6
+    assert size_contracts(120_000, 7340, 5, 2.0, 0.5, 3.0, 40, "nearest")[0] == 3      # 3.27 -> 3
+    assert size_contracts(15_000, 7340, 5, 2.0, 1.0, 3.0, 40, "nearest")[0] == 1       # 0.82 -> 1 (2.45x <= 3x)
+    assert size_contracts(10_000, 7340, 5, 2.0, 1.0, 3.0, 40, "nearest")[0] == 0       # 1 contract = 3.67x > cap
 
 
 @pytest.mark.parametrize("T,expect", [(dt.date(2025, 3, 31), "MESM5"), (dt.date(2025, 6, 30), "MESU5"),

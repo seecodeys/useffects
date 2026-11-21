@@ -39,6 +39,7 @@ class StrategyConfig:
     entry_grace_s: int = 90          # never enter later than open + this
     fill_timeout_s: int = 30
     roll_min_days: int = 3           # use the first contract expiring at least this many days after the trade
+    sizing_rounding: str = "floor"   # floor: never above target leverage; nearest: closest contract count (still <= max_leverage)
 
 
 @dataclass
@@ -111,6 +112,8 @@ class Config:
         if self.mode == "live" and self.ib.market_data_type != 1:
             errs.append("mode=live requires ib.market_data_type: 1 (live data for the disaster stop)")
         s, g = self.strategy, self.guardrails
+        if s.sizing_rounding not in ("floor", "nearest"):
+            errs.append("strategy.sizing_rounding must be floor or nearest")
         if s.instrument not in ("MES", "ES"):
             errs.append("strategy.instrument must be MES or ES")
         if not (0 < s.leverage <= g.max_leverage):

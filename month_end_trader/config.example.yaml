@@ -11,6 +11,7 @@ ib:
 strategy:
   leverage: 2.0             # MES notional = 2 x net liquidation, on top of your SPY core
   instrument: MES
+  sizing_rounding: floor    # floor (never above target) or nearest (closest contract count, capped by max_leverage)
   entry_delay_s: 1          # enter at 09:30:01 ET
   exit_lead_s: 2            # exit at 15:59:58 ET (12:59:58 on 1 pm half days)
   entry_grace_s: 90         # never enter after 09:31:30

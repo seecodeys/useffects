@@ -41,11 +41,12 @@ class Plan:
 
 
 def size_contracts(net_liq: float, price: float, multiplier: float, leverage: float, derisk: float,
-                   max_leverage: float, max_contracts: int) -> tuple[int, float]:
+                   max_leverage: float, max_contracts: int, rounding: str = "floor") -> tuple[int, float]:
     if net_liq <= 0 or price <= 0:
         return 0, 0.0
     per = price * multiplier
-    qty = math.floor(leverage * derisk * net_liq / per)
+    raw = leverage * derisk * net_liq / per
+    qty = math.floor(raw + 0.5) if rounding == "nearest" else math.floor(raw)
     qty = min(qty, max_contracts, HARD_MAX_CONTRACTS)
     while qty > 0 and qty * per / net_liq > min(max_leverage, HARD_MAX_LEVERAGE) + 1e-9:
         qty -= 1
@@ -155,7 +156,7 @@ def preflight(cfg: Config, broker: Broker, trade_date: dt.date, fetchers: dict,
         blockers.append(f"futures-vs-{cfg.signal.equity} price sanity check failed: {e}")
 
     qty, eff = size_contracts(acct.net_liquidation, price, contract.multiplier, s.leverage, derisk,
-                              g.max_leverage, g.max_contracts)
+                              g.max_leverage, g.max_contracts, s.sizing_rounding)
     if qty < 1:
         blockers.append(f"position size rounds to 0 contracts (net liq {acct.net_liquidation:,.0f}, "
                         f"1 contract = {price * contract.multiplier:,.0f})")
