@@ -200,11 +200,14 @@ for name, (W, ev) in variants.items():
                for p, (s, e) in PER.items()}
     if "fall" in ev:
         nev = {p: int(((ev.dec >= s) & (ev.dec <= e) & ev.fall).sum()) for p, (s, e) in PER.items()}
+    ndec = {p: max(1, int(((ev.dec >= s) & (ev.dec <= e) & (ev.get("sign", ev.get("fall", True)) != 0)).sum()))
+            for p, (s, e) in PER.items()}
+    bpdec = {p: 1e4 * net.loc[s:e].sum() / ndec[p] for p, (s, e) in PER.items()}
     yr = net.loc["2002-07-01":END].groupby(net.loc["2002-07-01":END].index.year).sum() * 1e4
     out.append({"variant": name, "events_tr": nev["train"], "events_va": nev["valid"],
                 "train_t": row["train_t"], "valid_t": row["valid_t"], "valid_sharpe": row["valid_sharpe"],
                 "valid_bp_per_trade": row["valid_bp_per_trade"], "train_bp_day": row["train_bp_per_trade"],
-                "timing_t_tr": tv["train"], "timing_t_va": tv["valid"], "gate": lib.passes_gate(row),
+                "bp_per_dec_tr": bpdec["train"], "bp_per_dec_va": bpdec["valid"], "timing_t_tr": tv["train"], "timing_t_va": tv["valid"], "gate": lib.passes_gate(row),
                 "worst_yr_bp": yr.min(), "best_yr": int(yr.idxmax()), "best_yr_bp": yr.max()})
 res = pd.DataFrame(out)
 pd.set_option("display.width", 250)

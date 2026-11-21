@@ -1337,3 +1337,8 @@ the month's last session — credit month-end bid, not tax selling); HYG ex−1�
 Monthly FINRA margin statistics (1997+), month-m data used from the close of the last trading day of m+1, lag-1.
 Short SPY in deleveraging regime +0.9 / +0.1 (2001/2008-driven); short after 3-month plunge −0.7 / −0.8; short at high
 debt/price −0.1 / never fires; long at high free-credit/debt −0.4 / never fires. Dead. (8 rows: a NaN-bug run superseded.)
+
+## 366 — SPDR ETF creation/redemption flows (shares outstanding; agent-run, results/agent_366.md)  ·  2026-11-21
+SSGA NAV-history files (2006+; raw kept in data/ssga, uncommitted); value dated t treated as known at close t+2, traded
+from t+3. SPY extreme 1-day flow reversal 5d +1.7 / −0.0 (2008/2011); sector 5d flow reversal +0.3 / −1.2; 20d flow
+top/bottom 3 +0.3 / +0.1; single-sector shock reversal vs SPY −0.3 / −1.7. Dead.
