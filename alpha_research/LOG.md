@@ -1279,3 +1279,9 @@ CPI release dates from ALFRED CPIAUCSL vintages (data/cpi_release_dates.csv). Ho
 timing value vs an always-on position. Short VIXY on FOMC day +1.4 / +1.7 (+96bp/event valid, right sign 10/12 years,
 only 32 train events); short VIXY on CPI day −0.5 / +0.6; WPUT in FOMC weeks +0.6 / −1.7; WPUT in CPI weeks ~0.
 Dead except V1 = weak-but-consistent (fails train t on few events). Follow-up: longer train sample via VIX futures index.
+
+## 355b — FOMC-day vol crush in spot VIX, 2000-22 (descriptive, supports 355 V1)  ·  2026-11-21
+No free VIX-futures series before 2009 (Yahoo lacks SPVXSTR), so spot VIX (not tradable) as a check: log change on FOMC
+days 2000-07 −2.2% (t −2.7, falls 71%), 2008-14 −2.9% (t −2.7, 63%), 2015-22 −1.6% (t −1.4, 58%) vs ~0 on all days.
+The event-vol premium into FOMC is a long-standing pattern, weaker recently. 355 V1 stays weak-consistent (VIXY history
+too short to pass the train gate). Not registered.
