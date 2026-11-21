@@ -70,8 +70,14 @@ def test_bond_replay_month(X, tmp_path, data, ief, led):
     assert s.phase == "FLAT", (X, s.phase, s.get("blockers"), s.data["events"][-3:])
     assert b.zn_pos == 0
     # bot: ZN fills (half a 1/64 tick of slippage per side) x hedge ratio -> IEF bp; ledger: IEF close E -> close X
+    crit = [a[1] for a in alerts if a[0] == "CRITICAL"]
+    if s.get("exit_reason") == "disaster stop":
+        # stop fired at a (daily-stepped) close inside the window: loss bounded, the full-window move was worse
+        assert s.get("pnl_pct_equity") > -100 * cfg.bond.disaster_stop_pct_equity - 2.5, X
+        assert led.loc[X, "ief_bp"] < 0 and crit and all("DISASTER STOP" in c for c in crit), crit
+        return
     slip_bp = 1e4 * 2 * (1 / 128) / 110.0 * cfg.bond.hedge_ratio
     ief_bp = led.loc[X, "ief_bp"]
     bot_bp = s.get("trade_bp") * cfg.bond.hedge_ratio
     assert bot_bp == pytest.approx(ief_bp - slip_bp, abs=0.6 + 0.01 * abs(ief_bp)), (X, bot_bp, ief_bp)
-    assert not [a for a in alerts if a[0] == "CRITICAL"], [a[1] for a in alerts if a[0] == "CRITICAL"]
+    assert not crit, crit
