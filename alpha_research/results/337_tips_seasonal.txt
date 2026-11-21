@@ -1,0 +1,22 @@
+months with signal (2004-22): 228  x>0 share: 0.51  mean |x| %: 0.290  mean hedge h: 0.72
+mean known accrual / excess by holding calendar month (% , 2004-22):
+    1:-0.21/-0.40 2:-0.17/-0.36 3:+0.38/+0.19 4:+0.43/+0.24 5:+0.57/+0.37 6:+0.38/+0.18 7:+0.38/+0.17 8:+0.34/+0.13 9:+0.10/-0.11 10:+0.11/-0.10 11:+0.18/-0.03 12:+0.03/-0.18
+337A sign(excess known accrual) TIP-hIEF
+   train_sharpe=+0.68  train_t=+2.25  valid_sharpe=+0.39  valid_t=+1.10  valid_bp_per_trade=+0.37  valid_traded_%=+100.00  train_bp/unit/day=+0.69  gate=False
+   monthly net bp: train mean +23.5 (t +2.02, n=132)  valid mean +13.0 (t +1.22)
+   yearly bp: 04:+205 05:-85 06:+123 07:+42 08:+489 09:+1099 10:+291 11:+684 12:-220 13:-39 14:+518 15:+118 16:+279 17:-188 18:+375 19:-31 20:-230 21:+262 22:+664
+337B size=known accrual/0.2% TIP-hIEF
+   train_sharpe=+0.48  train_t=+1.60  valid_sharpe=+0.15  valid_t=+0.43  valid_bp_per_trade=+0.20  valid_traded_%=+100.00  train_bp/unit/day=+0.60  gate=False
+   monthly net bp: train mean +26.8 (t +1.44, n=132)  valid mean +8.7 (t +0.56)
+   yearly bp: 04:+296 05:-83 06:-150 07:+61 08:+612 09:+1043 10:+113 11:+1503 12:-9 13:-277 14:+427 15:-119 16:+330 17:-154 18:+24 19:+4 20:-218 21:+1213 22:-243
+337C sign(excess known accrual) VTIP-hSHY
+   train_sharpe=+1.16  train_t=+1.73  valid_sharpe=+0.15  valid_t=+0.43  valid_bp_per_trade=+0.07  valid_traded_%=+100.00  train_bp/unit/day=+0.25  gate=False
+   monthly net bp: train mean +9.4 (t +1.53, n=27)  valid mean +3.2 (t +0.50)
+   yearly bp: 12:+0 13:-36 14:+291 15:-10 16:+74 17:-105 18:+159 19:+103 20:-313 21:+186 22:+209
+337D control sign(x) IEF alone
+   train_sharpe=-0.22  train_t=-0.74  valid_sharpe=-0.36  valid_t=-1.02  valid_bp_per_trade=-0.90  valid_traded_%=+100.00  train_bp/unit/day=-0.64  gate=False
+   monthly net bp: train mean -12.3 (t -0.77, n=132)  valid mean -18.9 (t -1.03)
+   yearly bp: 04:-82 05:+208 06:-175 07:-39 08:-446 09:+283 10:-1251 11:-161 12:+407 13:-186 14:-188 15:-379 16:-851 17:-225 18:-1 19:+64 20:-503 21:+227 22:-148
+descr train: monthly hedged spread on x: slope +0.33 (t +1.10); slope=1 means full pass-through of the known excess carry; spread sd 142bp, n=122
+descr valid: monthly hedged spread on x: slope +0.21 (t +0.63); slope=1 means full pass-through of the known excess carry; spread sd 104bp, n=96
+registered tests in this registry: 4
