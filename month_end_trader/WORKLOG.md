@@ -36,7 +36,9 @@ Treasury bid, long ZN over the last 3 sessions). Backtest with IBKR costs: backt
       requirement documented. Paper-verify: localSymbol format, market orders at Sunday 18:00 reopen, IB close-out date
 - [x] Weekly status + evening-before announcement include leg B
 - [ ] Dry run + rehearsal with both legs (met dry-run / met rehearse) incl. ledger comparison for leg B (IEF paper)
-- [ ] Historical replay of leg B over all month-ends 2003-2026 on the FakeBroker (ZN path from IEF), compare to ledger
+- [x] Historical replay of leg B (tests/test_bond_replay.py): both legs in one daemon through past windows, ZN path
+      from IEF closes; every trade within slippage of the IEF ledger, no CRITICAL alerts. 48 sampled windows passed;
+      default runs 24, MET_SLOW=1 all 286
 - [ ] CBOT holiday/early-close calendar: SIFMA-only early closes (14:00 ET, e.g. day before Good Friday / Christmas Eve when
       NYSE is a full day) and Good Friday rates sessions - check whether any E/X ever falls on one (2003-2030)
 - [ ] README + PAPER_TEST.md: leg B section (ZN permissions, CBOT data, first paper window 24 -> 30 Nov 2026)
