@@ -1,0 +1,45 @@
+first dates: {'ANGL': '2012-04-11', 'HYG': '2007-04-11', 'LQD': '2002-07-30', 'IEF': '2002-07-30', 'FALN': '2016-06-21'}
+h(ANGL~HYG, 2012-05..2014) = 0.267   h2(LQD~IEF, 2003-14) = 0.581
+V1 short ANGL-hHYG W3              train_sharpe=-0.54  train_t=-0.88  valid_sharpe=-0.85  valid_t=-2.41  valid_bp_per_trade=-16.19  valid_traded_%=+4.72 gate=False
+   n tr/va 32/95  net bp/event tr -9.2 va -16.2 | @1bp tr -6.7 va -13.7 | hit va 39%
+V2 long ANGL-hHYG F3               train_sharpe=+0.46  train_t=+0.75  valid_sharpe=+0.97  valid_t=+2.76  valid_bp_per_trade=+19.84  valid_traded_%=+4.72 gate=False
+   n tr/va 32/95  net bp/event tr +10.3 va +19.8 | @1bp tr +12.8 va +22.4 | hit va 61%
+V3 V2 if LQD-IEF<-1% prior month   train_sharpe=-0.55  train_t=-0.89  valid_sharpe=+0.88  valid_t=+2.50  valid_bp_per_trade=+72.27  valid_traded_%=+0.84 gate=False
+   n tr/va 3/17  net bp/event tr -47.3 va +72.3 | @1bp tr -44.8 va +74.8 | hit va 82%
+V4 long LQD-h2IEF F3               train_sharpe=-0.22  train_t=-0.76  valid_sharpe=-0.33  valid_t=-0.93  valid_bp_per_trade=-4.94  valid_traded_%=+4.72 gate=False
+   n tr/va 144/95  net bp/event tr -3.4 va -4.9 | @1bp tr -0.2 va -1.8 | hit va 44%
+
+=== per-year net P&L (bp, sum over events) ===
+      V1 short ANGL-hHYG W3  V1 short ANGL-hHYG W3 n  V2 long ANGL-hHYG F3  V2 long ANGL-hHYG F3 n  V3 V2 if LQD-IEF<-1% prior month  V3 V2 if LQD-IEF<-1% prior month n  V4 long LQD-h2IEF F3  V4 long LQD-h2IEF F3 n
+Date                                                                                                                                                                                                                  
+2003                    NaN                      NaN                   NaN                     NaN                               NaN                                 NaN                  65.0                      12
+2004                    NaN                      NaN                   NaN                     NaN                               NaN                                 NaN                -190.0                      12
+2005                    NaN                      NaN                   NaN                     NaN                               NaN                                 NaN                 -92.0                      12
+2006                    NaN                      NaN                   NaN                     NaN                               NaN                                 NaN                 -20.0                      12
+2007                    NaN                      NaN                   NaN                     NaN                               NaN                                 NaN                -130.0                      12
+2008                    NaN                      NaN                   NaN                     NaN                               NaN                                 NaN                 268.0                      12
+2009                    NaN                      NaN                   NaN                     NaN                               NaN                                 NaN                 -49.0                      12
+2010                    NaN                      NaN                   NaN                     NaN                               NaN                                 NaN                -101.0                      12
+2011                    NaN                      NaN                   NaN                     NaN                               NaN                                 NaN                 223.0                      12
+2012                 -127.0                      8.0                 311.0                     8.0                             -10.0                                 2.0                  -5.0                      12
+2013                  -38.0                     12.0                -187.0                    12.0                            -132.0                                 1.0                -269.0                      12
+2014                 -131.0                     12.0                 206.0                    12.0                               NaN                                 NaN                -191.0                      12
+2015                  175.0                     12.0                 255.0                    12.0                              84.0                                 1.0                -236.0                      12
+2016                 -462.0                     12.0                 191.0                    12.0                             199.0                                 2.0                 -56.0                      12
+2017                 -242.0                     12.0                 138.0                    12.0                               NaN                                 NaN                 -50.0                      12
+2018                   -4.0                     12.0                  65.0                    12.0                             166.0                                 5.0                -159.0                      12
+2019                 -205.0                     12.0                  30.0                    12.0                              54.0                                 1.0                 -79.0                      12
+2020                 -444.0                     12.0                1115.0                    12.0                             545.0                                 3.0                  92.0                      12
+2021                  -10.0                     12.0                 124.0                    12.0                               NaN                                 NaN                 -46.0                      12
+2022                 -348.0                     11.0                 -35.0                    11.0                             182.0                                 5.0                  65.0                      11
+
+=== descriptive gross window returns (bp, mean per event), 2012-05..2022 ===
+ANGL-hHYG                        W3 train: n=32 mean +4.0bp t=+0.38 | timing vs uncond 3-day -2.6bp (t=-0.25)
+ANGL-hHYG                        W3 valid: n=95 mean +11.1bp t=+1.69 | timing vs uncond 3-day +4.5bp (t=+0.68)
+ANGL-hHYG                        F3 train: n=32 mean +15.1bp t=+1.08 | timing vs uncond 3-day +8.5bp (t=+0.61)
+ANGL-hHYG                        F3 valid: n=95 mean +24.9bp t=+3.57 | timing vs uncond 3-day +18.3bp (t=+2.62)
+FALN-hHYG (h=0.80, 2016-07+)     W3 valid: n=77 mean +4.5bp t=+1.00 | timing vs uncond 3-day +1.3bp (t=+0.29)
+FALN-hHYG (h=0.80, 2016-07+)     F3 valid: n=77 mean +9.7bp t=+2.02 | timing vs uncond 3-day +6.6bp (t=+1.36)
+   FALN W3 by year bp: {2016: -7.3, 2017: 0.7, 2018: -16.7, 2019: 6.6, 2020: 32.3, 2021: 2.6, 2022: 7.4}
+   FALN F3 by year bp: {2016: 17.1, 2017: 21.3, 2018: -6.2, 2019: -1.1, 2020: 41.0, 2021: 0.7, 2022: -1.9}
+N registered tests in this registry: 4  luck t ~ 1.67

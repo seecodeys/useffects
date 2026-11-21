@@ -1378,3 +1378,8 @@ vs TLT's ~2.5), so the effect is a month-end move in the Treasury curve itself, 
 reconstitution arbitrage — not something confined to index-eligible securities. Floating-rate loans (no duration) show
 about half HYG's bid. Refines the mechanism: index-driven demand moves Treasury yields at month-end, and every rate
 instrument tied to them follows (bills <1y don't, 318). Not a gate test (consistency check).
+
+## 372 — Month-end bond bid in hedged/local-market bonds (idea E1; agent-run, results/agent_372.md)  ·  2026-11-21
+Each exchange's own last 3 sessions, 2bp/side. BNDX (USD-hedged intl) +1.1 / +1.0; IAF.AX (Australia) +2.4 / +1.7
+(valid Sharpe 0.61, timing t 1.9 / 1.5; −433bp in 2021); 2510.T (Japan, data from 2017) valid −1.1; EMLC−β·CEW −1.2 / −1.9.
+Pooled V1-V3 +2.5 / +1.0. The bid is strongest in USD and Canadian bonds (277/278); weak/absent elsewhere. Weak.
