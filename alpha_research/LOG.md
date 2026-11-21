@@ -1325,3 +1325,10 @@ IEF after a 'rich' ZN roll jump +0.6 / −1.0. Train edge from 2006-11; ~0 since
 SPDR NAV/shares-outstanding history (2006+), FINRA margin statistics (1997+), Treasury TIC, auction allotments by investor
 class (2000+), OFR money-fund data, Cboe VX futures per-contract volume/OI (2005+), EIA weekly petroleum, ECB weekly
 balance sheet, JPX investor-type flows (2016+), Fed Z.1. Testers launched on the first four flow uses (366-369).
+
+## 363 — Bond-ETF month-start ex-dividend mechanics + bond-bid data audit (agent-run; results/agent_363.md)  ·  2026-11-21
+Raw prices + actual dividends, 1bp/side per leg. Hedged ex-day basket −0.4 / −0.4; short cum-day −4.7 / −1.8 (cum day is
+the month's last session — credit month-end bid, not tax selling); HYG ex−1→ex+1 +1.7 / +1.2; HYG+EMB +2.0 / +1.7
+(+9.8bp/trade valid) — fails gate on train t. Credit ETFs drop ~0.80-0.95× the dividend, Treasury ETFs ~1×. Weak.
+**Audit: the month-end bond-bid estimates are NOT affected by ex-dates** — 8 December ex-dates fall in the IEF/TLT window
+(2002-09) and adjusted closes match raw-plus-dividend returns to ≤0.01bp.

@@ -28,3 +28,5 @@
   p = 0.006-0.03 across 2y/10y/30y). Timeline matches the index-extension mechanism.
 - 2026-11-21 (318): control — 3-month bills (outside the >1y bond indices) show no meaningful month-end bid (pre-2002 p=0.44)
   while 2y notes do (p=0.006); the effect follows index eligibility.
+- 2026-11-21 (363): data audit — Yahoo adjusted closes handle the bond ETFs' dividends correctly inside the month-end
+  window (≤0.01bp difference vs raw price + dividend); the bond-bid estimates stand.
