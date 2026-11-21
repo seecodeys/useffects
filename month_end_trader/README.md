@@ -53,7 +53,7 @@ The daemon is a single loop of idempotent `tick()`s over the state saved in `sta
 - The decay monitor says stop (size ×0), or its state is unreadable.
 - Optional: SPY core below a minimum weight.
 
-**Size** is capped, with a warning, at `max_leverage` (hard cap 4x) and `max_contracts` (hard cap 200). A non-USD base currency (e.g. SGD) is converted to USD at IBKR's exchange rate.
+**Size** is `leverage x net liquidation / (MES price x 5)`, rounded down by default (`strategy.sizing_rounding: floor`; ~$120k at 2x gives 6 MES = 1.78x). `sizing_rounding: nearest` rounds to the closest count instead (7 MES = 2.14x). It is capped, with a warning, at `max_leverage` (hard cap 4x) and `max_contracts` (hard cap 200). A non-USD base currency (e.g. SGD) is converted to USD at IBKR's exchange rate.
 
 **During and after the trade:**
 - No entry later than open + 90 s.
