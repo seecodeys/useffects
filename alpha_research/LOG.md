@@ -1247,3 +1247,14 @@ COR3M from cdn.cboe.com (2006+, back-filled before its 2022 launch; KCJ/ICJ file
 timing value vs exposure-matched long. High COR3M → SPY +1.1 / +2.0 (only 3 valid events, April 2020); high premium
 (COR3M − realized sector corr) → SPY +1.4 / +0.4; → PUT index +1.1 / +0.5; 3-month hold +1.2 / +1.5 (1 valid event).
 Thresholds rarely fire after 2014. Dead/weak.
+
+## 351 — Nasdaq-100 covered-call (QYLD) roll flow (agent-run; results/agent_351.md)  ·  2026-11-21
+Signal: sign of the NDX move since the last roll (strike proxy), traded the session before monthly OPEX.
+QQQ−β·SPY open→close −0.5 / +0.8 (+3bp/trade, rising with fund AUM but t<1 per sub-period; ~0 at 1bp/side/leg);
+|move|>2% −0.2 / +1.3; placebo a week earlier ~0; NSX CFD 12:00-15:59 directional +1.3 / +2.1 (2019-22 t 3.5, 2022 ≈45%)
+— fails train and is likely trend rather than roll flow. Dead/weak; worth re-checking later if QYLD-type AUM keeps growing.
+
+## Agent round 3 summary (340-353)  ·  2026-11-21
+14 more agent tests from 3 more idea scouts (cross-asset, options/ETF, papers). Nothing passed the gate. Real but sub-cost
+or decayed: gold PM fix pre-2015 (346). Weak: dealer inventory (340, duration premium), covered-call roll (351).
+Registry: 580. The two findings (013 month-end rebalancing; month-end bond bid) remain the only robust results.

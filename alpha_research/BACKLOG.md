@@ -312,3 +312,4 @@ is an opening-print artifact (015). New tests use prior-close information only.
 - [x] 353 SPY ex-div vs IVV/VOO (agent) — dead.
 - [x] 350 Twin bond-ETF reversion (agent) — dead.
 - [x] 352 Implied-correlation premium (agent) — dead/weak.
+- [x] 351 QYLD covered-call roll (agent) — dead/weak; recheck if AUM grows.
