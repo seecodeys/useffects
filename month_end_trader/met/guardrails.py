@@ -100,6 +100,24 @@ def vol_scale(cfg: Config, trade_date: dt.date, fetchers: dict) -> tuple[float, 
     return (1.0 if all(high.values()) else s.low_vol_scale), v, notes
 
 
+def other_futures_notional(broker, exclude_symbol: str) -> float:
+    """|notional| of every futures position on the account except `exclude_symbol` (USD market value; IB reports
+    futures marketValue as quantity x price x multiplier)."""
+    return sum(abs(p.market_value) for p in broker.positions() if p.sec_type == "FUT" and p.symbol != exclude_symbol)
+
+
+def total_leverage_blocker(cfg: Config, broker, exclude_symbol: str, new_notional: float, net_liq: float) -> str | None:
+    try:
+        other = other_futures_notional(broker, exclude_symbol)
+    except Exception as e:
+        return f"total exposure check failed: {e}"
+    tot = (other + new_notional) / net_liq if net_liq > 0 else float("inf")
+    if not (tot <= cfg.guardrails.max_total_leverage + 1e-9):
+        return (f"total futures exposure {tot:.2f}x net liq (this order {new_notional / net_liq:.2f}x + open "
+                f"{other / net_liq:.2f}x) above guardrails.max_total_leverage {cfg.guardrails.max_total_leverage:g}")
+    return None
+
+
 def read_derisk(cfg: Config) -> tuple[float | None, str]:
     """(multiplier in [0, 1], note). None = unreadable -> preflight blocks (fail closed)."""
     p = Path(cfg.monitoring.state_dir) / "monitor.json"
@@ -213,6 +231,11 @@ def preflight(cfg: Config, broker: Broker, trade_date: dt.date, fetchers: dict,
     if s.leverage * vscale * derisk * acct.net_liquidation / (price * contract.multiplier) > g.max_contracts:
         warnings.append(f"size capped at max_contracts={g.max_contracts}")
     if blockers:
+        return None, blockers, warnings
+
+    tb = total_leverage_blocker(cfg, broker, s.instrument, qty * price * contract.multiplier, acct.net_liquidation)
+    if tb:
+        blockers.append(tb)
         return None, blockers, warnings
 
     action = "BUY" if sig.direction > 0 else "SELL"

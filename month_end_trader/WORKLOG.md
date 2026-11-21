@@ -33,7 +33,10 @@ Treasury bid, long ZN over the last 3 sessions). Backtest with IBKR costs: backt
 - [ ] Weekly status / announce: include leg B (next window, position, bond monitor status)
 - [ ] CBOT holiday/early-close calendar for Treasury futures (SIFMA early closes 14:00 ET; Good Friday) vs futures_open
 - [ ] README + PAPER_TEST.md: leg B section (ZN permissions, CBOT data, first paper window 24 -> 30 Nov 2026)
-- [ ] Combined-exposure guardrail: refuse if MES + ZN notional / net liq exceeds a configured ceiling
+- [x] Combined-exposure guardrail: guardrails.max_total_leverage (default 7x, hard 8x) on all futures notional of
+      both legs incl. the new order; permanent blocker (no retries). 3 tests
+- [ ] Granularity for small accounts (< ~$150k): option to express leg B in CME Micro 10-Year Yield futures (10Y,
+      ~$10 DV01 vs ~$65 for ZN) - needs a yield->price sign flip and its own sizing; ask the user before building
 - [ ] validate-data: add IEF; bond-check prints contract choice + first notice day
 - [x] IBKR adapter unit tests with fake ib_async objects (fill_summary, status mapping incl. Inactive/Timeout/Unknown, what-if NaN -> BrokerError, FX conversion SGD->USD, stale ticker, account rows filter)
 - [x] README: IBKR operational settings (bypass order precautions, Gateway restart time outside 09:00-16:30 ET, dedicated API username, US equity data for ADJUSTED_LAST); document MET_EXTRA_CLOSURES

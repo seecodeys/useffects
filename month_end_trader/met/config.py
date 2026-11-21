@@ -14,6 +14,7 @@ HARD_MIN_EXIT_LEAD_S = 1
 HARD_MAX_ENTRY_GRACE_S = 600
 HARD_MAX_BOND_LEVERAGE = 6.0     # ZN notional / net liquidation
 HARD_MAX_BOND_CONTRACTS = 50
+HARD_MAX_TOTAL_LEVERAGE = 8.0    # all futures notional of both legs / net liquidation
 
 
 class ConfigError(ValueError):
@@ -100,6 +101,7 @@ class GuardrailConfig:
     core_min_weight: float = 0.5     # SPY value / net liq expected at least this
     core_policy: str = "warn"        # warn | block | ignore
     auto_derisk: bool = True         # size x0.5 / x0 from the SPRT decay monitor
+    max_total_leverage: float = 7.0  # (all MES/ES + ZN futures notional incl. the new order) / net liq, both legs
 
 
 @dataclass
@@ -188,6 +190,8 @@ class Config:
             errs.append("guardrails.disaster_stop_pct_equity must be in [0, 1)")
         if not set(self.signal.sources) <= {"ibkr", "yahoo"} or not self.signal.sources:
             errs.append("signal.sources must be a non-empty subset of [ibkr, yahoo]")
+        if not (0 < g.max_total_leverage <= HARD_MAX_TOTAL_LEVERAGE):
+            errs.append(f"guardrails.max_total_leverage must be in (0, {HARD_MAX_TOTAL_LEVERAGE}]")
         if not (0.002 <= s.vol_threshold <= 0.05):
             errs.append("strategy.vol_threshold must be a DAILY std in [0.002, 0.05]")
         if not (5 <= s.vol_window <= 60):

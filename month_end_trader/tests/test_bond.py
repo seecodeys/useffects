@@ -306,3 +306,31 @@ def test_derisk_zero_or_unreadable_blocks(benv):
     p.write_text(json.dumps({"size_multiplier": 0.5, "status": "weakening"}))
     plan, blockers, _ = bond_preflight(cfg, b, dt.date(2025, 9, 30), today=dt.date(2025, 9, 25))
     assert plan is not None and plan.derisk_multiplier == 0.5 and plan.effective_leverage < 2.0
+
+
+# ------------------------------------------------------------------------------------------ combined exposure
+def test_total_exposure_cap_blocks_leg_a_while_bond_holds(benv):
+    """On month-end day leg B already holds ~3.2x ZN; with a 4x total cap leg A's ~1x+ order is refused."""
+    cfg, clock, b, d, alerts, bx = benv(dt.datetime(2025, 9, 24, 8, 0), zn_fn=drift())
+    cfg.guardrails.max_total_leverage = 4.0
+    run(d, clock, dt.datetime(2025, 9, 30, 20, 0))
+    a = TradeState(cfg.monitoring.state_dir, "2025-09-30")
+    assert a.phase == "SKIPPED" and any("total futures exposure" in x for x in a.get("blockers"))
+    assert bst(cfg, dt.date(2025, 9, 30)).phase == "FLAT"
+    assert not [o for o in b.orders if o["ref"].startswith("MET-")]
+
+
+def test_total_exposure_cap_blocks_bond_alone(benv):
+    cfg, clock, b, d, alerts, bx = benv(dt.datetime(2025, 9, 25, 8, 0), zn_fn=drift())
+    cfg.guardrails.max_total_leverage = 2.0
+    run(d, clock, dt.datetime(2025, 9, 25, 17, 0))
+    s = bst(cfg, dt.date(2025, 9, 30))
+    assert s.phase == "SKIPPED" and any("total futures exposure" in x for x in s.get("blockers"))
+    assert s.get("preflight_attempts") is None              # permanent: no retry loop
+
+
+def test_default_total_cap_allows_both_legs(benv):
+    cfg, clock, b, d, alerts, bx = benv(dt.datetime(2025, 9, 24, 8, 0), zn_fn=drift())
+    run(d, clock, dt.datetime(2025, 9, 30, 20, 0))
+    assert TradeState(cfg.monitoring.state_dir, "2025-09-30").phase == "FLAT"
+    assert bst(cfg, dt.date(2025, 9, 30)).phase == "FLAT"

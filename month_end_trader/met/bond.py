@@ -38,7 +38,7 @@ from .state import StateCorrupt, kill_switch_active
 log = logging.getLogger("met.bond")
 
 BOND_REF = "MEB-"
-BOND_PERMANENT = PERMANENT_PREFIXES + ("existing ZN", "bond decay monitor says stop", "no ZN contract",
+BOND_PERMANENT = PERMANENT_PREFIXES + ("total futures exposure", "existing ZN", "bond decay monitor says stop", "no ZN contract",
                                        "not the bond entry session")
 
 
@@ -193,6 +193,11 @@ def bond_preflight(cfg: Config, broker: Broker, X: dt.date, today: dt.date | Non
         return None, blockers, warnings
     if target * derisk * acct.net_liquidation / (price * contract.multiplier) > b.max_contracts:
         warnings.append(f"size capped at bond.max_contracts={b.max_contracts}")
+    from .guardrails import total_leverage_blocker
+    tb = total_leverage_blocker(cfg, broker, b.instrument, qty * price * contract.multiplier, acct.net_liquidation)
+    if tb:
+        blockers.append(tb)
+        return None, blockers, warnings
     try:
         mc = broker.what_if(contract, "BUY", qty)
         if not (mc.excess_after >= g.margin_buffer_pct * acct.net_liquidation):
