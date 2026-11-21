@@ -37,7 +37,7 @@ def cpi_release_dates():
     path = os.path.join(lib.DATA, "cpi_release_dates.csv")
     if os.path.exists(path):
         return pd.to_datetime(pd.read_csv(path)["date"])
-    html = requests.get("https://alfred.stlouisfed.org/series/downloaddata?seid=CPIAUCSL", headers=lib._HDR,
+    html = requests.get("https://alfred.stlouisfed.org/series/downloaddata?seid=CPIAUCSL",
                         timeout=60).text
     import re
     vint = sorted({d for d in re.findall(r"(?:19|20)\d\d-\d\d-\d\d", html) if "1999-06-01" <= d <= "2026-12-31"})
