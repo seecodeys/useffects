@@ -87,6 +87,7 @@ s_fri = big_sign(wk_fri)
 mon = cfd[cfd.dayofweek == 0]
 am_mon = ret_between(mon, (9, 30), mon, (11, 0))
 wk_mon = ret_between(prev_day(mon, 10), (15, 59), prev_day(mon, 3), (15, 59))
+wk_mon = pd.Series(wk_mon.values, index=mon)             # re-index from prior Friday to the Monday
 s_mon = big_sign(wk_mon)
 oth = cfd[cfd.dayofweek < 4]
 pm_oth = ret_between(oth, (14, 0), oth, (15, 59))
