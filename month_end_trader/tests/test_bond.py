@@ -413,7 +413,11 @@ def test_mtn_small_account_happy_path(benv):
 def test_mtn_validation():
     c = Config(); c.ib.account = "DU1"; c.bond.instrument = "MTN"; c.bond.max_contracts = 300
     c.validate()
-    assert c.bond.hedge_ratio == 0.885
+    assert c.bond.hedge_ratio == 0.885 and c.bond.max_contracts == 300
+    c = Config(); c.ib.account = "DU1"; c.bond.instrument = "MTN"; c.validate()
+    assert c.bond.max_contracts == 200
+    c = Config(); c.ib.account = "DU1"; c.validate()
+    assert c.bond.max_contracts == 20
     c = Config(); c.ib.account = "DU1"; c.bond.instrument = "XYZ"
     with pytest.raises(ConfigError, match="bond.instrument"):
         c.validate()

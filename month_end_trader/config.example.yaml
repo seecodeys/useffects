@@ -32,7 +32,7 @@ bond:                       # leg B: long 10y T-note futures over the last 3 ses
   exit_lead_s: 300         # 15:55 ET on month-end, clear of leg A's 15:59:58 exit (12:50 on 1 pm closes)
   roll_buffer_days: 5       # never hold a contract within 5 sessions of its first notice day
   disaster_stop_pct_equity: 0.04   # flatten if the bond overlay loses 4% of equity (checked whenever CBOT trades)
-  max_contracts: 20
+  max_contracts: 0          # 0 = per instrument (ZN 20, MTN 200)
   auto_derisk: true         # bond SPRT monitor can halve or stop the leg
 
 guardrails:

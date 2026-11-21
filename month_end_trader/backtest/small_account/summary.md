@@ -19,23 +19,23 @@ been traded this way.
 
 | | MTN, A floor (headline) | MTN, A nearest | B in ZN instead (A floor) | S&P 500 TR |
 |---|---|---|---|---|
-| CAGR | **22.8%** | 22.8% | 23.5% | 11.3% |
-| Final equity | $2,381,132 | $2,406,225 | $2,733,021 | $229,849 |
+| CAGR | **22.7%** | 22.8% | 23.5% | 11.3% |
+| Final equity | $2,358,908 | $2,380,217 | $2,733,021 | $229,849 |
 | Volatility | 20.0% | 20.1% | 19.9% | 18.5% |
-| Sharpe (excess of T-bills) | 1.04 | 1.04 | 1.07 | 0.58 |
+| Sharpe (excess of T-bills) | 1.04 | 1.03 | 1.07 | 0.58 |
 | Max drawdown | -40.7% | -41.4% | -39.5% | -55.2% |
-| Beta / alpha vs S&P (daily OLS) | 0.95 / 10.5%/yr (t=5.5) | 0.96 / 10.5%/yr (t=5.4) | 0.96 / 10.9%/yr | 1.00 / 0 |
+| Beta / alpha vs S&P (daily OLS) | 0.95 / 10.4%/yr (t=5.5) | 0.96 / 10.4%/yr (t=5.4) | 0.96 / 10.9%/yr | 1.00 / 0 |
 | Leg A trades / skipped (0 MES) | 286 / 0 | 286 / 0 | 286 / 0 | |
-| Leg A win rate, avg net per trade | 60.8%, 0.49% ($2,824) | 60.8%, 0.50% ($2,863) | 60.8%, 0.49% | |
+| Leg A win rate, avg net per trade | 60.8%, 0.49% ($2,801) | 60.8%, 0.50% ($2,839) | 60.8%, 0.49% | |
 | Leg B trades / skipped | 286 / 0 | 286 / 0 | 226 / 60 | |
-| Leg B win rate, avg net per trade | 58.4%, 0.37% ($763) | 58.4%, 0.37% | 63.3%, 0.55% | |
-| Leg B avg contracts, avg notional / net liq | 75, 2.38x | 76, 2.37x | | |
-| Total costs (fees + slippage + SPY rebalancing) | $204,720 | $206,527 | $109,487 | |
-| Contracts a fresh $18k account trades today | A: 1 (2.11x) full / 0 (0.00x) half size; B: **4 MTN** | A: 1 / 1; B: 4 MTN | B: 0 ZN | |
+| Leg B win rate, avg net per trade | 58.4%, 0.37% ($742) | 58.4%, 0.37% | 63.3%, 0.55% | |
+| Leg B avg contracts, avg notional / net liq | 75, 2.38x | 75, 2.37x | | |
+| Total costs (fees + slippage + SPY rebalancing) | $203,672 | $205,266 | $109,487 | |
+| Contracts a fresh $18k account trades today | A: 1 (2.11x) full / 0 (0.00x) half size; B: **4 MTN** | A: 1 (2.11x) / 1 (2.11x); B: 4 MTN | B: 0 ZN | |
 
 Stress costs (2 ticks per side on MES and 2/32 on MTN): A floor CAGR **20.1%**
-(Sharpe 0.93), A nearest 20.3%.
-With 1/64 slippage instead of 1/32: 23.8% / 23.7%.
+(Sharpe 0.93), A nearest 20.2%.
+With 1/64 slippage instead of 1/32: 23.7% / 23.6%.
 Leg B priced on the IEF-minus-bills model for every trade (no TN=F): A floor 22.8%,
 A nearest 22.9%.
 
@@ -43,24 +43,27 @@ A nearest 22.9%.
 
 | $18k, base costs | MTN, A floor | MTN, A nearest | 10Y yield future, A floor (previous) | 10Y yield future, A nearest (previous) |
 |---|---|---|---|---|
-| CAGR | **22.8%** | 22.8% | 22.1% | 22.1% |
-| Sharpe | **1.04** | 1.04 | 1.00 | 1.00 |
+| CAGR | **22.7%** | 22.8% | 22.1% | 22.1% |
+| Sharpe | **1.04** | 1.03 | 1.00 | 1.00 |
 | Max drawdown | **-40.7%** | -41.4% | -43.2% | -42.5% |
-| Alpha vs S&P (%/yr) | **10.5** | 10.5 | 9.8 | 9.9 |
+| Alpha vs S&P (%/yr) | **10.4** | 10.4 | 9.8 | 9.9 |
 | Beta | **0.95** | 0.96 | 0.97 | 0.97 |
 | Leg B win rate | **58.4%** | 58.4% | 58.4% | 58.4% |
-| Leg B avg net per trade (% of acct) | **0.371%** | 0.370% | 0.336% | 0.335% |
-| Final equity | **2,381,132** | 2,406,225 | 2,087,064 | 2,113,037 |
+| Leg B avg net per trade (% of acct) | **0.366%** | 0.365% | 0.336% | 0.335% |
+| Final equity | **2,358,908** | 2,380,217 | 2,087,064 | 2,113,037 |
 | Leg B priced on | TN=F 2016+, IEF model before | same | ^TNX yield changes x DV01 | same |
 | Leg B contracts for a fresh $18k account today | 4 MTN | 4 MTN | 3 x 10Y (2.42x IEF-equivalent) | same |
 
 Stress costs: 20.1% now vs 20.9% before;
 B on the IEF model throughout: 22.8% now vs
 23.8% before (the 10Y used duration-based sizing at 2.81x, MTN uses
-2.8 x 0.885 and whole $10.8k contracts, so the two IEF-model runs are not identical). The difference to the previous
-headline is mostly the pricing model, not the instrument: the yield-future run priced leg B on ^TNX, which misses the
-carry and IEF's month-end basket effect; a *price* future (MTN) is an excess-return bond position, so it earns the
-carry that a yield future does not (see "Leg-B models" below).
+2.8 x 0.885 and whole $10.8k contracts, so the two IEF-model runs are not identical). Why MTN beats the previous
+headline: leg B earned 21.0bp of notional gross per trade vs 14.9bp in the yield-future run
+(^TNX missed carry and IEF's month-end basket effect; a *price* future is an excess-return bond position and tracks
+the IEF model, see "Leg-B models" below). Against that, MTN costs more: leg-B fees + slippage $159,996 vs
+$73,626, and floor rounding plus the 400-contract cap (15 trades capped, all from
+2025-08-26) leave 2.69x IEF-equivalent on average instead of 2.81x. Net: B averages
+0.366% of the account per trade vs 0.336% before.
 
 ![equity](equity_18k.png)
 
@@ -76,7 +79,7 @@ carry that a yield future does not (see "Leg-B models" below).
   the run: Dec 72, Jun 72, Mar 70, Sep 72. Contract and last trade day are in `trades_18k.csv`.
 - **Sizing exactly as the bot** (`met.guardrails.size_contracts`, imported): contracts = floor(2.8 x 0.885 x
   net liq / (price x 100)), max 400, notional <= 4.5x net liq. Net liq at the entry close.
-  Average 2.38x notional (min 1.72x) = 2.68x IEF-equivalent
+  Average 2.38x notional (min 1.74x) = 2.69x IEF-equivalent
   (target 2.80x). In 2003-2005 the $18k account held 3-6 MTN.
   The bot's config default `bond.max_contracts` is 20 (the MTN hard cap is 400); this backtest uses 400 as asked,
   so a live account above ~$90k must raise `bond.max_contracts`.
@@ -97,28 +100,28 @@ carry that a yield future does not (see "Leg-B models" below).
   some other series and are **rejected**. Before 2016-01-11 leg B uses the IEF model only.
   3 NYSE sessions from 2016 have no TN=F close (forward-filled up to 2 sessions).
 - **Rolls.** Yahoo's TN=F rolls from the expiring to the next contract around the 15th-25th of Mar/Jun/Sep/Dec. A roll
-  day is detected as the single largest |TN=F return - (IEF - bills)/0.885| residual in the 12th-28th of each contract
-  month, if above 3 robust sd (0.100% here): 28 days flagged (2016-03-22 (-0.70%), 2016-12-14 (+0.51%), 2017-03-23 (-1.06%), 2017-06-22 (-0.69%), 2017-09-21 (-0.65%), 2018-03-21 (-0.61%), 2018-06-21 (-0.71%), 2018-09-20 (-0.36%), 2018-12-28 (-0.55%), 2019-03-20 (-0.61%), 2019-06-20 (+1.02%), 2019-12-20 (+0.74%), 2020-03-20 (-1.43%), 2020-09-22 (+1.40%), 2020-12-22 (-0.41%), 2021-03-23 (-1.54%), 2021-06-22 (-1.20%), 2021-09-22 (-1.53%), 2022-03-23 (-0.93%), 2022-06-22 (-1.17%), 2022-09-21 (-0.45%), 2023-03-22 (-1.12%), 2023-06-22 (+1.06%), 2023-09-20 (+0.52%), 2024-06-20 (+0.51%), 2026-03-20 (+0.35%), 2026-06-22 (-0.34%), 2026-09-25 (-0.55%)).
+  day is detected as the single largest |TN=F return - (IEF - bills)/0.885| residual in the 12th-25th of each contract
+  month, if above 3 robust sd (0.100% here): 28 days flagged (2016-03-22 (-0.70%), 2016-12-14 (+0.51%), 2017-03-23 (-1.06%), 2017-06-22 (-0.69%), 2017-09-21 (-0.65%), 2018-03-21 (-0.61%), 2018-06-21 (-0.71%), 2018-09-20 (-0.36%), 2018-12-20 (+0.38%), 2019-03-20 (-0.61%), 2019-06-20 (+1.02%), 2019-12-20 (+0.74%), 2020-03-20 (-1.43%), 2020-09-22 (+1.40%), 2020-12-22 (-0.41%), 2021-03-23 (-1.54%), 2021-06-22 (-1.20%), 2021-09-22 (-1.53%), 2022-03-23 (-0.93%), 2022-06-22 (-1.17%), 2022-09-21 (-0.45%), 2023-03-22 (-1.12%), 2023-06-22 (+1.06%), 2023-09-20 (+0.52%), 2024-06-20 (+0.51%), 2026-03-20 (+0.35%), 2026-06-22 (-0.34%), 2026-09-25 (-0.55%)).
   On a flagged day the TN=F return is replaced by the IEF model's return (neutralised). **None of these falls inside a
-  B hold** (1 hold days flagged; trades with a neutralised day: 1): the hold is the last 3
+  B hold** (0 hold days flagged; trades with a neutralised day: 0): the hold is the last 3
   sessions of the month, while Yahoo rolls 1-2 weeks before contract-month end. Largest |residual| on any hold day
   0.69% (hold days with residual above 5 sd: 5: 2018-12-28 -0.55%, 2021-02-26 -0.59%, 2022-07-28 -0.69%, 2022-11-30 -0.66%, 2024-07-31 -0.51%).
 - **Contract mismatch.** In Feb/May/Aug/Nov the bot holds the contract after next while Yahoo's front is the
   nearby (about to go into delivery). Returns of adjacent TN contracts differ only by the change in the calendar spread
-  over 3 days; on those windows the TN vs IEF per-trade correlation is 0.959 vs 0.974 in other
-  months, mean gap +0.2bp vs +1.9bp. No contract-level history was available to do better.
+  over 3 days; on those windows the TN vs IEF per-trade correlation is 0.959 vs 0.973 in other
+  months, mean gap +0.2bp vs +2.5bp. No contract-level history was available to do better.
 - **Cross-check: IEF total return minus T-bills, / 0.885** (`gross_pnl_ief` for every trade). On the 130 trades
-  priced on TN=F: per-trade P&L correlation **0.967** (in bp of notional 0.969), same sign on
-  95%, tracking difference 17.2bp of notional per trade. Mean per trade: TN=F
-  +21.5bp, IEF model +22.8bp, so the IEF model earns **+1.4bp**
-  (s.e. 1.5bp, $+620 per trade at the run's sizes) more per hold
-  (-0.8bp 2016-2022, +5.3bp 2023+). Gross over these trades: TN=F
-  $328,447 vs IEF $409,105. Largest gaps: 2022-11-25 MTNH3: TN -10bp vs IEF +52bp; 2024-07-26 MTNU4: TN +74bp vs IEF +118bp; 2022-08-26 MTNZ2: TN -78bp vs IEF -118bp; 2022-04-26 MTNM2: TN -101bp vs IEF -140bp; 2022-12-27 MTNH3: TN +16bp vs IEF -23bp.
+  priced on TN=F: per-trade P&L correlation **0.967** (in bp of notional 0.968), same sign on
+  95%, tracking difference 17.5bp of notional per trade. Mean per trade: TN=F
+  +21.0bp, IEF model +22.8bp, so the IEF model earns **+1.8bp**
+  (s.e. 1.5bp, $+645 per trade at the run's sizes) more per hold
+  (-0.2bp 2016-2022, +5.3bp 2023+). Gross over these trades: TN=F
+  $321,806 vs IEF $405,598. Largest gaps: 2022-11-25 MTNH3: TN -10bp vs IEF +52bp; 2024-07-26 MTNU4: TN +74bp vs IEF +118bp; 2018-12-26 MTNH9: TN +87bp vs IEF +129bp; 2022-08-26 MTNZ2: TN -78bp vs IEF -118bp; 2022-04-26 MTNM2: TN -101bp vs IEF -140bp.
   Pre-2016 trades (IEF model only) averaged +21.0bp of notional gross.
 - **Why they differ:** TN=F's close is the CBOT settlement (~15:00 ET) while IEF closes at 16:00 and the bot trades at
   15:55-15:58, so each model misses a different last hour; IEF holds a 7-10y basket, TN's cheapest-to-deliver is a
   ~9.5-10y note; and 0.885 is a 2017-2026 average beta (re-estimated here on non-roll days: 2016+
-  0.871 (corr 0.957), 2017+ 0.874). Unlike the yield
+  0.876 (corr 0.958), 2017+ 0.879). Unlike the yield
   future, a price future is an excess-return bond position, so carry is not a systematic difference here.
 
 ## Costs and margin assumptions
@@ -146,11 +149,11 @@ but the 1-2 x 1/32 assumptions are untested against real MTN fills.
 ## Small-account realities
 
 - **IBKR minimum** ($2,000) is met at every size; lowest equity in the $18k headline run $16,655.
-- **Margin.** Highest futures initial margin at any trade (A + open B on the last day), $18k base: **29.2% of net
+- **Margin.** Highest futures initial margin at any trade (A + open B on the last day), $18k base: **29.1% of net
   liq** (A floor), 30.2% (A nearest); trades above 60%: **0 / 0**. Across all sizes and
   variants the maximum was 30.2%. With SPY's 25% maintenance added the worst total requirement was
   54.8% / 55.6%. With margins doubled the headline run peaks at 58.4%
-  (0 trades above 60%). Net interest over the run $+3,070.
+  (0 trades above 60%). Net interest over the run $+2,955.
 - **Rounding at today's levels** (2026-10-30: S&P 7,580, one MES = $37,900, one MTN =
   $10,812): one MES at full size needs $13,298 of equity, at half size
   $26,597 (floor) or $12,633 (nearest, 3x cap); one MTN needs
@@ -176,39 +179,39 @@ prices (table above), scaled with equity as it grows. Previous (10Y yield future
 
 | account | A floor: CAGR / Sharpe / max DD / alpha | A nearest: CAGR / Sharpe / max DD / alpha | A skipped (floor / nearest) |
 |---|---|---|---|
-| $10k | 15.1% [13.6%] / 0.77 [0.70] / -53.4% / 3.9% | 15.1% [13.6%] / 0.77 [0.70] / -53.4% / 3.9% | 286 / 286 |
-| $18k | 21.1% [19.8%] / 0.99 [0.95] / -43.9% / 8.9% | 22.5% [21.2%] / 1.04 [1.00] / -44.2% / 10.2% | 151 / 0 |
-| $25k | 19.1% [18.0%] / 0.93 [0.89] / -46.7% / 7.2% | 20.0% [19.2%] / 0.97 [0.93] / -44.7% / 8.0% | 151 / 0 |
-| $50k | 21.9% [21.0%] / 1.02 [0.98] / -41.9% / 9.7% | 22.3% [21.5%] / 1.04 [1.01] / -43.0% / 10.0% | 0 / 0 |
-| $100k | 22.9% [22.5%] / 1.05 [1.03] / -40.0% / 10.6% | 23.2% [22.7%] / 1.06 [1.03] / -40.0% / 10.8% | 0 / 0 |
+| $10k | 15.0% [13.6%] / 0.76 [0.70] / -53.4% / 3.8% | 15.0% [13.6%] / 0.76 [0.70] / -53.4% / 3.8% | 286 / 286 |
+| $18k | 21.0% [19.8%] / 0.98 [0.95] / -43.9% / 8.9% | 22.5% [21.2%] / 1.04 [1.00] / -44.2% / 10.1% | 151 / 0 |
+| $25k | 19.1% [18.0%] / 0.92 [0.89] / -46.7% / 7.2% | 19.9% [19.2%] / 0.96 [0.93] / -44.7% / 8.0% | 151 / 0 |
+| $50k | 21.8% [21.0%] / 1.02 [0.98] / -41.9% / 9.6% | 22.3% [21.5%] / 1.03 [1.01] / -43.0% / 10.0% | 0 / 0 |
+| $100k | 22.8% [22.5%] / 1.05 [1.03] / -40.0% / 10.5% | 23.1% [22.7%] / 1.06 [1.03] / -40.0% / 10.8% | 0 / 0 |
 
 | metric | $10k today's rounding fixed, A floor | $10k today's rounding fixed, A nearest | $18k today's rounding fixed, A floor | $18k today's rounding fixed, A nearest | $25k today's rounding fixed, A floor | $25k today's rounding fixed, A nearest | $50k today's rounding fixed, A floor | $50k today's rounding fixed, A nearest | $100k today's rounding fixed, A floor | $100k today's rounding fixed, A nearest |
 |---|---|---|---|---|---|---|---|---|---|---|
-| CAGR % | 15.11 | 15.11 | 21.10 | 22.52 | 19.11 | 19.97 | 21.90 | 22.34 | 22.91 | 23.16 |
-| vol % | 18.29 | 18.29 | 19.60 | 19.74 | 18.99 | 18.91 | 19.55 | 19.68 | 19.80 | 19.85 |
-| Sharpe | 0.77 | 0.77 | 0.99 | 1.04 | 0.93 | 0.97 | 1.02 | 1.04 | 1.05 | 1.06 |
+| CAGR % | 15.04 | 15.04 | 21.04 | 22.46 | 19.06 | 19.92 | 21.85 | 22.30 | 22.76 | 23.11 |
+| vol % | 18.32 | 18.32 | 19.60 | 19.75 | 18.99 | 18.91 | 19.55 | 19.68 | 19.79 | 19.85 |
+| Sharpe | 0.76 | 0.76 | 0.98 | 1.04 | 0.92 | 0.96 | 1.02 | 1.03 | 1.05 | 1.06 |
 | max DD % | -53.44 | -53.44 | -43.92 | -44.23 | -46.73 | -44.68 | -41.91 | -43.02 | -39.98 | -39.98 |
 | beta | 0.94 | 0.94 | 0.96 | 0.96 | 0.96 | 0.95 | 0.95 | 0.96 | 0.95 | 0.95 |
-| alpha %/yr | 3.89 | 3.89 | 8.94 | 10.16 | 7.23 | 8.04 | 9.69 | 10.04 | 10.59 | 10.81 |
-| alpha t | 3.27 | 3.27 | 5.33 | 5.76 | 5.14 | 5.53 | 5.62 | 5.71 | 5.68 | 5.74 |
+| alpha %/yr | 3.82 | 3.82 | 8.89 | 10.11 | 7.19 | 7.99 | 9.65 | 10.00 | 10.48 | 10.76 |
+| alpha t | 3.21 | 3.21 | 5.31 | 5.73 | 5.11 | 5.50 | 5.59 | 5.69 | 5.62 | 5.72 |
 | A trades | 0.00 | 0.00 | 135.00 | 286.00 | 135.00 | 286.00 | 286.00 | 286.00 | 286.00 | 286.00 |
 | A skipped | 286.00 | 286.00 | 151.00 | 0.00 | 151.00 | 0.00 | 0.00 | 0.00 | 0.00 | 0.00 |
 | A win % |  |  | 63.70 | 62.24 | 63.70 | 62.24 | 62.24 | 62.24 | 62.24 | 62.24 |
 | A avg % acct |  |  | 0.78 | 0.47 | 0.56 | 0.34 | 0.44 | 0.47 | 0.52 | 0.54 |
-| A avg net $ |  |  | 3,347 | 2,462 | 2,417 | 1,611 | 5,766 | 6,705 | 16,189 | 17,126 |
-| A avg contracts |  |  | 35.57 | 44.62 | 27.40 | 31.65 | 77.15 | 105.66 | 222.46 | 253.73 |
+| A avg net $ |  |  | 3,315 | 2,438 | 2,396 | 1,597 | 5,710 | 6,647 | 15,778 | 16,959 |
+| A avg contracts |  |  | 35.32 | 44.32 | 27.24 | 31.47 | 76.62 | 105.03 | 218.48 | 251.97 |
 | A avg lev x |  |  | 2.11 | 2.11 | 1.52 | 1.52 | 1.47 | 1.87 | 1.85 | 2.05 |
 | B trades | 286.00 | 286.00 | 286.00 | 286.00 | 286.00 | 286.00 | 286.00 | 286.00 | 286.00 | 286.00 |
 | B skipped | 0.00 | 0.00 | 0.00 | 0.00 | 0.00 | 0.00 | 0.00 | 0.00 | 0.00 | 0.00 |
 | B win % | 58.39 | 58.39 | 58.39 | 58.39 | 58.39 | 58.39 | 58.39 | 58.39 | 58.39 | 58.39 |
-| B avg % acct | 0.33 | 0.33 | 0.37 | 0.37 | 0.33 | 0.33 | 0.36 | 0.36 | 0.36 | 0.36 |
-| B avg net $ | 165.33 | 165.33 | 582.41 | 669.00 | 590.82 | 646.65 | 1,691 | 1,775 | 3,721 | 3,694 |
-| B avg contracts | 13.11 | 13.11 | 64.58 | 80.45 | 58.66 | 66.89 | 198.92 | 214.05 | 466.40 | 479.28 |
+| B avg % acct | 0.33 | 0.33 | 0.36 | 0.36 | 0.33 | 0.33 | 0.36 | 0.36 | 0.36 | 0.36 |
+| B avg net $ | 161.25 | 161.25 | 568.08 | 651.22 | 577.07 | 630.88 | 1,648 | 1,730 | 3,592 | 3,596 |
+| B avg contracts | 12.97 | 12.97 | 64.01 | 79.73 | 58.20 | 66.36 | 197.16 | 212.36 | 455.58 | 474.99 |
 | B avg lev x | 2.16 | 2.16 | 2.40 | 2.40 | 2.16 | 2.16 | 2.38 | 2.38 | 2.38 | 2.38 |
 | max futures margin % netliq | 6.85 | 6.85 | 23.80 | 23.78 | 18.54 | 18.50 | 25.05 | 25.03 | 27.95 | 27.95 |
 | trades margin > 60% | 0.00 | 0.00 | 0.00 | 0.00 | 0.00 | 0.00 | 0.00 | 0.00 | 0.00 | 0.00 |
-| costs $ | 27,928 | 27,928 | 146,115 | 195,689 | 131,246 | 158,765 | 464,563 | 513,110 | 1,114,243 | 1,159,738 |
-| final equity $ | 286,048 | 286,048 | 1,721,359 | 2,271,820 | 1,612,455 | 1,913,369 | 5,600,477 | 6,104,255 | 13,614,544 | 14,307,924 |
+| costs $ | 27,628 | 27,628 | 144,814 | 193,940 | 130,222 | 157,528 | 460,436 | 509,056 | 1,088,407 | 1,149,338 |
+| final equity $ | 281,932 | 281,932 | 1,703,005 | 2,247,536 | 1,596,939 | 1,894,914 | 5,541,215 | 6,046,854 | 13,241,247 | 14,156,635 |
 
 ## All account sizes (base costs, B in MTN), started in 2003
 
@@ -216,61 +219,61 @@ Previous 10Y-yield-future CAGR, floor / nearest: $10k 22.0% / 22.0%, $18k 22.1% 
 
 | metric | $10k MTN, A floor | $10k MTN, A nearest | $18k MTN, A floor | $18k MTN, A nearest | $25k MTN, A floor | $25k MTN, A nearest | $50k MTN, A floor | $50k MTN, A nearest | $100k MTN, A floor | $100k MTN, A nearest |
 |---|---|---|---|---|---|---|---|---|---|---|
-| CAGR % | 22.41 | 22.70 | 22.76 | 22.81 | 22.87 | 22.96 | 22.70 | 22.71 | 22.46 | 22.47 |
-| vol % | 19.85 | 20.04 | 19.97 | 20.11 | 19.97 | 20.04 | 20.04 | 20.05 | 19.98 | 19.99 |
-| Sharpe | 1.03 | 1.04 | 1.04 | 1.04 | 1.04 | 1.05 | 1.04 | 1.03 | 1.03 | 1.03 |
+| CAGR % | 22.26 | 22.65 | 22.71 | 22.76 | 22.82 | 22.91 | 22.65 | 22.65 | 22.41 | 22.42 |
+| vol % | 19.84 | 20.04 | 19.97 | 20.11 | 19.98 | 20.04 | 20.04 | 20.06 | 19.98 | 19.99 |
+| Sharpe | 1.03 | 1.03 | 1.04 | 1.03 | 1.04 | 1.04 | 1.03 | 1.03 | 1.03 | 1.03 |
 | max DD % | -40.57 | -40.58 | -40.75 | -41.37 | -40.55 | -40.73 | -41.40 | -41.68 | -41.60 | -41.65 |
 | beta | 0.95 | 0.96 | 0.95 | 0.96 | 0.95 | 0.96 | 0.96 | 0.96 | 0.96 | 0.96 |
-| alpha %/yr | 10.18 | 10.38 | 10.46 | 10.47 | 10.57 | 10.63 | 10.39 | 10.40 | 10.16 | 10.17 |
-| alpha t | 5.43 | 5.44 | 5.48 | 5.43 | 5.51 | 5.50 | 5.43 | 5.41 | 5.42 | 5.42 |
+| alpha %/yr | 10.06 | 10.34 | 10.42 | 10.42 | 10.52 | 10.58 | 10.34 | 10.34 | 10.12 | 10.13 |
+| alpha t | 5.37 | 5.42 | 5.45 | 5.41 | 5.49 | 5.48 | 5.40 | 5.39 | 5.40 | 5.39 |
 | A trades | 286.00 | 286.00 | 286.00 | 286.00 | 286.00 | 286.00 | 286.00 | 286.00 | 286.00 | 286.00 |
 | A skipped | 0.00 | 0.00 | 0.00 | 0.00 | 0.00 | 0.00 | 0.00 | 0.00 | 0.00 | 0.00 |
 | A win % | 60.84 | 60.84 | 60.84 | 60.84 | 60.84 | 60.84 | 60.84 | 60.84 | 60.84 | 60.84 |
 | A avg % acct | 0.48 | 0.50 | 0.49 | 0.50 | 0.49 | 0.50 | 0.50 | 0.50 | 0.50 | 0.50 |
-| A avg net $ | 1,496 | 1,592 | 2,824 | 2,863 | 3,983 | 4,061 | 7,896 | 7,908 | 15,013 | 15,061 |
-| A avg contracts | 21.65 | 23.31 | 41.04 | 41.87 | 58.09 | 59.47 | 116.50 | 117.00 | 227.34 | 228.32 |
+| A avg net $ | 1,455 | 1,580 | 2,801 | 2,839 | 3,949 | 4,023 | 7,808 | 7,822 | 14,867 | 14,917 |
+| A avg contracts | 21.25 | 23.17 | 40.81 | 41.59 | 57.72 | 59.05 | 115.64 | 116.11 | 225.79 | 226.74 |
 | A avg lev x | 2.01 | 2.10 | 2.05 | 2.10 | 2.06 | 2.10 | 2.08 | 2.10 | 2.09 | 2.10 |
 | B trades | 286.00 | 286.00 | 286.00 | 286.00 | 286.00 | 286.00 | 286.00 | 286.00 | 286.00 | 286.00 |
 | B skipped | 0.00 | 0.00 | 0.00 | 0.00 | 0.00 | 0.00 | 0.00 | 0.00 | 0.00 | 0.00 |
 | B win % | 58.39 | 58.39 | 58.39 | 58.39 | 58.39 | 58.39 | 58.39 | 58.39 | 58.39 | 58.39 |
-| B avg % acct | 0.36 | 0.36 | 0.37 | 0.37 | 0.38 | 0.38 | 0.38 | 0.38 | 0.36 | 0.35 |
-| B avg net $ | 312.49 | 327.00 | 762.62 | 772.37 | 1,166 | 1,186 | 2,291 | 2,290 | 3,725 | 3,729 |
-| B avg contracts | 42.26 | 44.59 | 75.47 | 75.90 | 95.65 | 96.58 | 141.27 | 141.29 | 195.76 | 195.91 |
+| B avg % acct | 0.36 | 0.36 | 0.37 | 0.37 | 0.37 | 0.37 | 0.37 | 0.37 | 0.35 | 0.35 |
+| B avg net $ | 300.45 | 318.83 | 742.19 | 748.60 | 1,142 | 1,161 | 2,238 | 2,236 | 3,640 | 3,642 |
+| B avg contracts | 41.23 | 44.21 | 75.09 | 75.44 | 95.20 | 96.12 | 140.86 | 140.87 | 195.50 | 195.64 |
 | B avg lev x | 2.33 | 2.34 | 2.38 | 2.37 | 2.35 | 2.35 | 2.25 | 2.25 | 2.09 | 2.09 |
-| max futures margin % netliq | 29.08 | 29.60 | 29.18 | 30.22 | 29.31 | 29.61 | 29.41 | 29.71 | 29.63 | 29.57 |
+| max futures margin % netliq | 29.19 | 29.60 | 29.11 | 30.22 | 29.31 | 29.61 | 29.41 | 29.71 | 29.63 | 29.57 |
 | trades margin > 60% | 0.00 | 0.00 | 0.00 | 0.00 | 0.00 | 0.00 | 0.00 | 0.00 | 0.00 | 0.00 |
-| costs $ | 113,218 | 119,972 | 204,720 | 206,527 | 265,971 | 269,419 | 425,670 | 426,250 | 660,393 | 661,750 |
-| final equity $ | 1,237,476 | 1,307,738 | 2,381,132 | 2,406,225 | 3,382,034 | 3,438,793 | 6,547,649 | 6,551,021 | 12,489,339 | 12,519,352 |
+| costs $ | 110,594 | 118,999 | 203,672 | 205,266 | 264,620 | 267,998 | 423,878 | 424,416 | 658,172 | 659,495 |
+| final equity $ | 1,202,043 | 1,295,773 | 2,358,908 | 2,380,217 | 3,349,692 | 3,403,837 | 6,472,300 | 6,476,420 | 12,361,187 | 12,389,684 |
 
 ## $18k variants
 
 | metric | $18k MTN, A floor | $18k MTN, A nearest | $18k MTN, A floor, stress costs | $18k MTN, A floor, 1/64 slippage | $18k MTN, A floor, B P&L = IEF-minus-bills model throughout | $18k MTN, A nearest, stress costs | $18k MTN, A nearest, 1/64 slippage | $18k MTN, A nearest, B P&L = IEF-minus-bills model throughout | $18k ZN (../simulate.py), A floor | $18k S&P 500 TR benchmark |
 |---|---|---|---|---|---|---|---|---|---|---|
-| CAGR % | 22.76 | 22.81 | 20.12 | 23.79 | 22.83 | 20.27 | 23.69 | 22.88 | 23.47 | 11.28 |
-| vol % | 19.97 | 20.11 | 19.96 | 19.98 | 20.12 | 20.18 | 19.91 | 20.25 | 19.87 | 18.49 |
-| Sharpe | 1.04 | 1.04 | 0.93 | 1.08 | 1.04 | 0.93 | 1.08 | 1.03 | 1.07 | 0.58 |
+| CAGR % | 22.71 | 22.76 | 20.06 | 23.74 | 22.83 | 20.22 | 23.62 | 22.88 | 23.47 | 11.28 |
+| vol % | 19.97 | 20.11 | 19.96 | 19.98 | 20.12 | 20.19 | 19.91 | 20.25 | 19.87 | 18.49 |
+| Sharpe | 1.04 | 1.03 | 0.93 | 1.08 | 1.04 | 0.93 | 1.08 | 1.03 | 1.07 | 0.58 |
 | max DD % | -40.75 | -41.37 | -42.29 | -39.64 | -40.75 | -42.32 | -39.63 | -41.37 | -39.52 | -55.19 |
 | beta | 0.95 | 0.96 | 0.96 | 0.95 | 0.96 | 0.97 | 0.95 | 0.96 | 0.96 | 1.00 |
-| alpha %/yr | 10.46 | 10.47 | 8.25 | 11.32 | 10.51 | 8.30 | 11.28 | 10.51 | 10.95 | -0.12 |
-| alpha t | 5.48 | 5.43 | 4.38 | 5.88 | 5.39 | 4.36 | 5.84 | 5.34 | 6.03 | -0.90 |
+| alpha %/yr | 10.42 | 10.42 | 8.20 | 11.28 | 10.51 | 8.26 | 11.22 | 10.51 | 10.95 | -0.12 |
+| alpha t | 5.45 | 5.41 | 4.36 | 5.86 | 5.39 | 4.33 | 5.81 | 5.34 | 6.03 | -0.90 |
 | A trades | 286.00 | 286.00 | 286.00 | 286.00 | 286.00 | 286.00 | 286.00 | 286.00 | 286.00 |  |
 | A skipped | 0.00 | 0.00 | 0.00 | 0.00 | 0.00 | 0.00 | 0.00 | 0.00 | 0.00 |  |
 | A win % | 60.84 | 60.84 | 58.04 | 60.84 | 60.84 | 58.04 | 60.84 | 60.84 | 60.84 |  |
 | A avg % acct | 0.49 | 0.50 | 0.43 | 0.49 | 0.49 | 0.44 | 0.50 | 0.50 | 0.49 |  |
-| A avg net $ | 2,824 | 2,863 | 1,751 | 3,408 | 2,819 | 1,812 | 3,349 | 2,856 | 3,149 |  |
-| A avg contracts | 41.04 | 41.87 | 28.35 | 48.29 | 40.83 | 29.70 | 47.80 | 41.63 | 44.55 |  |
+| A avg net $ | 2,801 | 2,839 | 1,727 | 3,376 | 2,819 | 1,796 | 3,312 | 2,856 | 3,149 |  |
+| A avg contracts | 40.81 | 41.59 | 28.15 | 47.96 | 40.83 | 29.52 | 47.41 | 41.63 | 44.55 |  |
 | A avg lev x | 2.05 | 2.10 | 2.04 | 2.06 | 2.05 | 2.10 | 2.10 | 2.10 | 2.05 |  |
 | B trades | 286.00 | 286.00 | 286.00 | 286.00 | 286.00 | 286.00 | 286.00 | 286.00 | 226.00 |  |
 | B skipped | 0.00 | 0.00 | 0.00 | 0.00 | 0.00 | 0.00 | 0.00 | 0.00 | 60.00 |  |
 | B win % | 58.39 | 58.39 | 56.99 | 59.44 | 59.09 | 56.99 | 59.44 | 59.09 | 63.27 |  |
-| B avg % acct | 0.37 | 0.37 | 0.24 | 0.44 | 0.38 | 0.24 | 0.44 | 0.38 | 0.55 |  |
-| B avg net $ | 762.62 | 772.37 | 105.44 | 1,226 | 1,031 | 110.85 | 1,194 | 1,042 | 1,686 |  |
-| B avg contracts | 75.47 | 75.90 | 52.25 | 85.07 | 74.91 | 53.78 | 83.79 | 75.31 | 14.38 |  |
+| B avg % acct | 0.37 | 0.37 | 0.24 | 0.44 | 0.38 | 0.24 | 0.43 | 0.38 | 0.55 |  |
+| B avg net $ | 742.19 | 748.60 | 97.35 | 1,202 | 1,031 | 102.29 | 1,167 | 1,042 | 1,686 |  |
+| B avg contracts | 75.09 | 75.44 | 51.74 | 84.62 | 74.91 | 53.34 | 83.23 | 75.31 | 14.38 |  |
 | B avg lev x | 2.38 | 2.37 | 2.38 | 2.36 | 2.37 | 2.39 | 2.36 | 2.37 | 2.89 |  |
-| max futures margin % netliq | 29.18 | 30.22 | 29.06 | 29.23 | 29.26 | 29.24 | 29.39 | 30.22 |  |  |
+| max futures margin % netliq | 29.11 | 30.22 | 29.09 | 29.23 | 29.26 | 29.25 | 29.39 | 30.22 |  |  |
 | trades margin > 60% | 0.00 | 0.00 | 0.00 | 0.00 | 0.00 | 0.00 | 0.00 | 0.00 |  |  |
-| costs $ | 204,720 | 206,527 | 255,342 | 156,919 | 203,309 | 263,744 | 154,808 | 205,022 | 109,487 |  |
-| final equity $ | 2,381,132 | 2,406,225 | 1,419,403 | 2,908,747 | 2,413,623 | 1,460,902 | 2,851,400 | 2,436,969 | 2,733,021 | 229,849 |
+| costs $ | 203,672 | 205,266 | 252,999 | 155,997 | 203,309 | 261,693 | 153,692 | 205,022 | 109,487 |  |
+| final equity $ | 2,358,908 | 2,380,217 | 1,402,771 | 2,881,501 | 2,413,623 | 1,446,662 | 2,812,512 | 2,436,969 | 2,733,021 | 229,849 |
 
 ## Yearly, $18k headline (A floor, base costs)
 
@@ -291,15 +294,15 @@ Previous 10Y-yield-future CAGR, floor / nearest: $10k 22.0% / 22.0%, $18k 22.1% 
 | 2015 | 7.17 | 7.33 | 1.23 | 5.94 | -10.86 | -11.91 | 4,938 | 3,481 | 3,607 | -14.33 | 12 | 66.67 | 12 | 58.33 | 151,763 |
 | 2016 | 33.96 | 34.05 | 12.00 | 21.96 | -8.44 | -9.19 | 14,582 | 16,579 | 4,120 | -17.27 | 12 | 83.33 | 12 | 66.67 | 203,296 |
 | 2017 | 19.10 | 19.06 | 21.71 | -2.61 | -4.15 | -2.61 | -6,679 | 1,432 | 4,843 | -56.56 | 12 | 33.33 | 12 | 66.67 | 242,119 |
-| 2018 | 15.64 | 15.79 | -4.57 | 20.21 | -18.54 | -19.35 | 26,788 | 24,407 | 6,688 | -104.22 | 12 | 58.33 | 12 | 75.00 | 279,993 |
-| 2019 | 33.20 | 33.21 | 31.22 | 1.98 | -5.34 | -6.62 | -14,806 | 24,058 | 7,077 | 130.67 | 12 | 41.67 | 12 | 50.00 | 372,950 |
-| 2020 | 39.75 | 39.82 | 18.33 | 21.42 | -28.32 | -33.72 | 28,894 | 37,603 | 8,965 | -2.62 | 12 | 58.33 | 12 | 75.00 | 521,198 |
-| 2021 | 29.15 | 29.17 | 28.73 | 0.42 | -8.12 | -5.11 | 8,456 | 1,621 | 11,535 | -23.16 | 12 | 66.67 | 12 | 33.33 | 673,119 |
-| 2022 | 12.11 | 12.24 | -18.18 | 30.28 | -16.63 | -24.50 | 148,231 | 64,918 | 16,297 | 147.67 | 12 | 75.00 | 12 | 58.33 | 754,627 |
-| 2023 | 31.74 | 31.76 | 26.18 | 5.57 | -8.30 | -9.97 | 44,097 | -918.27 | 20,207 | 1,748 | 12 | 58.33 | 12 | 41.67 | 994,153 |
-| 2024 | 41.19 | 41.28 | 24.89 | 16.30 | -5.85 | -8.41 | 113,430 | 36,064 | 28,363 | 1,044 | 12 | 75.00 | 12 | 58.33 | 1,403,603 |
-| 2025 | 47.53 | 47.66 | 17.72 | 29.81 | -11.31 | -18.76 | 304,453 | 60,561 | 38,230 | 1,503 | 12 | 83.33 | 12 | 75.00 | 2,070,702 |
-| 2026 | 14.99 | 15.02 | 11.69 | 3.30 | -7.34 | -8.88 | 121,299 | -84,800 | 33,843 | -1,300 | 10 | 50.00 | 10 | 40.00 | 2,381,132 |
+| 2018 | 14.15 | 14.31 | -4.57 | 18.72 | -18.54 | -19.35 | 26,788 | 20,793 | 6,688 | -105.33 | 12 | 58.33 | 12 | 75.00 | 276,378 |
+| 2019 | 33.62 | 33.58 | 31.22 | 2.40 | -5.42 | -6.62 | -14,554 | 23,844 | 6,999 | 65.86 | 12 | 41.67 | 12 | 50.00 | 369,308 |
+| 2020 | 39.77 | 39.78 | 18.33 | 21.44 | -28.32 | -33.72 | 28,692 | 37,517 | 8,898 | -9.48 | 12 | 58.33 | 12 | 75.00 | 516,177 |
+| 2021 | 29.24 | 29.24 | 28.73 | 0.52 | -8.08 | -5.11 | 8,976 | 1,533 | 11,435 | -22.43 | 12 | 66.67 | 12 | 33.33 | 667,127 |
+| 2022 | 12.13 | 12.17 | -18.18 | 30.31 | -16.63 | -24.50 | 146,363 | 64,341 | 16,152 | 167.27 | 12 | 75.00 | 12 | 58.33 | 748,064 |
+| 2023 | 31.69 | 31.74 | 26.18 | 5.51 | -8.31 | -9.97 | 43,507 | -1,077 | 20,039 | 1,723 | 12 | 58.33 | 12 | 41.67 | 985,123 |
+| 2024 | 41.20 | 41.25 | 24.89 | 16.31 | -5.85 | -8.41 | 112,521 | 35,756 | 28,106 | 1,038 | 12 | 75.00 | 12 | 58.33 | 1,390,975 |
+| 2025 | 47.54 | 47.71 | 17.72 | 29.83 | -11.31 | -18.76 | 302,097 | 59,763 | 38,040 | 1,487 | 12 | 83.33 | 12 | 75.00 | 2,052,310 |
+| 2026 | 14.94 | 14.99 | 11.69 | 3.25 | -7.35 | -8.88 | 119,927 | -84,800 | 33,802 | -1,315 | 10 | 50.00 | 10 | 40.00 | 2,358,908 |
 
 ## In-sample vs holdout ($18k)
 
@@ -310,19 +313,19 @@ Sharpe 0.91; 2023+ holdout
 
 | variant | period | CAGR % | S&P CAGR % | Sharpe | max DD % | alpha %/yr | beta | A win % | B win % | A avg % acct | B avg % acct | A skipped | B skipped |
 |---|---|---|---|---|---|---|---|---|---|---|---|---|---|
-| floor | 2003-2022 in-sample | 20.55 | 9.70 | 0.95 | -40.75 | 10.20 | 0.95 | 59.58 | 59.17 | 0.42 | 0.42 | 0 | 0 |
-| floor | 2023+ holdout | 35.07 | 21.00 | 1.61 | -11.31 | 11.50 | 0.99 | 67.39 | 54.35 | 0.86 | 0.11 | 0 | 0 |
-| floor | 2016+ (B on TN=F prices) | 28.97 | 14.69 | 1.27 | -28.32 | 12.32 | 0.99 | 62.31 | 58.46 | 0.64 | 0.40 | 0 | 0 |
-| floor | 2024+ (MTN live) | 36.22 | 19.19 | 1.66 | -11.31 | 13.87 | 0.98 | 70.59 | 58.82 | 1.00 | 0.15 | 0 | 0 |
-| nearest | 2003-2022 in-sample | 20.60 | 9.70 | 0.95 | -41.37 | 10.21 | 0.96 | 59.58 | 59.17 | 0.43 | 0.42 | 0 | 0 |
-| nearest | 2023+ holdout | 35.14 | 21.00 | 1.61 | -11.31 | 11.55 | 0.99 | 67.39 | 54.35 | 0.86 | 0.11 | 0 | 0 |
-| nearest | 2016+ (B on TN=F prices) | 29.04 | 14.69 | 1.27 | -28.32 | 12.38 | 0.99 | 62.31 | 58.46 | 0.64 | 0.40 | 0 | 0 |
-| nearest | 2024+ (MTN live) | 36.31 | 19.19 | 1.67 | -11.31 | 13.94 | 0.98 | 70.59 | 58.82 | 1.00 | 0.15 | 0 | 0 |
+| floor | 2003-2022 in-sample | 20.49 | 9.70 | 0.95 | -40.75 | 10.15 | 0.95 | 59.58 | 59.17 | 0.42 | 0.42 | 0 | 0 |
+| floor | 2023+ holdout | 35.05 | 21.00 | 1.61 | -11.31 | 11.48 | 0.99 | 67.39 | 54.35 | 0.86 | 0.11 | 0 | 0 |
+| floor | 2016+ (B on TN=F prices) | 28.86 | 14.69 | 1.26 | -28.32 | 12.23 | 0.99 | 62.31 | 58.46 | 0.64 | 0.39 | 0 | 0 |
+| floor | 2024+ (MTN live) | 36.21 | 19.19 | 1.66 | -11.31 | 13.86 | 0.98 | 70.59 | 58.82 | 1.00 | 0.15 | 0 | 0 |
+| nearest | 2003-2022 in-sample | 20.53 | 9.70 | 0.95 | -41.37 | 10.15 | 0.96 | 59.58 | 59.17 | 0.43 | 0.41 | 0 | 0 |
+| nearest | 2023+ holdout | 35.13 | 21.00 | 1.61 | -11.31 | 11.54 | 0.99 | 67.39 | 54.35 | 0.87 | 0.11 | 0 | 0 |
+| nearest | 2016+ (B on TN=F prices) | 28.91 | 14.69 | 1.26 | -28.32 | 12.27 | 0.99 | 62.31 | 58.46 | 0.64 | 0.39 | 0 | 0 |
+| nearest | 2024+ (MTN live) | 36.31 | 19.19 | 1.66 | -11.31 | 13.94 | 0.98 | 70.59 | 58.82 | 1.00 | 0.15 | 0 | 0 |
 
 ## Spot checks (trades recomputed by hand)
 
 - **A 2003-01-31 long 11 MES** (by hand from raw Yahoo files): SPX close 855.70; SPY open->close +2.270% so entry = 855.70/(1+0.02270) = 836.71; gross = +1 x 11 x $5 x (855.70 - 836.71) = $1,044.52; costs = 11 x 2 x ($0.62 + $1.25) = $41.14; net $1,003.38. Simulation: gross $1,044.52, costs $41.14, net $1,003.38. Matches.
-- **B 2024-01-26 -> 2024-01-31 long 219 MTNH4 (TN=F model)** (by hand from raw Yahoo files): contract: first quarterly MTN whose last trade day is > 5 sessions after 2024-01-31 = MTNH4 (last trade 2024-02-28); size = floor(2.8 x 0.885 x $1,018,238 / (115.078125 x 100)) = floor(219.26) = 219; TN=F 115.078125 -> 116.875000; gross = 219 x 100 x (116.875000 - 115.078125) = $39,351.56; costs = 219 x 2 x ($0.60 + $3.125) = $1631.55; net $37,720.01. Simulation: gross $39,351.56, costs $1631.55, net $37,720.01. Matches.
+- **B 2024-01-26 -> 2024-01-31 long 217 MTNH4 (TN=F model)** (by hand from raw Yahoo files): contract: first quarterly MTN whose last trade day is > 5 sessions after 2024-01-31 = MTNH4 (last trade 2024-02-28); size = floor(2.8 x 0.885 x $1,008,997 / (115.078125 x 100)) = floor(217.27) = 217; TN=F 115.078125 -> 116.875000; gross = 217 x 100 x (116.875000 - 115.078125) = $38,992.19; costs = 217 x 2 x ($0.60 + $3.125) = $1616.65; net $37,375.54. Simulation: gross $38,992.19, costs $1616.65, net $37,375.54. Matches.
 - **B 2008-01-28 -> 2008-01-31 long 7 MTNH8 (hypothetical, IEF model)** (by hand from raw Yahoo files): sizing price 121.814 (synthetic: 6%/9.5y bond at ^TNX x calibration); size floor(2.8 x 0.885 x $37,604 / (121.814 x 100)) = 7; 01-29 IEF -0.401% - bill 0.0062%; 01-30 IEF -0.045% - bill 0.0061%; 01-31 IEF +0.514% - bill 0.0059%; price x prod(1 + excess/0.885) = 121.8806; gross = 7 x 100 x (121.8806 - 121.8141) = $46.52; costs $52.15; net $-5.63. Simulation: gross $46.52, costs $52.15, net $-5.63. Matches.
 
 ## Caveats
@@ -332,7 +335,7 @@ Sharpe 0.91; 2023+ holdout
   years use today's contract specs on index/ETF data.
 - **Leg-B model risk.** TN=F settles ~15:00 ET, IEF closes 16:00, the bot trades 15:55-15:58; Yahoo's front contract is
   not the bot's contract in Feb/May/Aug/Nov; the IEF model / 0.885 is a fixed-beta proxy. The two models differ by
-  17bp of notional per trade (1 sd).
+  18bp of notional per trade (1 sd).
 - **Costs.** 1/32 slippage on a ~$10.8k contract is ~2.9bp per side, large relative to a few-bp-per-day edge.
 - **Leverage and gap risk.** Gross exposure on the last day: SPY 1x + MES up to 2.85x (3x nearest) + MTN ~2.5x notional.
   The bot's bond disaster stop (4% of equity) and decay monitor (de-risk/stop) are not modelled.

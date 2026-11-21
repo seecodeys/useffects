@@ -16,8 +16,9 @@ HARD_MAX_BOND_LEVERAGE = 6.0     # ZN notional / net liquidation
 HARD_MAX_BOND_CONTRACTS = 50
 # hedge: beta of IEF daily returns on the futures' daily returns, 2017-2026 (roll days excluded): ZN 1.13 (corr 0.96),
 # TN (MTN's underlying, Ultra 10-Year) 0.885 (corr 0.96). cost = IBKR all-in estimate per contract per side.
-BOND_SPECS = {"ZN": dict(multiplier=1000.0, hedge=1.14, cost=1.70, max_contracts=50, cash_settled=False),
-              "MTN": dict(multiplier=100.0, hedge=0.885, cost=0.60, max_contracts=400, cash_settled=True)}
+BOND_SPECS = {"ZN": dict(multiplier=1000.0, hedge=1.14, cost=1.70, max_contracts=50, default_contracts=20, cash_settled=False),
+              "MTN": dict(multiplier=100.0, hedge=0.885, cost=0.60, max_contracts=400, default_contracts=200,
+                          cash_settled=True)}
 HARD_MAX_TOTAL_LEVERAGE = 8.0    # all futures notional of both legs / net liquidation
 
 
@@ -87,7 +88,7 @@ class BondConfig:
     roll_buffer_days: int = 5        # contract's first notice day must be > exit date + this many business days
     sizing_rounding: str = "floor"
     max_leverage: float = 4.5        # ZN notional / net liq ceiling (2.8 x 1.14 = 3.19 at full size)
-    max_contracts: int = 20
+    max_contracts: int = 0           # 0 = per instrument: ZN 20, MTN 200 (MTN is 1/10 the size)
     disaster_stop_pct_equity: float = 0.04   # flatten if the bond overlay loses 4% of equity (~1.25% ZN move); 0 = off
     disaster_poll_s: int = 30
     auto_derisk: bool = True         # bond decay monitor (SPRT) can halve or stop the leg
@@ -214,6 +215,8 @@ class Config:
             errs.append(f"bond.instrument must be one of {sorted(BOND_SPECS)}")
         elif bd.hedge_ratio == 0:
             bd.hedge_ratio = BOND_SPECS[bd.instrument]["hedge"]
+        if bd.instrument in BOND_SPECS and bd.max_contracts == 0:
+            bd.max_contracts = BOND_SPECS[bd.instrument]["default_contracts"]
         if bd.sizing_rounding not in ("floor", "nearest"):
             errs.append("bond.sizing_rounding must be floor or nearest")
         if not (0 < bd.leverage * bd.hedge_ratio <= bd.max_leverage):

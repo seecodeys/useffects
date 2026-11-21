@@ -106,6 +106,7 @@ PREV_10Y_PERIODS = {
     ('nearest', '2023+ holdout'): {'CAGR %': 35.518, 'Sharpe': 1.611, 'max DD %': -11.089, 'alpha %/yr': 11.838, 'B win %': 56.522, 'B avg % acct': 0.164},
 }
 PREV_10Y_TODAY_18K = "3 x 10Y (2.42x IEF-equivalent)"
+PREV_10Y_B_GROSS_BP, PREV_10Y_B_COSTS = 14.906, 73626.3   # leg-B gross bp of notional per trade; fees + slippage $
 # =============================================================================
 
 
@@ -604,6 +605,11 @@ def main():
     bb = tr[(tr.leg == "B") & (tr.contracts > 0)]
     info["contracts_by_month"] = bb.contract.str[3].map({"H": "Mar", "M": "Jun", "U": "Sep", "Z": "Dec"}).value_counts().to_dict()
     info["b_lev"] = (bb.lev_x_netliq.mean(), bb.lev_x_netliq.min(), bb.ief_equiv_lev.mean())
+    cap = bb[bb.contracts >= B_MAX_CONTRACTS]
+    info["n_capped"] = len(cap); info["first_capped"] = str(cap.entry_date.iloc[0]) if len(cap) else "-"
+    info["b_gross_bp"] = (1e4 * bb.gross_pnl / bb.position_notional).mean()
+    info["b_costs"] = (bb.commissions + bb.slippage).sum()
+    info["prev_b_gross_bp"], info["prev_b_costs"] = PREV_10Y_B_GROSS_BP, PREV_10Y_B_COSTS
     SPOT = spot_check(tr)
 
     pd.set_option("display.width", 250); pd.set_option("display.max_columns", 60)
@@ -693,7 +699,7 @@ been traded this way.
 | Leg B win rate, avg net per trade | {f(hf("B win %"))}%, {f(hf("B avg % acct"), 2)}% (${hf("B avg net $"):,.0f}) | {f(hn("B win %"))}%, {f(hn("B avg % acct"), 2)}% | {f(zn("B win %"))}%, {f(zn("B avg % acct"), 2)}% | |
 | Leg B avg contracts, avg notional / net liq | {hf("B avg contracts"):.0f}, {hf("B avg lev x"):.2f}x | {hn("B avg contracts"):.0f}, {hn("B avg lev x"):.2f}x | | |
 | Total costs (fees + slippage + SPY rebalancing) | ${hf("costs $"):,.0f} | ${hn("costs $"):,.0f} | ${zn("costs $"):,.0f} | |
-| Contracts a fresh $18k account trades today | A: {CN[CN["account $"] == E]["A full floor (lev x)"].iloc[0]} full / {CN[CN["account $"] == E]["A half floor (lev x)"].iloc[0]} half size; B: **{nb18} MTN** | A: 1 / 1; B: {nb18} MTN | B: 0 ZN | |
+| Contracts a fresh $18k account trades today | A: {CN[CN["account $"] == E]["A full floor (lev x)"].iloc[0]} full / {CN[CN["account $"] == E]["A half floor (lev x)"].iloc[0]} half size; B: **{nb18} MTN** | A: {CN[CN["account $"] == E]["A full nearest (lev x)"].iloc[0]} / {CN[CN["account $"] == E]["A half nearest (lev x)"].iloc[0]}; B: {nb18} MTN | B: 0 ZN | |
 
 Stress costs (2 ticks per side on MES and 2/32 on MTN): A floor CAGR **{f(g(E, "MTN, A floor, stress costs", "CAGR %"))}%**
 (Sharpe {f(g(E, "MTN, A floor, stress costs", "Sharpe"), 2)}), A nearest {f(g(E, "MTN, A nearest, stress costs", "CAGR %"))}%.
@@ -712,10 +718,13 @@ A nearest {f(g(E, "MTN, A nearest, B P&L = IEF-minus-bills model throughout", "C
 Stress costs: {f(g(E, "MTN, A floor, stress costs", "CAGR %"))}% now vs {f(pv(E, "A floor, stress costs", "CAGR %"))}% before;
 B on the IEF model throughout: {f(g(E, "MTN, A floor, B P&L = IEF-minus-bills model throughout", "CAGR %"))}% now vs
 {f(pv(E, "A floor, B P&L = IEF-minus-bills model", "CAGR %"))}% before (the 10Y used duration-based sizing at 2.81x, MTN uses
-2.8 x 0.885 and whole $10.8k contracts, so the two IEF-model runs are not identical). The difference to the previous
-headline is mostly the pricing model, not the instrument: the yield-future run priced leg B on ^TNX, which misses the
-carry and IEF's month-end basket effect; a *price* future (MTN) is an excess-return bond position, so it earns the
-carry that a yield future does not (see "Leg-B models" below).
+2.8 x 0.885 and whole $10.8k contracts, so the two IEF-model runs are not identical). Why MTN beats the previous
+headline: leg B earned {info["b_gross_bp"]:.1f}bp of notional gross per trade vs {info["prev_b_gross_bp"]:.1f}bp in the yield-future run
+(^TNX missed carry and IEF's month-end basket effect; a *price* future is an excess-return bond position and tracks
+the IEF model, see "Leg-B models" below). Against that, MTN costs more: leg-B fees + slippage ${info["b_costs"]:,.0f} vs
+${info["prev_b_costs"]:,.0f}, and floor rounding plus the 400-contract cap ({info["n_capped"]} trades capped, all from
+{info["first_capped"]}) leave {info["b_lev"][2]:.2f}x IEF-equivalent on average instead of 2.81x. Net: B averages
+{f(hf("B avg % acct"), 3)}% of the account per trade vs {f(of("B avg % acct"), 3)}% before.
 
 ![equity](equity_18k.png)
 
