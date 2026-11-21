@@ -30,3 +30,20 @@ V4 raw 0.5 CWB + 0.5 PFF W3
 Permutation control (gross residual, random 3-session window in same month):
   perm CWB train: W3 resid +13.9 bp/mo vs random-window mean -3.0 (sd 6.7), one-sided p 0.004, n months 57
   perm CWB valid: W3 resid +3.9 bp/mo vs random-window mean -1.5 (sd 8.2), one-sided p 0.262, n months 95
+  perm PFF train: W3 resid +37.5 bp/mo vs random-window mean -4.1 (sd 26.6), one-sided p 0.060, n months 81
+  perm PFF valid: W3 resid +11.7 bp/mo vs random-window mean -8.3 (sd 9.2), one-sided p 0.011, n months 95
+
+Yearly net bp (2015-22):
+      V1 CWB-bs*SPY-bb*IEF W3  V2 PFF-bs*SPY-bb*IEF W3  V3 pooled 0.5 resid CWB + 0.5 resid PFF W3  V4 raw 0.5 CWB + 0.5 PFF W3
+Date                                                                                                                           
+2015                    108.4                     29.3                                        68.8                         -8.9
+2016                   -201.0                    151.5                                       -24.7                        227.9
+2017                   -238.9                   -143.1                                      -191.0                        108.1
+2018                   -318.5                     94.4                                      -112.1                         58.9
+2019                    -69.6                    -83.7                                       -76.7                        140.1
+2020                    269.4                   -429.7                                       -80.2                        144.1
+2021                    147.0                    676.0                                       411.5                       -264.4
+2022                   -124.2                    120.9                                        -1.7                        744.2
+
+gate: {'V1 CWB-bs*SPY-bb*IEF W3': np.False_, 'V2 PFF-bs*SPY-bb*IEF W3': np.False_, 'V3 pooled 0.5 resid CWB + 0.5 resid PFF W3': np.False_, 'V4 raw 0.5 CWB + 0.5 PFF W3': np.False_}
+registry size: 4

@@ -1411,3 +1411,9 @@ TIPS flagged via fiscaldata inflation_index_security=Yes. Long breakeven (8×ΔT
 TIPS-settle months only +0.4 / −0.3; TIP−0.726·IEF TIPS months +0.8 / +0.8; all months +1.4 / +0.8. No supply effect;
 since 2015 a TIPS issue settles every month (flag untestable in valid). TIP's month-end bid (280) is the nominal Treasury
 bid — ~0 left after an IEF hedge. Dead.
+
+## 376 — Convertibles/preferreds month-end bid beyond the Treasury hedge (idea E3; agent-run, results/agent_376.md)  ·  2026-11-21
+CWB index rebalances on the last business day (SSGA). Residual = ETF − βs·SPY − βb·IEF (trailing betas), last 3 sessions,
+2bp/side/leg. CWB residual +0.9 / −0.6; PFF residual +1.6 / +0.6; pooled +1.7 / −0.0; raw CWB+PFF +2.3 / +1.1 (timing t
++0.8 / +0.5). PFF has a small extra pre-cost bid (random-window p 0.011) eaten by hedge costs. Dead/weak — nothing beyond
+the curve bid.
