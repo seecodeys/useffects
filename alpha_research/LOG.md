@@ -1149,3 +1149,8 @@ Follow sign(09:30→15:30) over 15:30→16:00 on the SPX CFD, direction taken fr
 (gross +2.2bp/day 2010-14, +0.4bp 2015-22; net of the 1bp round trip ~0 or negative). Fails the gate; no holdout look.
 Note: the large negative t of the clock-fixed 290 'fade' was mostly the cost drag on a ~zero gross edge — neither
 momentum nor reversal survives costs. Dead. Registry: 494.
+
+## 339 — Broker-dealer capital shocks → credit/equity premia (He-Kelly-Manela; agent-run, results/agent_339.md)  ·  2026-11-21
+Shock month = dealer basket (GS/MS/JPM/C/BAC) minus SPY in the bottom quintile (cut from 2000-14); 36 train / 20 valid
+months; lag-1, credit duration-hedged with IEF. HYG−0.5 IEF +0.0 / +0.4; LQD−1.1 IEF −0.8 / +0.1; long SPY −0.1 / +0.8;
+size-scaled HYG +/− ~0. 2008-09 shocks were followed by further losses. Dead.
