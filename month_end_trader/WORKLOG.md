@@ -127,7 +127,7 @@ Treasury bid, long ZN over the last 3 sessions). Backtest with IBKR costs: backt
 - [x] Review round 8 (5 findings, no P&L/ownership bugs) fixed: disagreement flag resets when sources agree, bot waits
       while the user's MET-<date>-manual order is working (no double close), Unknown/Timeout entries wait for executions,
       guard re-read only for new mismatches, mismatch flag clears. 189 tests
-- [x] Full replay of all 291 TLT-era month-ends (MET_SLOW=1) after round 8: 291/291 match the paper ledger
+- [x] Full replay of all 291 TLT-era month-ends (MET_SLOW=1) after round 8: 291/291 match the paper ledger; re-run 2026-11-21 after the two-leg refactor and all B-round fixes: 291/291
 - [x] Review round 9 (monitor/CLI/deploy, 6 findings) fixed: Telegram delivery checked + retries + dedupe released on
       failure + `met alert-test`, provisional signal/check before T-1's close, atomic monitor.json + robust `status`,
       explicit edge_dead flag + half-size recovery, kill/unkill permission errors explained (docker exec), intraday shares
