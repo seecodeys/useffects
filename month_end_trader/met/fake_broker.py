@@ -283,8 +283,8 @@ class FakeBroker(Broker):
         if not self.is_connected():
             self.orders.append(dict(id=oid, ref=ref, action=action, qty=qty, status="NotConnected"))
             return OrderResult(oid, "Rejected", qty, 0, 0.0, "not connected")
-        from .executor import futures_open
-        if not futures_open(self.clock.now()):
+        from .executor import futures_open, rates_futures_open
+        if not (rates_futures_open if contract.symbol == "ZN" else futures_open)(self.clock.now()):
             self.orders.append(dict(id=oid, ref=ref, action=action, qty=qty, status="Rejected", t=self.clock.now()))
             return OrderResult(oid, "Rejected", qty, 0, 0.0, "market closed (simulated)")
         if self.reject_next > 0:

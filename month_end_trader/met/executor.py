@@ -84,6 +84,16 @@ def futures_open(now: dt.datetime) -> bool:
     return True
 
 
+def rates_futures_open(now: dt.datetime) -> bool:
+    """CBOT Treasury futures: same weekly/daily schedule as CME equity futures, but on NYSE half days and NYSE
+    weekday holidays the rates session halts at 12:00 CT = 13:00 ET (not 13:15)."""
+    t, d = now.time(), now.date()
+    if now.weekday() < 5 and (cal.is_session(d) and cal.is_early_close(d) or not cal.is_session(d)) \
+            and dt.time(13) <= t < dt.time(18):
+        return False
+    return futures_open(now)
+
+
 class Executor:
     """Leg A (013 month-end, MES/ES open->close). The bond leg (bond.py) subclasses this and overrides the
     leg-specific hooks below; ownership, exits, reconcile and late-fill handling are shared."""
@@ -106,6 +116,9 @@ class Executor:
     @property
     def disaster_pct(self) -> float:
         return self.cfg.guardrails.disaster_stop_pct_equity
+
+    def market_open(self, now: dt.datetime) -> bool:
+        return futures_open(now)
 
     def State(self, d) -> TradeState:
         return TradeState(self.cfg.monitoring.state_dir, str(d), prefix=self.STATE_PREFIX)
@@ -474,7 +487,7 @@ class Executor:
         nxt = st.get("next_exit_try")
         if nxt and now < dt.datetime.fromisoformat(nxt):
             return False
-        if not futures_open(now):
+        if not self.market_open(now):
             if not st.get("closed_market_alerted"):
                 what = "an unresolved trade (fills and broker disagree)" if st.get("disagree_rounds") else "an open position"
                 self.alert.critical(f"{trade_date}: futures market closed with {what}", "will retry when CME reopens")
@@ -634,7 +647,7 @@ class Executor:
                 day = dt.date.fromisoformat(d)
                 if st.owned == 0:
                     self.reconcile(day, st)
-                if st.owned != 0 and futures_open(now):
+                if st.owned != 0 and self.market_open(now):
                     la = self._unfinished_alert.get(d)
                     if not la or (now - la).total_seconds() > 3600:
                         self._unfinished_alert[d] = now
@@ -693,11 +706,32 @@ class Executor:
                 lines.append("decay monitor: " + json.loads(mp.read_text()).get("status", "?"))
             except Exception:
                 pass
+        if self.cfg.bond.enabled:
+            lines += self._bond_status_lines(now)
         self.alert.info("Weekly status: bot running", "\n".join(lines))
         try:
             mark.write_text(key)
         except OSError:
             pass
+
+    def _bond_status_lines(self, now) -> list:
+        out = []
+        try:
+            from .bond import window_for
+            E, X = window_for(now.date(), self.cfg.bond.hold_sessions)
+            st = TradeState(self.cfg.monitoring.state_dir, str(X), prefix="bond")
+            out.append(f"bond leg: next window {E} -> {X} (state {st.phase}), {self.cfg.bond.leverage:g}x IEF-equivalent")
+            if self.broker.is_connected():
+                zp = self.broker.all_future_positions(self.cfg.bond.instrument)
+                out.append(f"{self.cfg.bond.instrument} positions: " +
+                           (", ".join(f"{p.local_symbol} {p.quantity:+g}" for p in zp) or "none"))
+            bp = Path(self.cfg.monitoring.state_dir) / "bond_monitor.json"
+            if bp.exists():
+                import json
+                out.append("bond decay monitor: " + json.loads(bp.read_text()).get("status", "?"))
+        except Exception as ex:
+            out.append(f"bond status unavailable ({ex.__class__.__name__})")
+        return out
 
     def overnight_guard(self, d: dt.date):
         if d in self._overnight_checked:

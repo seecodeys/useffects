@@ -31,7 +31,7 @@ from pathlib import Path
 from . import calendar as cal
 from .broker import Broker
 from .config import Config, HARD_MAX_BOND_CONTRACTS, HARD_MAX_BOND_LEVERAGE
-from .executor import Executor, PERMANENT_PREFIXES, futures_open
+from .executor import Executor, PERMANENT_PREFIXES, rates_futures_open
 from .guardrails import size_contracts
 from .state import StateCorrupt, kill_switch_active
 
@@ -257,6 +257,9 @@ class BondExecutor(Executor):
     def disaster_pct(self) -> float:
         return self.cfg.bond.disaster_stop_pct_equity
 
+    def market_open(self, now: dt.datetime) -> bool:
+        return rates_futures_open(now)
+
     def entry_date(self, st) -> dt.date:
         p = st.get("plan") or {}
         if p.get("entry_date"):
@@ -268,18 +271,43 @@ class BondExecutor(Executor):
         E = entry_session(X, b.hold_sessions)
         _, cE = cal.session_open_close(E)
         _, cX = cal.session_open_close(X)
-        entry = cE - dt.timedelta(seconds=b.entry_lead_s)
+        # half days: CBOT rates close at 13:00 ET with the NYSE, so leave room for exit retries before it
+        lead_e = max(b.entry_lead_s, b.half_day_lead_s) if cal.is_early_close(E) else b.entry_lead_s
+        lead_x = max(b.exit_lead_s, b.half_day_lead_s) if cal.is_early_close(X) else b.exit_lead_s
+        entry = cE - dt.timedelta(seconds=lead_e)
         return dict(E=E, X=X, close_entry=cE, close=cX,
                     preflight=cE - dt.timedelta(minutes=30),
                     entry=entry,
                     entry_deadline=min(entry + dt.timedelta(seconds=b.entry_grace_s), cE - dt.timedelta(seconds=20)),
                     entry_reconcile=cE + dt.timedelta(minutes=10),
-                    exit=cX - dt.timedelta(seconds=b.exit_lead_s),
+                    exit=cX - dt.timedelta(seconds=lead_x),
                     reconcile=cX + dt.timedelta(minutes=2 if cal.is_early_close(X) else 10),
                     report=cX + dt.timedelta(hours=2))
 
-    def announce(self, trade_date):            # the PLANNED alert on the entry day is the announcement
-        return
+    def announce(self, X):
+        """Evening before the entry session: proof the leg is armed (contract, size estimate, times)."""
+        st = self.State(X)
+        if st.get("announced") or st.get("announce_attempts", 0) >= 3:
+            return
+        tm = self.times(X)
+        if not self.broker.is_connected():
+            n = st.get("announce_attempts", 0) + 1
+            st.update(self.ts(), note="announce: broker not connected", announce_attempts=n)
+            if n == 1:
+                self.alert.critical(f"{X}: broker not connected the evening before the bond entry",
+                                    f"fix IB Gateway before {tm['preflight']:%a %H:%M} ET")
+            return
+        try:
+            plan, blockers, warnings = bond_preflight(self.cfg, self.broker, X, check_only=True)
+        except Exception as e:
+            plan, blockers, warnings = None, [f"check crashed: {e!r}"], []
+        if plan:
+            body = (f"tomorrow {tm['entry']:%H:%M} ET: BUY ~{plan.qty} {plan.contract_local_symbol} "
+                    f"(~{plan.ief_equiv_leverage:.2f}x IEF-equivalent), exit {X} {tm['exit']:%H:%M} ET")
+        else:
+            body = "provisional check BLOCKED (re-checked at the preflight):\n" + "\n".join(blockers)
+        self.alert.info(f"Bond window {tm['E']} -> {X} starts tomorrow", body + ("\n" + "\n".join(warnings) if warnings else ""))
+        st.update(self.ts(), note="announced", announced=True)
 
     def do_preflight(self, X: dt.date, st):
         tm = self.times(X)
@@ -318,7 +346,7 @@ class BondExecutor(Executor):
     def guard_while_holding(self, trade_date, st, exit_time):
         """Overnight / weekend: when CBOT is closed, only the kill switch is checked (the exit then waits for the
         reopen). While it trades: the full leg-A guard set (disaster stop, mismatch, kill switch)."""
-        if futures_open(self.broker.now()):
+        if self.market_open(self.broker.now()):
             return super().guard_while_holding(trade_date, st, exit_time)
         if kill_switch_active(self.cfg.monitoring.state_dir):
             self.alert.critical(f"{trade_date}: kill switch while holding (market closed) -> flatten at the reopen")
@@ -358,6 +386,15 @@ class BondExecutor(Executor):
                 self.alert.critical("disconnected while a bond position may be open", ", ".join(self.unfinished()))
 
         if today < E:
+            prev = cal.previous_session(E)
+            ann_t = cal.session_open_close(prev)[1] + dt.timedelta(minutes=30)
+            if today == prev and now >= ann_t:
+                try:
+                    self.announce(X)
+                except StateCorrupt:
+                    pass
+            elif today == prev:
+                nxt.append(ann_t)
             nxt.append(tm["preflight"])
         else:
             try:

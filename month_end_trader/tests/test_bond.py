@@ -121,14 +121,14 @@ def test_happy_path_both_legs(benv):
 
 def test_november_window_uses_march_contract_and_half_day(benv):
     """Nov 2025: X = Fri 28 Nov (1 pm close), E = Mon 24 Nov; Thanksgiving inside the hold. Dec contract's first
-    notice day is 28 Nov -> March contract; exit at 12:58."""
+    notice day is 28 Nov -> March contract; exit at 12:50 (CBOT rates halt 13:00)."""
     cfg, clock, b, d, alerts, bx = benv(dt.datetime(2025, 11, 24, 8, 0), zn_fn=drift())
     run(d, clock, dt.datetime(2025, 11, 28, 18, 0))
     s = bst(cfg, dt.date(2025, 11, 28))
     assert s.phase == "FLAT" and s.get("plan")["contract_local_symbol"] == "ZNH6"
     zo = zn_orders(b)
     assert zo[0]["t"].date() == dt.date(2025, 11, 24)
-    assert zo[1]["t"].date() == dt.date(2025, 11, 28) and dt.time(12, 58) <= zo[1]["t"].time() < dt.time(13, 0)
+    assert zo[1]["t"].date() == dt.date(2025, 11, 28) and dt.time(12, 50) <= zo[1]["t"].time() < dt.time(12, 51)
 
 
 def test_restart_mid_hold_keeps_ownership(benv):
@@ -334,3 +334,46 @@ def test_default_total_cap_allows_both_legs(benv):
     run(d, clock, dt.datetime(2025, 9, 30, 20, 0))
     assert TradeState(cfg.monitoring.state_dir, "2025-09-30").phase == "FLAT"
     assert bst(cfg, dt.date(2025, 9, 30)).phase == "FLAT"
+
+
+def test_announce_evening_before_entry(benv):
+    cfg, clock, b, d, alerts, bx = benv(dt.datetime(2025, 9, 24, 8, 0), zn_fn=drift())
+    run(d, clock, dt.datetime(2025, 9, 24, 17, 0))
+    msgs = [(t, body) for l, t, body in alerts if "Bond window" in t]
+    assert len(msgs) == 1 and "2025-09-25 -> 2025-09-30" in msgs[0][0] and "BUY ~3 ZNZ5" in msgs[0][1]
+    run(d, clock, dt.datetime(2025, 9, 24, 23, 0))
+    assert len([1 for l, t, _ in alerts if "Bond window" in t]) == 1            # once
+
+
+def test_weekly_status_includes_bond(benv):
+    cfg, clock, b, d, alerts, bx = benv(dt.datetime(2025, 9, 29, 7, 0), zn_fn=drift())
+    run(d, clock, dt.datetime(2025, 9, 29, 8, 30))
+    body = next(body for l, t, body in alerts if "Weekly status" in t)
+    assert "bond leg: next window" in body and "ZN positions" in body
+
+
+def test_rates_hours_half_day_and_holiday():
+    from met.executor import futures_open, rates_futures_open
+    ET = cal.ET
+    hd = dt.datetime(2025, 11, 28, 13, 5, tzinfo=ET)            # Black Friday 13:05: CME equity open, CBOT rates shut
+    assert futures_open(hd) and not rates_futures_open(hd)
+    assert rates_futures_open(dt.datetime(2025, 11, 28, 12, 55, tzinfo=ET))
+    assert rates_futures_open(dt.datetime(2025, 11, 30, 18, 30, tzinfo=ET))      # Sunday reopen
+    assert not rates_futures_open(dt.datetime(2025, 11, 27, 14, 0, tzinfo=ET))   # Thanksgiving afternoon
+
+
+def test_half_day_exit_retries_stay_before_rates_close(benv):
+    """Three rejected exit rounds on the 1 pm close still flatten before 13:00 ET (no weekend carry)."""
+    cfg, clock, b, d, alerts, bx = benv(dt.datetime(2025, 11, 24, 8, 0), zn_fn=drift())
+    run(d, clock, dt.datetime(2025, 11, 28, 12, 45))
+    b.reject_next = 3
+    run(d, clock, dt.datetime(2025, 11, 28, 18, 0))
+    s = bst(cfg, dt.date(2025, 11, 28))
+    sells = [o for o in zn_orders(b) if o["action"] == "SELL" and o["status"] != "Rejected"]
+    assert s.phase == "FLAT" and b.zn_pos == 0 and sells[0]["t"].time() < dt.time(13, 0)
+
+
+def test_roll_buffer_capped():
+    c = Config(); c.ib.account = "DU1"; c.bond.roll_buffer_days = 19
+    with pytest.raises(ConfigError, match="roll_buffer_days"):
+        c.validate()

@@ -4,7 +4,10 @@ IBKR-side requirements:
   * API enabled (Configure > API > Settings), 'Read-Only API' OFF, trusted IP 127.0.0.1
   * 'Bypass Order Precautions for API orders' ON (or raise the precautionary size/value limits), otherwise a
     multi-contract market order can be rejected (error 201/383) at 09:30:01
-  * US futures trading permission; CME real-time L1 data (MES/ES); US equity data for SPY/TLT daily bars
+  * US futures trading permission; CME real-time L1 data (MES/ES) AND CBOT real-time L1 data (ZN, bond leg) on the
+    API username (e.g. the non-pro US Securities Snapshot and Futures Value Bundle); US equity data for SPY/TLT bars
+  * ZN (bond leg) is physically delivered: IBKR closes out / blocks longs a few days before first notice; the bot
+    only uses contracts whose first notice day is > bond.roll_buffer_days sessions after the exit
   * Gateway auto-restart time OUTSIDE 09:00-16:30 ET (it is set in the machine's local timezone)
   * Preferably a dedicated second IBKR username for the API: logging into TWS/Mobile with the same username
     causes error 10197 (no market data) or logs the Gateway out

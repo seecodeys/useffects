@@ -26,12 +26,14 @@ Treasury bid, long ZN over the last 3 sessions). Backtest with IBKR costs: backt
 ## TODO (take the top unchecked item each check-in)
 - [ ] Review round B1 (agents): bond leg correctness (ownership across days, exits, half days, holidays, CBOT hours
       vs futures_open, first notice), and daemon interplay of legs A and B on the month-end day
-- [ ] Review round B2 (agents): IBKR adapter for ZN (CBOT contract details: lastTradeDateOrContractMonth semantics,
-      multiplier '1000', price increments 1/64 & 1/128, what-if margin with an open ZN position, market data permission)
+- [x] Review round B2 (IBKR adapter for ZN; reviews/B2_ibkr_zn.md): fixed CBOT half-day hours (rates_futures_open,
+      13:00 ET halt; bond.half_day_lead_s -> 12:50 ET on 1 pm closes), roll_buffer_days capped at 15, CBOT data
+      requirement documented. Paper-verify: localSymbol format, market orders at Sunday 18:00 reopen, IB close-out date
+- [x] Weekly status + evening-before announcement include leg B
 - [ ] Dry run + rehearsal with both legs (met dry-run / met rehearse) incl. ledger comparison for leg B (IEF paper)
 - [ ] Historical replay of leg B over all month-ends 2003-2026 on the FakeBroker (ZN path from IEF), compare to ledger
-- [ ] Weekly status / announce: include leg B (next window, position, bond monitor status)
-- [ ] CBOT holiday/early-close calendar for Treasury futures (SIFMA early closes 14:00 ET; Good Friday) vs futures_open
+- [ ] CBOT holiday/early-close calendar: SIFMA-only early closes (14:00 ET, e.g. day before Good Friday / Christmas Eve when
+      NYSE is a full day) and Good Friday rates sessions - check whether any E/X ever falls on one (2003-2030)
 - [ ] README + PAPER_TEST.md: leg B section (ZN permissions, CBOT data, first paper window 24 -> 30 Nov 2026)
 - [x] Combined-exposure guardrail: guardrails.max_total_leverage (default 7x, hard 8x) on all futures notional of
       both legs incl. the new order; permanent blocker (no retries). 3 tests

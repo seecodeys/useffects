@@ -74,6 +74,7 @@ class BondConfig:
     hold_sessions: int = 3
     entry_lead_s: int = 120          # enter 2 min before the NYSE close (15:58 ET; 12:58 on half days)
     exit_lead_s: int = 120
+    half_day_lead_s: int = 600       # on 1 pm closes enter/exit at 12:50 ET (CBOT rates halt at 13:00 ET)
     entry_grace_s: int = 90          # no entry later than entry time + this (and never in the last 20 s)
     fill_timeout_s: int = 30
     roll_buffer_days: int = 5        # contract's first notice day must be > exit date + this many business days
@@ -220,8 +221,10 @@ class Config:
             errs.append("bond.entry_grace_s must be in [0, entry_lead_s - 20]")
         if not (5 <= bd.fill_timeout_s <= 120):
             errs.append("bond.fill_timeout_s must be in [5, 120]")
-        if not (2 <= bd.roll_buffer_days <= 20):
-            errs.append("bond.roll_buffer_days must be in [2, 20]")
+        if not (2 <= bd.roll_buffer_days <= 15):       # >15 can skip to the thin second-deferred contract
+            errs.append("bond.roll_buffer_days must be in [2, 15]")
+        if not (bd.exit_lead_s <= bd.half_day_lead_s <= 1800):
+            errs.append("bond.half_day_lead_s must be in [exit_lead_s, 1800]")
         if not (0 <= bd.disaster_stop_pct_equity < 0.5):
             errs.append("bond.disaster_stop_pct_equity must be in [0, 0.5)")
         if not (5 <= bd.disaster_poll_s <= 300):
