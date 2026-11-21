@@ -21,7 +21,7 @@
 | 276e | Permutation test of the bond bid (2002-22) | IEF +23bp vs random-window +2.7bp; TLT +40 vs +2.6bp; p<0.0002 | — | Month-end window is extreme vs any other 3-day window |
 
 - 2026-11-20 (309, clock-corrected 2026-11-21): 013 passes the delayed-entry test that killed 004/006 — entering at
-  +15.8/+15.4/+14.2bp of the +17.1bp (SPX CFD 2010-22, t 2.4-2.8); same on the Nasdaq-100 CFD.
+  09:35/09:45/10:00 keeps +8.9/+10.1/+10.1bp of the +10.4bp from 09:30 (SPX CFD 2010-22, t 1.4-1.6; corrected clock); same on NSX.
 
 - 2026-11-20 (315): the month-end bond bid replicates on never-used FRED yield data back to 1962: absent 1962-82 (before
   bond indexing), present at ~2-3bp of yield decline per month-end in 1983-92, 1993-2001 and 2002-22 (pre-2002 permutation
