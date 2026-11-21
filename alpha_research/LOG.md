@@ -1185,3 +1185,8 @@ vol-spike re-leveraging (325). Bonus: agent 330 found the HistData clock bug (co
 FRED WMTSECL1 4-week % change (from 2007), known Friday, lag-1, 1bp/side, thresholds from train. Drop <10th pct → short
 TLT 20d −0.4 / +0.7; with UUP rising −0.5 / +1.4; short IEF 10d −0.1 / +0.8; rise >90th → long IEF +0.1 / no events.
 Signs flip between periods (valid gains = 2022); holdings trend down after 2014. Dead.
+
+## 342 — Mutual-fund Oct-31 year-end tax-loss selling / November rebound (agent-run; results/agent_342.md)  ·  2026-11-21
+Sector SPDRs + IWM + 20 country ETFs; long YTD bottom fifth / short top fifth (rank at Oct 20), lag-1, 2bp/side.
+Oct-end→Nov-end −1.0 / +1.8; selling leg Oct 20→31 −0.8 / +0.6; first 10 Nov sessions −1.1 / +2.2; June placebo +0.2 / −0.3.
+Wrong sign in train (losers lagged in 11/15 Novembers); valid gain is 2020+2022. Dead.
