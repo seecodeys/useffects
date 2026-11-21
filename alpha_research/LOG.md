@@ -1342,3 +1342,9 @@ debt/price −0.1 / never fires; long at high free-credit/debt −0.4 / never fi
 SSGA NAV-history files (2006+; raw kept in data/ssga, uncommitted); value dated t treated as known at close t+2, traded
 from t+3. SPY extreme 1-day flow reversal 5d +1.7 / −0.0 (2008/2011); sector 5d flow reversal +0.3 / −1.2; 20d flow
 top/bottom 3 +0.3 / +0.1; single-sector shock reversal vs SPY −0.3 / −1.7. Dead.
+
+## 368 — Treasury auction allotments by end-investor class (agent-run; results/agent_368.md)  ·  2026-11-21
+End-investor allotments (total − SOMA − dealers; independent of 331's dealer share, corr ±0.15), published with a lag
+(assumed public by end of next month from 2009-10, quarterly before) → slow signal, lag-1. Investment-fund share surprise
+10d −0.1 / −0.8; foreign share −0.6 / +0.5; real-money regime IEF vs TLT −1.0 / +0.6; foreign share falling 3 months
+→ short TLT/long SHY +0.9 / +0.3 (9/11 events). Dead.

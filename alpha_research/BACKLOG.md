@@ -326,3 +326,4 @@ is an opening-print artifact (015). New tests use prior-close information only.
 - [x] 363 Bond-ETF ex-dates (agent) — weak; bond-bid data audit clean.
 - [x] 367 FINRA margin debt (agent) — dead.
 - [x] 366 SPDR shares-outstanding flows (agent) — dead.
+- [x] 368 Auction allotments by investor class (agent) — dead.
