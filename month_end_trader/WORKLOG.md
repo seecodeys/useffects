@@ -35,7 +35,8 @@ Treasury bid, long ZN over the last 3 sessions). Backtest with IBKR costs: backt
       13:00 ET halt; bond.half_day_lead_s -> 12:50 ET on 1 pm closes), roll_buffer_days capped at 15, CBOT data
       requirement documented. Paper-verify: localSymbol format, market orders at Sunday 18:00 reopen, IB close-out date
 - [x] Weekly status + evening-before announcement include leg B
-- [ ] Dry run + rehearsal with both legs (met dry-run / met rehearse) incl. ledger comparison for leg B (IEF paper)
+- [x] Dry run + rehearsal with both legs: `met rehearse` prints the 23-30 Nov alert timeline for both legs; `met
+      dry-run` prints leg B trades next to the IEF ledger (Aug-Oct 2025 within ~2bp). ZN path anchored at the run start
 - [x] Historical replay of leg B (tests/test_bond_replay.py): both legs in one daemon through past windows, ZN path
       from IEF closes; every trade within slippage of the IEF ledger, no CRITICAL alerts. 48 sampled windows passed;
       default runs 24, MET_SLOW=1 all 286 (full run 2026-11-21: 286/286 passed, incl. disaster-stop months e.g. 2009-01)

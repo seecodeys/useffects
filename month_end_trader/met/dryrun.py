@@ -61,27 +61,83 @@ def make_env(start: dt.datetime, state_dir: str, spy, tlt, cash=20_000.0, core_s
     return cfg, clock, b, ex, sink
 
 
-def dry_run(months=3, start=dt.datetime(2025, 8, 20, 8, 0), verbose=True):
+def ief_fixture() -> pd.Series:
+    x = pd.read_csv(FIX / "ief.csv")
+    return pd.Series(x["adjclose"].values, index=pd.to_datetime(x["date"]).dt.date)
+
+
+def zn_path_from_ief(ief: pd.Series, hedge: float, p0: float = 110.0, anchor: dt.date | None = None):
+    """ZN price that moves 1/hedge of IEF's adjusted return, stepping at each NYSE close (visible from 15:50 ET).
+    Equal to p0 at `anchor` (default: the first date); relative moves only, so the level stays plausible."""
+    dates = list(ief.index)
+    base = float(ief.loc[max(d for d in dates if d <= anchor)]) if anchor else float(ief.iloc[0])
+
+    def px(now):
+        t = now.astimezone(cal.ET)
+        i = 0
+        lo, hi = 0, len(dates) - 1
+        while lo <= hi:                                   # last session whose close-10m is <= t
+            mid = (lo + hi) // 2
+            d = dates[mid]
+            c = cal.session_open_close(d)[1] if cal.is_session(d) else dt.datetime.combine(d, dt.time(16), tzinfo=cal.ET)
+            if c - dt.timedelta(minutes=10) <= t:
+                i, lo = mid, mid + 1
+            else:
+                hi = mid - 1
+        return p0 * (1 + (float(ief.iloc[i]) / base - 1) / hedge)
+    return px
+
+
+def add_bond_leg(cfg, b, ex, ief: pd.Series | None = None):
+    """Enable leg B on a dry-run env: ZN path from IEF, bond monitor on the same data. Returns the Daemon."""
+    from .bond import BondExecutor
+    from .bond_monitor import run_bond_report
+    from .daemon import Daemon
+    cfg.bond.enabled = True
+    ief = ief_fixture() if ief is None else ief
+    clock = b.clock
+    b.zn_price_fn = zn_path_from_ief(ief, cfg.bond.hedge_ratio, anchor=clock.now().date())
+    rep = lambda d: run_bond_report(cfg, asof=d, ief=ief[[x <= clock.now().date() for x in ief.index]])
+    bx = BondExecutor(cfg, b, ex.alert, ex.fetchers, reporter=rep)
+    return Daemon([ex, bx]), bx
+
+
+def dry_run(months=3, start=dt.datetime(2025, 8, 20, 8, 0), verbose=True, bond=True):
     logging.basicConfig(level=logging.WARNING)
     spy, tlt = load_fixture()
     with tempfile.TemporaryDirectory() as tmp:
         cfg, clock, b, ex, sink = make_env(start.replace(tzinfo=cal.ET), tmp, spy, tlt)
+        runner = ex
+        if bond:
+            runner, _ = add_bond_leg(cfg, b, ex)
         end_month = (pd.Timestamp(start) + pd.offsets.MonthBegin(months)).date()
         stop_at = dt.datetime.combine(end_month, dt.time(8, 0), tzinfo=cal.ET)
-        ex.run_forever(stop=lambda: clock.now() >= stop_at)
+        runner.run_forever(stop=lambda: clock.now() >= stop_at, lock=False)
         from .state import all_trades
         trades = all_trades(tmp)
+        btrades = all_trades(tmp, prefix="bond") if bond else []
         led = paper_ledger(spy, tlt, start=str(start.date()), until=stop_at.date())
         if verbose:
             print(f"dry run {start.date()} -> {stop_at.date()}: {len(b.orders)} orders")
+            print(" leg A (MES):")
             for t in trades:
                 print(f"  {t['trade_date']} {t['phase']:<8} {t.get('plan', {}).get('action', '-'):<4} "
                       f"qty {t.get('entry_filled', 0):>3} entry {t.get('entry_price', 0) or 0:9.2f} "
                       f"exit {t.get('exit_price', 0) or 0:9.2f} bp {t.get('trade_bp', float('nan')):+7.1f} "
-                      f"pnl {t.get('net_pnl', 0) or 0:+10,.0f}")
+                      f"pnl {t.get('net_pnl', 0) or 0:+10,.0f}  size x{(t.get('plan') or {}).get('vol_scale', 1):g}")
             print("  paper ledger:", ", ".join(f"{d}:{v:+.1f}bp" for d, v in led["paper_bp"].items()))
+            if bond:
+                from .bond_monitor import bond_ledger
+                bl = bond_ledger(ief_fixture(), cfg.bond.hold_sessions, start=str(start.date()), until=stop_at.date())
+                print(" leg B (ZN):")
+                for t in btrades:
+                    p = t.get("plan") or {}
+                    print(f"  {p.get('entry_date', '?')} -> {t['trade_date']} {t['phase']:<8} {p.get('contract_local_symbol', '-'):<6} "
+                          f"qty {t.get('entry_filled', 0):>3} IEF-equiv bp {(t.get('trade_bp') or float('nan')) * p.get('hedge_ratio', 1):+7.1f} "
+                          f"pnl {t.get('net_pnl', 0) or 0:+10,.0f}")
+                print("  IEF ledger:", ", ".join(f"{d}:{v:+.1f}bp" for d, v in bl["ief_bp"].items()))
             print("  alerts:")
             for lvl, title, _ in sink:
                 print(f"   [{lvl}] {title}")
-            print(f"  final net liq {b.account_snapshot().net_liquidation:,.0f}; open futures {b.fut_pos}")
+            print(f"  final net liq {b.account_snapshot().net_liquidation:,.0f}; open futures MES {b.fut_pos} ZN {b.zn_pos}")
         return trades, led, sink, b

@@ -393,7 +393,13 @@ def test_rehearsal_next_trade():
     from met.rehearsal import rehearse
     s, b, stamped = rehearse(dt.date(2026, 11, 30), verbose=False)
     titles = [t for _, _, t, _ in stamped]
-    assert s.phase == "FLAT" and [o["action"] for o in b.orders] in (["BUY", "SELL"], ["SELL", "BUY"])
+    mes = [o["action"] for o in b.orders if o["ref"].startswith("MET-")]
+    assert s.phase == "FLAT" and mes in (["BUY", "SELL"], ["SELL", "BUY"])
+    from met.state import TradeState
+    zn = [o for o in b.orders if o["ref"].startswith("MEB-")]
+    assert [o["action"] for o in zn] == ["BUY", "SELL"] and b.zn_pos == 0
+    assert zn[0]["t"].date() == dt.date(2026, 11, 24) and zn[1]["t"].date() == dt.date(2026, 11, 30)
+    assert any("Bond window 2026-11-24 -> 2026-11-30" in t for t in titles)
     assert any("Tomorrow (2026-11-30)" in t for t in titles)
     ann = next(ts for ts, _, t, _ in stamped if "Tomorrow" in t)
     assert ann.date() == dt.date(2026, 11, 27) and ann.time() == dt.time(13, 25)     # half-day T-1
