@@ -15,6 +15,13 @@ launch day). Every leg-B trade before 2024 is a hypothetical MTN with today's sp
 priced without any Ultra 10-Year data (IEF model, synthetic price for sizing). Only 2024 onward could actually have
 been traded this way.
 
+
+> **Independent review (round B5, 2026-11-21):** no look-ahead or accounting error. But this simulation did not cap
+> leg A at the bot's default 40 MES (it reached 183 MES from 2015 on as the account compounded) and used 400 instead
+> of the MTN default 200. **With the bot's default caps the $18k case is 20.7% CAGR (Sharpe 0.97, final $1.58M)
+> instead of 22.7%.** The disaster stops (not modelled) cost roughly another 0.5–1pp. The caps don't bind for a
+> starting $18k account for years; they matter only once it has grown large.
+
 ## Headline: $18,000, base costs
 
 | | MTN, A floor (headline) | MTN, A nearest | B in ZN instead (A floor) | S&P 500 TR |
@@ -81,8 +88,8 @@ $73,626, and floor rounding plus the 400-contract cap (15 trades capped, all fro
   net liq / (price x 100)), max 400, notional <= 4.5x net liq. Net liq at the entry close.
   Average 2.38x notional (min 1.74x) = 2.69x IEF-equivalent
   (target 2.80x). In 2003-2005 the $18k account held 3-6 MTN.
-  The bot's config default `bond.max_contracts` is 20 (the MTN hard cap is 400); this backtest uses 400 as asked,
-  so a live account above ~$90k must raise `bond.max_contracts`.
+  The bot's `bond.max_contracts` default for MTN is 200 (hard cap 400); this backtest used 400. The 200 default binds
+  only above roughly $0.9M. (An earlier version of this note said 20 / ~$90k: that was the ZN default.)
 - **Price used for sizing:** TN=F close from 2016-01-11; before that a synthetic price = price of a 6% coupon 9.5-year
   bond at the ^TNX yield x 1.021 (median TN=F / theoretical ratio 2016-2026, 5-95% range
   1.003-1.059). It only sets the contract count (a few % error at most).
