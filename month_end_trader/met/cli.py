@@ -13,6 +13,9 @@
   python -m met.cli dry-run    [--months N]              full daemon run against the simulated broker
   python -m met.cli rehearse                              alert timeline of the next trade on the simulator
   python -m met.cli validate-data --config config.yaml   compare IBKR ADJUSTED_LAST with Yahoo adjclose (run once)
+  python -m met.cli bond-check  --config config.yaml     leg B: run every bond preflight check for the next window, no orders
+  python -m met.cli bond-report --config config.yaml     leg B: run the bond decay monitor now
+`run`, `status` and `flatten` cover both legs (leg B only when bond.enabled).
 """
 from __future__ import annotations
 
@@ -102,6 +105,11 @@ def main(argv=None):
         res = run_report(cfg)
         print(json.dumps(res, indent=2, default=str)); return 0
 
+    if a.cmd == "bond-report":
+        from .bond_monitor import run_bond_report
+        res = run_bond_report(cfg)
+        print(json.dumps(res, indent=2, default=str)); return 0
+
     if a.cmd == "signal":
         T = cal.next_trade_date_after(now())
         broker = _broker(cfg, connect=False, cli=True)
@@ -143,6 +151,23 @@ def main(argv=None):
                 print(f"monitor (as of {m.get('asof')}): {m.get('summary')}")
             except Exception as e:
                 print(f"monitor.json UNREADABLE ({e}): run `met report`")
+        if cfg.bond.enabled:
+            from .bond import window_for, BondExecutor
+            E, X = window_for(now().date(), cfg.bond.hold_sessions)
+            for d in unfinished(cfg.monitoring.state_dir, prefix="bond"):
+                print(f"!! unfinished BOND trade state {d}: check ZN at the broker / run `met flatten`")
+            try:
+                bs = TradeState(cfg.monitoring.state_dir, str(X), prefix="bond")
+                print(f"bond leg: {cfg.bond.leverage:g}x IEF-equivalent in {cfg.bond.instrument}; next window entry {E} "
+                      f"(close - {cfg.bond.entry_lead_s}s) -> exit {X}; state={bs.phase}")
+            except Exception as e:
+                print(f"!! bond state for {X} is unreadable: {e}")
+            bp = Path(cfg.monitoring.state_dir) / "bond_monitor.json"
+            if bp.exists():
+                try:
+                    print("bond monitor:", json.loads(bp.read_text()).get("summary"))
+                except Exception as e:
+                    print(f"bond_monitor.json UNREADABLE ({e}): run `met bond-report`")
         print("kill switch:", (Path(cfg.monitoring.state_dir) / "KILL").exists())
         return 0
 
@@ -160,9 +185,26 @@ def main(argv=None):
     from .executor import Executor
     from .monitor import run_report
     ex = Executor(cfg, broker, alerter, make_fetchers(cfg, broker, broker.now), reporter=lambda d: run_report(cfg))
+    bx = None
+    if cfg.bond.enabled:
+        from .bond import BondExecutor
+        from .bond_monitor import run_bond_report
+        bx = BondExecutor(cfg, broker, alerter, ex.fetchers, reporter=lambda d: run_bond_report(cfg))
 
     if a.cmd == "run":
-        ex.run_forever(); return 0
+        from .daemon import Daemon
+        Daemon([ex] + ([bx] if bx else [])).run_forever(); return 0
+
+    if a.cmd == "bond-check":
+        from .bond import bond_preflight, window_for
+        E, X = window_for(now().date(), cfg.bond.hold_sessions)
+        plan, blockers, warnings = bond_preflight(cfg, broker, X, today=now().date(), check_only=True)
+        print(f"bond preflight for window {E} -> {X}:", "OK" if plan else "BLOCKED")
+        for x in blockers: print("  BLOCK:", x)
+        for w in warnings: print("  warn:", w)
+        if plan:
+            print(json.dumps(plan.to_dict(), indent=2, default=str))
+        return 0 if plan else 2
 
     if a.cmd == "validate-data":
         from .signal import yahoo_daily
@@ -268,7 +310,35 @@ def main(argv=None):
                 if ex.flatten(dt.date.fromisoformat(d), st, reason="manual flatten"):
                     break
                 broker.sleep(5)
-        print("done. Broker futures positions:", broker.all_future_positions(cfg.strategy.instrument)); return 0
+        if bx is not None:
+            from .bond import window_for
+            _, X = window_for(now().date(), cfg.bond.hold_sessions)
+            bdates = set(unfinished(cfg.monitoring.state_dir, prefix="bond"))
+            bst_x = TradeState(cfg.monitoring.state_dir, str(X), prefix="bond")
+            if bst_x.phase in ("ENTRY_SUBMITTED", "ENTERED", "EXIT_SUBMITTED", "ERROR", "FLAT"):
+                bdates.add(str(X))
+            for d in sorted(bdates):
+                st = TradeState(cfg.monitoring.state_dir, d, prefix="bond")
+                if not st.get("contract_con_id"):
+                    continue
+                c = bx.contract_for(st)
+                if not bx.sync(st):
+                    print(f"BOND {d}: cannot read executions from IB; not acting"); return 2
+                pos = broker.future_position(c)
+                print(f"BOND {d}: state {st.phase}, bot owns {st.owned:+d}, broker {pos:+g} {c.local_symbol}")
+                if pos == 0 or st.owned == 0:
+                    continue
+                if not a.yes and input(f"flatten the bond leg's {st.owned:+d} {c.local_symbol}? [y/N] ") != "y":
+                    return 1
+                if st.phase != "EXIT_SUBMITTED":
+                    st.update(bx.ts(), "EXIT_SUBMITTED", note="manual flatten", exit_reason="manual flatten")
+                for _ in range(6):
+                    st.data.pop("next_exit_try", None)
+                    if bx.flatten(dt.date.fromisoformat(d), st, reason="manual flatten"):
+                        break
+                    broker.sleep(5)
+        print("done. Broker futures positions:", broker.all_future_positions(cfg.strategy.instrument),
+              broker.all_future_positions(cfg.bond.instrument) if bx else ""); return 0
 
     ap.error(f"unknown command {a.cmd}")
 

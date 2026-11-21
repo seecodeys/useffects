@@ -35,6 +35,8 @@ class Plan:
     bond_mtd: float
     signal_sources: list = field(default_factory=list)
     warnings: list = field(default_factory=list)
+    vol_20d: float | None = None     # SPY daily-return std over vol_window sessions ending T-1 (vol tilt)
+    vol_scale: float = 1.0           # 1.0 high-vol month-end, low_vol_scale otherwise (1.0 when tilt is off)
 
     def to_dict(self):
         return asdict(self)
@@ -51,6 +53,51 @@ def size_contracts(net_liq: float, price: float, multiplier: float, leverage: fl
     while qty > 0 and qty * per / net_liq > min(max_leverage, HARD_MAX_LEVERAGE) + 1e-9:
         qty -= 1
     return max(qty, 0), qty * per / net_liq
+
+
+def trailing_vol(closes, trade_date: dt.date, window: int) -> float:
+    """Std of the `window` daily returns of adjusted closes ending at the T-1 close (research 168: rolling std
+    shifted one day). Requires the exact T-1 close and window+1 consecutive closes; raises ValueError otherwise."""
+    import pandas as pd
+    s = pd.Series(closes).dropna()
+    s.index = [pd.Timestamp(i).date() for i in s.index]
+    s = s[~pd.Index(s.index).duplicated(keep="last")].sort_index()
+    t1 = cal.previous_session(trade_date)
+    if t1 not in s.index:
+        raise ValueError(f"close for {t1} missing")
+    s = s[s.index <= t1]
+    want = cal.sessions(t1 - dt.timedelta(days=3 * window + 15), t1)[-(window + 1):]
+    missing = [d for d in want if d not in s.index]
+    if missing:
+        raise ValueError(f"{len(missing)} closes missing in the {window}-day window (first {missing[0]})")
+    r = s.loc[want].pct_change().dropna()
+    v = float(r.std())
+    if not (v == v) or v <= 0:
+        raise ValueError("vol is NaN/zero")
+    return v
+
+
+def vol_scale(cfg: Config, trade_date: dt.date, fetchers: dict) -> tuple[float, float | None, list]:
+    """(size scale, vol, warnings). Sources disagreeing on the regime, or no vol at all -> the low (smaller)
+    size, never the larger one."""
+    s = cfg.strategy
+    if not s.vol_tilt:
+        return 1.0, None, []
+    vols, notes = {}, []
+    for name, fetch in fetchers.items():
+        try:
+            vols[name] = trailing_vol(fetch(cfg.signal.equity), trade_date, s.vol_window)
+        except Exception as e:
+            notes.append(f"vol tilt: source {name} unavailable ({e})")
+    if not vols:
+        return s.low_vol_scale, None, notes + [f"vol tilt: no vol available -> low size x{s.low_vol_scale:g}"]
+    high = {n: v > s.vol_threshold for n, v in vols.items()}
+    v = min(vols.values())
+    if len(set(high.values())) > 1:
+        notes.append("vol tilt: sources disagree on the regime (" + ", ".join(f"{n} {x:.3%}" for n, x in vols.items())
+                     + f" vs threshold {s.vol_threshold:.3%}) -> low size")
+        return s.low_vol_scale, v, notes
+    return (1.0 if all(high.values()) else s.low_vol_scale), v, notes
 
 
 def read_derisk(cfg: Config) -> tuple[float | None, str]:
@@ -134,6 +181,9 @@ def preflight(cfg: Config, broker: Broker, trade_date: dt.date, fetchers: dict,
     if derisk <= 0 and not any("unreadable" in b for b in blockers):
         blockers.append(f"decay monitor says stop trading ({derisk_note})")
 
+    vscale, vol, vnotes = vol_scale(cfg, trade_date, fetchers)
+    warnings.extend(vnotes)
+
     contract = price = None
     try:
         contract = broker.front_future(s.instrument, s.exchange, trade_date + dt.timedelta(days=s.roll_min_days))
@@ -155,12 +205,12 @@ def preflight(cfg: Config, broker: Broker, trade_date: dt.date, fetchers: dict,
     except Exception as e:
         blockers.append(f"futures-vs-{cfg.signal.equity} price sanity check failed: {e}")
 
-    qty, eff = size_contracts(acct.net_liquidation, price, contract.multiplier, s.leverage, derisk,
+    qty, eff = size_contracts(acct.net_liquidation, price, contract.multiplier, s.leverage * vscale, derisk,
                               g.max_leverage, g.max_contracts, s.sizing_rounding)
     if qty < 1:
         blockers.append(f"position size rounds to 0 contracts (net liq {acct.net_liquidation:,.0f}, "
                         f"1 contract = {price * contract.multiplier:,.0f})")
-    if s.leverage * derisk * acct.net_liquidation / (price * contract.multiplier) > g.max_contracts:
+    if s.leverage * vscale * derisk * acct.net_liquidation / (price * contract.multiplier) > g.max_contracts:
         warnings.append(f"size capped at max_contracts={g.max_contracts}")
     if blockers:
         return None, blockers, warnings
@@ -181,5 +231,6 @@ def preflight(cfg: Config, broker: Broker, trade_date: dt.date, fetchers: dict,
                 contract_con_id=contract.con_id, ref_price=price,
                 multiplier=contract.multiplier, net_liq=acct.net_liquidation, target_leverage=s.leverage,
                 effective_leverage=eff, derisk_multiplier=derisk, gap=sig.gap, equity_mtd=sig.equity_mtd,
-                bond_mtd=sig.bond_mtd, signal_sources=[x.to_dict() for x in all_sigs], warnings=warnings)
+                bond_mtd=sig.bond_mtd, signal_sources=[x.to_dict() for x in all_sigs], warnings=warnings,
+                vol_20d=vol, vol_scale=vscale)
     return plan, [], warnings

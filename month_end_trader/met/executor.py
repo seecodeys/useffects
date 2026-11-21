@@ -211,8 +211,16 @@ class Executor:
                 self.alert.warn(f"Signal for {trade_date} not available", "\n".join(problems))
             st.update(self.ts(), note="announce failed: " + "; ".join(problems), announced=False, announce_attempts=n)
             return
+        from .guardrails import vol_scale
+        try:
+            vs, vol, _ = vol_scale(self.cfg, trade_date, self.fetchers)
+        except Exception:
+            vs, vol = 1.0, None
+        lev = self.cfg.strategy.leverage * vs
+        tilt = (f" (vol {vol:.2%}/day {'>' if vs == 1.0 else '<='} {self.cfg.strategy.vol_threshold:.2%}: "
+                f"{'full' if vs == 1.0 else 'reduced'} size)") if self.cfg.strategy.vol_tilt and vol is not None else ""
         body = (f"{self.cfg.signal.equity} MTD {sig.equity_mtd:+.2%}, {self.cfg.signal.bond} MTD {sig.bond_mtd:+.2%}, "
-                f"gap {sig.gap:+.2%} -> {sig.side} {self.instrument} at {self.cfg.strategy.leverage:g}x "
+                f"gap {sig.gap:+.2%} -> {sig.side} {self.instrument} at {lev:g}x{tilt} "
                 f"from the open to the close. Preflight runs 20 min before the open.")
         self.alert.info(f"Tomorrow ({trade_date}) month-end trade: {sig.side}",
                         body + ("\n" + "\n".join(problems) if problems else ""))
@@ -264,7 +272,9 @@ class Executor:
                   contract_con_id=plan.contract_con_id, warnings=warnings)
         self.alert.info(f"{trade_date}: PLANNED {plan.action} {plan.qty} {plan.contract_local_symbol}",
                         f"gap {plan.gap:+.2%}, ref {plan.ref_price:.2f}, net liq {plan.net_liq:,.0f}, "
-                        f"leverage {plan.effective_leverage:.2f}x" + ("\nWarnings: " + "; ".join(warnings) if warnings else ""))
+                        f"leverage {plan.effective_leverage:.2f}x" +
+                        (f", vol {plan.vol_20d:.2%}/day -> size x{plan.vol_scale:g}" if plan.vol_20d is not None
+                         else (f", size x{plan.vol_scale:g} (vol unavailable)" if plan.vol_scale != 1.0 else "")) + ("\nWarnings: " + "; ".join(warnings) if warnings else ""))
 
     def do_entry(self, trade_date: dt.date, st: TradeState, deadline: dt.datetime):
         if kill_switch_active(self.cfg.monitoring.state_dir):

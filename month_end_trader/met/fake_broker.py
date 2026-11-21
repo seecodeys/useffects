@@ -18,6 +18,19 @@ def _third_friday(y, m):
     return d + dt.timedelta(days=(4 - d.weekday()) % 7)
 
 
+def _zn_last_trade(y, m):
+    """ZN last trading day: 7th business day before the last business day of the contract month (approx.)."""
+    d = (pd.Timestamp(y, m, 1) + pd.offsets.MonthEnd(0)).date()
+    while d.weekday() >= 5:
+        d -= dt.timedelta(days=1)
+    n = 0
+    while n < 7:
+        d -= dt.timedelta(days=1)
+        if d.weekday() < 5:
+            n += 1
+    return d
+
+
 class FakeClock:
     def __init__(self, start: dt.datetime):
         self.t = start if start.tzinfo else start.replace(tzinfo=ET)
@@ -71,6 +84,15 @@ class FakeBroker(Broker):
         self.expiries = [_third_friday(y, m) for y in range(1993, 2041) for m in (3, 6, 9, 12)]
         self.commission = 0.62
         self._ids = itertools.count(1)
+        # second instrument: 10y T-note futures (bond leg). Price path: zn_price_fn(now) -> price
+        self.zn_pos = 0
+        self.zn_cost = 0.0
+        self.zn_multiplier = 1000.0
+        self.zn_price_fn = lambda now: 110.0
+        self.zn_tick = 1 / 64
+        self.zn_commission = 1.70
+        self.zn_local = ""
+        self.zn_expiries = [_zn_last_trade(y, m) for y in range(1993, 2041) for m in (3, 6, 9, 12)]
 
     # ---------------------------------------------------------------- connection & time
     def connect(self):
@@ -116,15 +138,19 @@ class FakeBroker(Broker):
                 px = spx
         return px
 
+    def zn_price_now(self) -> float:
+        return float(self.zn_price_fn(self.clock.now()))
+
     def price(self, contract):
         self._need()
         if self.price_unavailable:
             raise BrokerError("no market data (simulated)")
-        return self.fut_price_now()
+        return self.zn_price_now() if contract.symbol == "ZN" else self.fut_price_now()
 
     # ---------------------------------------------------------------- account
     def unrealised(self):
-        return self.fut_pos * self.fut_price_now() * self.multiplier - self.fut_cost * self.multiplier
+        return (self.fut_pos * self.fut_price_now() * self.multiplier - self.fut_cost * self.multiplier +
+                self.zn_pos * self.zn_price_now() * self.zn_multiplier - self.zn_cost * self.zn_multiplier)
 
     def account_snapshot(self):
         self._need()
@@ -146,6 +172,8 @@ class FakeBroker(Broker):
         if shown and not glitch:
             out.append(Position("MES", "FUT", shown, self._local(self._front(self.clock.now().date())),
                                 shown * self.fut_price_now() * self.multiplier))
+        if self.zn_pos and not glitch:
+            out.append(Position("ZN", "FUT", self.zn_pos, self.zn_local, self.zn_pos * self.zn_price_now() * self.zn_multiplier))
         return out
 
     def _front(self, min_expiry):
@@ -157,6 +185,10 @@ class FakeBroker(Broker):
 
     def front_future(self, symbol, exchange, min_expiry):
         self._need()
+        if symbol == "ZN":
+            e = next(x for x in self.zn_expiries if x >= min_expiry)
+            return FutureContract("ZN", e, self.zn_multiplier, "ZN" + "FGHJKMNQUVXZ"[e.month - 1] + str(e.year)[-1],
+                                  con_id=2000 + e.year % 100 * 100 + e.month)
         e = self._front(min_expiry)
         return FutureContract(symbol, e, self.multiplier, self._local(e), con_id=1000 + e.month)
 
@@ -167,11 +199,13 @@ class FakeBroker(Broker):
         now = self.clock.t
         due = [p for p in self._pending if p[0] <= now]
         self._pending = [p for p in self._pending if p[0] > now]
-        for _, action, qty, ref, _vis in due:
-            self._apply_fill(action, qty, ref)
+        for _, action, qty, ref, _vis, *sym in due:
+            self._apply_fill(action, qty, ref, sym[0] if sym else "MES")
 
-    def _apply_fill(self, action, qty, ref):
+    def _apply_fill(self, action, qty, ref, symbol="MES"):
         sgn = 1 if action == "BUY" else -1
+        if symbol == "ZN":
+            return self._apply_zn_fill(sgn, action, qty, ref)
         px = self.fut_price_now() + sgn * 0.25 * self.slippage_ticks
         if self.stale_after_fill:
             self._stale_pos, self._stale_left, self.stale_after_fill = self.fut_pos, self.stale_after_fill, 0
@@ -184,6 +218,22 @@ class FakeBroker(Broker):
         self.execs.append(dict(exec_id=f"E{len(self.execs) + 1}", rev=0, ref=ref, side=action, qty=float(qty), price=px,
                                time=str(self.clock.t), local_symbol=self._local(self._front(self.clock.t.date()))))
         return px
+
+    def _apply_zn_fill(self, sgn, action, qty, ref):
+        px = self.zn_price_now() + sgn * self.zn_tick * self.slippage_ticks / 2
+        if not self.zn_local:
+            self.zn_local = self._last_zn_local or "ZN?"
+        self.zn_pos += sgn * qty
+        self.zn_cost += sgn * qty * px
+        self.cash -= self.zn_commission * qty
+        if self.zn_pos == 0:
+            self.cash -= self.zn_cost * self.zn_multiplier
+            self.zn_cost = 0.0
+        self.execs.append(dict(exec_id=f"E{len(self.execs) + 1}", rev=0, ref=ref, side=action, qty=float(qty), price=px,
+                               time=str(self.clock.t), local_symbol=self.zn_local))
+        return px
+
+    _last_zn_local = ""
 
     def executions(self, ref_prefix):
         self._need()
@@ -201,7 +251,7 @@ class FakeBroker(Broker):
 
     def working_orders(self, ref_prefix="MET-"):
         self._process_pending()
-        return self.stuck_working + sum(1 for p in self._pending if p[4])
+        return self.stuck_working + sum(1 for p in self._pending if p[4] and p[3].startswith(ref_prefix))
 
     def manual_working(self, ref):
         return self.manual_open
@@ -216,6 +266,9 @@ class FakeBroker(Broker):
         self._need()
         nl = self.account_snapshot().net_liquidation
         init = qty * self.fut_price_now() * self.multiplier * 0.079   # ~$2,900 per MES at 7,340
+        if contract.symbol == "ZN":
+            init = qty * self.zn_price_now() * self.zn_multiplier * 0.02          # ~$2,200 per ZN
+        init += abs(self.zn_pos) * self.zn_price_now() * self.zn_multiplier * 0.02 if contract.symbol != "ZN" else 0
         if self.whatif_excess is not None:
             return MarginCheck(nl - self.whatif_excess, nl, init * 0.9)
         return MarginCheck(init, nl, init * 0.9)
@@ -223,6 +276,10 @@ class FakeBroker(Broker):
     # ---------------------------------------------------------------- orders
     def market_order(self, contract, action, qty, ref, timeout_s):
         oid = str(next(self._ids))
+        if contract.symbol == "ZN":
+            self._last_zn_local = contract.local_symbol
+            if self.zn_pos == 0:
+                self.zn_local = contract.local_symbol
         if not self.is_connected():
             self.orders.append(dict(id=oid, ref=ref, action=action, qty=qty, status="NotConnected"))
             return OrderResult(oid, "Rejected", qty, 0, 0.0, "not connected")
@@ -237,13 +294,13 @@ class FakeBroker(Broker):
         if self.fill_delay_next is not None:
             secs, visible = self.fill_delay_next
             self.fill_delay_next = None
-            self._pending.append((self.clock.t + dt.timedelta(seconds=secs), action, qty, ref, visible))
+            self._pending.append((self.clock.t + dt.timedelta(seconds=secs), action, qty, ref, visible, contract.symbol))
             self.clock.advance(0.3)
             self.orders.append(dict(id=oid, ref=ref, action=action, qty=qty, filled=0, status="Pending", t=self.clock.now()))
             return OrderResult(oid, "Unknown" if visible else "Timeout", qty, 0, 0.0, "simulated: fills later")
         fill = qty if self.partial_next is None else min(self.partial_next, qty)
         self.partial_next = None
-        px = self._apply_fill(action, fill, ref)
+        px = self._apply_fill(action, fill, ref, contract.symbol)
         self.clock.advance(0.3)
         status = "Filled" if fill == qty else "PartiallyFilled"
         if self.late_fill_next > 0:

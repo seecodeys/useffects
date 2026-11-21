@@ -9,7 +9,9 @@ ib:
   market_data_type: 1       # 1 = live (needs CME real-time data), 3 = delayed (sizing only)
 
 strategy:
-  leverage: 2.0             # MES notional = 2 x net liquidation, on top of your SPY core
+  leverage: 2.8             # FULL-size MES notional / net liq (research: 2.85), on top of your SPY core
+  vol_tilt: true            # research 168: full size only if SPY 20d vol > 0.837%/day (2002-14 median), else x0.5
+  low_vol_scale: 0.5
   instrument: MES
   sizing_rounding: floor    # floor (never above target) or nearest (closest contract count, capped by max_leverage)
   entry_delay_s: 1          # enter at 09:30:01 ET
@@ -21,8 +23,19 @@ signal:
   sources: [ibkr, yahoo]    # both are computed; if they disagree on direction the month is skipped
   require_agreement: true
 
+bond:                       # leg B: long 10y T-note futures over the last 3 sessions of each month
+  enabled: true
+  leverage: 2.8             # IEF-equivalent notional / net liq; ZN notional = leverage x hedge_ratio (~3.2x)
+  hedge_ratio: 1.14
+  entry_lead_s: 120         # enter 15:58 ET on the 4th-last session, exit 15:58 ET on the month-end session
+  exit_lead_s: 120
+  roll_buffer_days: 5       # never hold a contract within 5 sessions of its first notice day
+  disaster_stop_pct_equity: 0.04   # flatten if the bond overlay loses 4% of equity (checked whenever CBOT trades)
+  max_contracts: 20
+  auto_derisk: true         # bond SPRT monitor can halve or stop the leg
+
 guardrails:
-  max_leverage: 3.0
+  max_leverage: 3.0         # leg A MES notional / net liq ceiling
   max_contracts: 40
   min_net_liq: 10000
   margin_buffer_pct: 0.10

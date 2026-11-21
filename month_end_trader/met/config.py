@@ -12,6 +12,8 @@ HARD_MAX_LEVERAGE = 4.0          # overlay notional / net liquidation
 HARD_MAX_CONTRACTS = 200
 HARD_MIN_EXIT_LEAD_S = 1
 HARD_MAX_ENTRY_GRACE_S = 600
+HARD_MAX_BOND_LEVERAGE = 6.0     # ZN notional / net liquidation
+HARD_MAX_BOND_CONTRACTS = 50
 
 
 class ConfigError(ValueError):
@@ -40,6 +42,12 @@ class StrategyConfig:
     fill_timeout_s: int = 30
     roll_min_days: int = 3           # use the first contract expiring at least this many days after the trade
     sizing_rounding: str = "floor"   # floor: never above target leverage; nearest: closest contract count (still <= max_leverage)
+    # research 168: full size only when SPY's 20-day vol (std of the daily adjusted close-to-close returns ending at
+    # T-1) is above its 2002-08..2014 median; otherwise low_vol_scale x size. `leverage` is the FULL-size leverage.
+    vol_tilt: bool = False
+    vol_threshold: float = 0.008369  # daily std (= 13.3% annualised); 2002-08..2014 median, fixed (no re-fit)
+    vol_window: int = 20
+    low_vol_scale: float = 0.5
 
 
 @dataclass
@@ -50,6 +58,34 @@ class SignalConfig:
     require_agreement: bool = True   # if both sources available and the sign differs -> skip
     max_source_gap_diff: float = 0.0015  # sources' gaps must agree within 15bp, else treat as a data error
     require_all_sources: bool = False    # True: skip the month unless every source (IBKR and Yahoo) answers
+
+
+@dataclass
+class BondConfig:
+    """Leg B (research 276): long 10y Treasury futures over the last `hold_sessions` sessions of each month:
+    enter just before the close of the session `hold_sessions` before month-end, exit just before the month-end
+    close. Sized as IEF-equivalent notional: ZN notional = leverage x hedge_ratio x net liq."""
+    enabled: bool = False
+    instrument: str = "ZN"           # 10-Year T-Note futures ($1,000 x price)
+    exchange: str = "CBOT"
+    leverage: float = 2.8            # IEF-equivalent notional / net liq (research: 2.81)
+    hedge_ratio: float = 1.14        # IEF daily return ~= 1.14 x ZN return (2012-2026 regression, corr 0.96)
+    hold_sessions: int = 3
+    entry_lead_s: int = 120          # enter 2 min before the NYSE close (15:58 ET; 12:58 on half days)
+    exit_lead_s: int = 120
+    entry_grace_s: int = 90          # no entry later than entry time + this (and never in the last 20 s)
+    fill_timeout_s: int = 30
+    roll_buffer_days: int = 5        # contract's first notice day must be > exit date + this many business days
+    sizing_rounding: str = "floor"
+    max_leverage: float = 4.5        # ZN notional / net liq ceiling (2.8 x 1.14 = 3.19 at full size)
+    max_contracts: int = 20
+    disaster_stop_pct_equity: float = 0.04   # flatten if the bond overlay loses 4% of equity (~1.25% ZN move); 0 = off
+    disaster_poll_s: int = 30
+    auto_derisk: bool = True         # bond decay monitor (SPRT) can halve or stop the leg
+    edge_h1_bp: float = 20.0         # per-trade bp on IEF notional (2002-2026 mean 20.0, net of 2bp)
+    sd_bp: float = 66.0
+    price_min: float = 60.0          # ZN price sanity band
+    price_max: float = 180.0
 
 
 @dataclass
@@ -84,6 +120,7 @@ class Config:
     ib: IBConfig = field(default_factory=IBConfig)
     strategy: StrategyConfig = field(default_factory=StrategyConfig)
     signal: SignalConfig = field(default_factory=SignalConfig)
+    bond: BondConfig = field(default_factory=BondConfig)
     guardrails: GuardrailConfig = field(default_factory=GuardrailConfig)
     monitoring: MonitoringConfig = field(default_factory=MonitoringConfig)
 
@@ -151,6 +188,44 @@ class Config:
             errs.append("guardrails.disaster_stop_pct_equity must be in [0, 1)")
         if not set(self.signal.sources) <= {"ibkr", "yahoo"} or not self.signal.sources:
             errs.append("signal.sources must be a non-empty subset of [ibkr, yahoo]")
+        if not (0.002 <= s.vol_threshold <= 0.05):
+            errs.append("strategy.vol_threshold must be a DAILY std in [0.002, 0.05]")
+        if not (5 <= s.vol_window <= 60):
+            errs.append("strategy.vol_window must be in [5, 60]")
+        if not (0 < s.low_vol_scale <= 1):
+            errs.append("strategy.low_vol_scale must be in (0, 1]")
+        bd = self.bond
+        if bd.instrument not in ("ZN",):
+            errs.append("bond.instrument must be ZN")
+        if bd.sizing_rounding not in ("floor", "nearest"):
+            errs.append("bond.sizing_rounding must be floor or nearest")
+        if not (0 < bd.leverage * bd.hedge_ratio <= bd.max_leverage):
+            errs.append(f"bond.leverage x hedge_ratio ({bd.leverage * bd.hedge_ratio:.2f}) must be in (0, bond.max_leverage]")
+        if not (0.5 <= bd.hedge_ratio <= 2.0):
+            errs.append("bond.hedge_ratio must be in [0.5, 2.0]")
+        if bd.max_leverage > HARD_MAX_BOND_LEVERAGE:
+            errs.append(f"bond.max_leverage exceeds hard limit {HARD_MAX_BOND_LEVERAGE}")
+        if not (0 < bd.max_contracts <= HARD_MAX_BOND_CONTRACTS):
+            errs.append(f"bond.max_contracts must be in (0, {HARD_MAX_BOND_CONTRACTS}]")
+        if not (1 <= bd.hold_sessions <= 5):
+            errs.append("bond.hold_sessions must be in [1, 5]")
+        for k in ("entry_lead_s", "exit_lead_s"):
+            if not (30 <= getattr(bd, k) <= 900):
+                errs.append(f"bond.{k} must be in [30, 900]")
+        if not (0 <= bd.entry_grace_s <= bd.entry_lead_s - 20):
+            errs.append("bond.entry_grace_s must be in [0, entry_lead_s - 20]")
+        if not (5 <= bd.fill_timeout_s <= 120):
+            errs.append("bond.fill_timeout_s must be in [5, 120]")
+        if not (2 <= bd.roll_buffer_days <= 20):
+            errs.append("bond.roll_buffer_days must be in [2, 20]")
+        if not (0 <= bd.disaster_stop_pct_equity < 0.5):
+            errs.append("bond.disaster_stop_pct_equity must be in [0, 0.5)")
+        if not (5 <= bd.disaster_poll_s <= 300):
+            errs.append("bond.disaster_poll_s must be in [5, 300]")
+        if not (0 < bd.price_min < bd.price_max):
+            errs.append("bond.price_min must be < price_max")
+        if bd.sd_bp <= 0 or bd.edge_h1_bp <= 0:
+            errs.append("bond.edge_h1_bp and sd_bp must be > 0")
         if errs:
             raise ConfigError("; ".join(errs))
         return self

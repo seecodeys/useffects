@@ -1,16 +1,40 @@
 # month_end_trader work log
 
-Branch: `claude/blissful-mccarthy-mt2shh`. Scheduled check-ins (4 hourly tasks, staggered ~15 min) continue this work.
+Branch: `claude/sweet-goldberg-pvjfgq` (merged from `claude/blissful-mccarthy-mt2shh`). Scheduled check-ins
+(4 hourly tasks at :07/:22/:37/:52 UTC) continue this work.
+
+Strategy now = SPY core + leg A (013 month-end MES, vol-tilted per research 168) + leg B (research 276 month-end
+Treasury bid, long ZN over the last 3 sessions). Backtest with IBKR costs: backtest/summary.md.
 
 ## Hard rules for every session
 - Never set `mode: live`, never place orders against a real account, never ask for or store IBKR credentials.
-- Push only to `claude/blissful-mccarthy-mt2shh`. Run `pytest -q` before every commit.
+- Push only to `claude/sweet-goldberg-pvjfgq`. Run `pytest -q` before every commit.
 
 ## Done
 - [x] Core modules: config, calendar, signal, guardrails, executor (tick state machine), state, alerts, fake broker, IBKR adapter, monitor, CLI, dry run
 - [x] Dry run 2025-08..2025-11 matches paper ledger
 
+## Leg B / vol tilt (2026-11-21)
+- [x] Executor parametrized per leg (REF prefix, instrument, state prefix, entry date); no behaviour change for A
+- [x] Vol tilt for leg A (strategy.vol_tilt, fixed threshold 0.008369 daily = 2002-14 median, low_vol_scale 0.5;
+      sources disagreeing or vol unavailable -> low size). tests/test_vol_tilt.py
+- [x] Leg B: met/bond.py (BondExecutor + bond_preflight + first-notice-safe contract choice), met/bond_monitor.py
+      (IEF paper ledger + SPRT -> bond_monitor.json), met/daemon.py (one daemon, both legs), FakeBroker ZN support,
+      CLI run/status/flatten/bond-check/bond-report, config `bond:` section. tests/test_bond.py (28)
+- [x] Full IBKR-cost backtest (backtest/: trades.csv, yearly.csv, equity.png, summary.md)
+
 ## TODO (take the top unchecked item each check-in)
+- [ ] Review round B1 (agents): bond leg correctness (ownership across days, exits, half days, holidays, CBOT hours
+      vs futures_open, first notice), and daemon interplay of legs A and B on the month-end day
+- [ ] Review round B2 (agents): IBKR adapter for ZN (CBOT contract details: lastTradeDateOrContractMonth semantics,
+      multiplier '1000', price increments 1/64 & 1/128, what-if margin with an open ZN position, market data permission)
+- [ ] Dry run + rehearsal with both legs (met dry-run / met rehearse) incl. ledger comparison for leg B (IEF paper)
+- [ ] Historical replay of leg B over all month-ends 2003-2026 on the FakeBroker (ZN path from IEF), compare to ledger
+- [ ] Weekly status / announce: include leg B (next window, position, bond monitor status)
+- [ ] CBOT holiday/early-close calendar for Treasury futures (SIFMA early closes 14:00 ET; Good Friday) vs futures_open
+- [ ] README + PAPER_TEST.md: leg B section (ZN permissions, CBOT data, first paper window 24 -> 30 Nov 2026)
+- [ ] Combined-exposure guardrail: refuse if MES + ZN notional / net liq exceeds a configured ceiling
+- [ ] validate-data: add IEF; bond-check prints contract choice + first notice day
 - [x] IBKR adapter unit tests with fake ib_async objects (fill_summary, status mapping incl. Inactive/Timeout/Unknown, what-if NaN -> BrokerError, FX conversion SGD->USD, stale ticker, account rows filter)
 - [x] README: IBKR operational settings (bypass order precautions, Gateway restart time outside 09:00-16:30 ET, dedicated API username, US equity data for ADJUSTED_LAST); document MET_EXTRA_CLOSURES
 - [x] Script `met validate-data`: compare IBKR ADJUSTED_LAST vs Yahoo adjclose ratios over 120d incl. TLT ex-dates (user runs once)
