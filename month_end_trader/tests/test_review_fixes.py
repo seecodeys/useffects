@@ -541,7 +541,7 @@ def test_rejections_for_two_days_bounded(env):
     run_until(ex, clock, dt.datetime(2025, 9, 30, 15, 0))
     b.reject_next = 10**6
     run_until(ex, clock, dt.datetime(2025, 10, 2, 16, 0))
-    assert len(b.orders) <= 60, len(b.orders)
+    assert len(b.orders) <= 64, len(b.orders)          # 10 fast rounds + 4 at 15 min + hourly while CME trades
     assert sum("MANUAL INTERVENTION" in t for t in crit(alerts)) == 1
 
 

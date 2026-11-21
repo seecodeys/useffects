@@ -43,14 +43,15 @@ class Plan:
 
 
 def size_contracts(net_liq: float, price: float, multiplier: float, leverage: float, derisk: float,
-                   max_leverage: float, max_contracts: int, rounding: str = "floor") -> tuple[int, float]:
+                   max_leverage: float, max_contracts: int, rounding: str = "floor",
+                   hard_max_leverage: float = HARD_MAX_LEVERAGE, hard_max_contracts: int = HARD_MAX_CONTRACTS) -> tuple[int, float]:
     if net_liq <= 0 or price <= 0:
         return 0, 0.0
     per = price * multiplier
     raw = leverage * derisk * net_liq / per
     qty = math.floor(raw + 0.5) if rounding == "nearest" else math.floor(raw)
-    qty = min(qty, max_contracts, HARD_MAX_CONTRACTS)
-    while qty > 0 and qty * per / net_liq > min(max_leverage, HARD_MAX_LEVERAGE) + 1e-9:
+    qty = min(qty, max_contracts, hard_max_contracts)
+    while qty > 0 and qty * per / net_liq > min(max_leverage, hard_max_leverage) + 1e-9:
         qty -= 1
     return max(qty, 0), qty * per / net_liq
 

@@ -107,7 +107,7 @@ def test_happy_path_both_legs(benv):
     zo = zn_orders(b)
     assert [o["action"] for o in zo] == ["BUY", "SELL"]
     assert zo[0]["t"].date() == dt.date(2025, 9, 25) and dt.time(15, 58) <= zo[0]["t"].time() < dt.time(15, 59)
-    assert zo[1]["t"].date() == X and dt.time(15, 58) <= zo[1]["t"].time() < dt.time(15, 59)
+    assert zo[1]["t"].date() == X and dt.time(15, 55) <= zo[1]["t"].time() < dt.time(15, 56)     # clear of leg A
     p = s.get("plan")
     assert p["contract_local_symbol"] == "ZNZ5" and p["entry_date"] == "2025-09-25"
     assert 2.5 <= p["effective_leverage"] <= 3.3 and p["qty"] == zo[0]["qty"]

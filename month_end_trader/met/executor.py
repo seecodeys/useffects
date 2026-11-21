@@ -45,7 +45,8 @@ RESET_EXIT = dict(next_exit_try=None, exit_failures=0, disagree_rounds=0, manual
 GUARD_QUIET_S = 45          # no guard work this close to the exit time
 PRICE_FAIL_ALERT = 4        # consecutive missing prices before a CRITICAL alert
 EXIT_BACKOFF_S = (5, 15, 30, 60, 120, 300)   # between failed exit rounds
-MAX_EXIT_ROUNDS = 10        # failed exit rounds before the 'manual intervention' alert; then one round per hour
+MAX_EXIT_ROUNDS = 10        # failed exit rounds before the 'manual intervention' alert; then 15-min rounds for an hour, then hourly
+SLOW_EXIT_RETRY_S = 900     # first hour after that: a reopen after a 'market closed' rejection is not missed by ~1 h
 
 
 def _fill_date(f) -> dt.date | None:
@@ -98,6 +99,7 @@ class Executor:
     """Leg A (013 month-end, MES/ES open->close). The bond leg (bond.py) subclasses this and overrides the
     leg-specific hooks below; ownership, exits, reconcile and late-fill handling are shared."""
     REF = BOT_REF                 # orderRef prefix of this leg's orders
+    CLI_LEG = ""                  # appended to CLI hints in alerts (bond leg: " --leg bond")
     STATE_PREFIX = "trade"        # state files <prefix>_<date>.json
     LEG = "A"
 
@@ -329,7 +331,7 @@ class Executor:
                 today = self.broker.now().date()
                 if st.get("fills"):
                     seen = {e["exec_id"] for e in ex}
-                    missing = [k for k, f in st.get("fills").items() if k not in seen and not k.startswith("manual")
+                    missing = [k for k, f in st.get("fills").items() if k not in seen and not k.startswith(("manual", "adopted"))
                                and _fill_date(f) == today]       # earlier days' fills have legitimately expired
                     if missing and not st.get("missing_exec_warned"):
                         st.update(self.ts(), note=f"executions missing from IB: {missing}", missing_exec_warned=True)
@@ -462,8 +464,8 @@ class Executor:
     def _backoff(self, st, quick=False):
         n = int(st.get("exit_failures", 0)) + 1
         delay = 5 if quick else EXIT_BACKOFF_S[min(n - 1, len(EXIT_BACKOFF_S) - 1)]
-        if n >= MAX_EXIT_ROUNDS:
-            delay = 3600
+        if n >= MAX_EXIT_ROUNDS:              # 15-min rounds for the first hour (a reopen is not missed), then hourly
+            delay = SLOW_EXIT_RETRY_S if n < MAX_EXIT_ROUNDS + 4 else 3600
         st.update(self.ts(), note=f"exit retry in {delay}s", exit_failures=n,
                   next_exit_try=(self.broker.now() + dt.timedelta(seconds=delay)).isoformat())
         if n == MAX_EXIT_ROUNDS and not st.get("manual_alerted"):
@@ -471,11 +473,11 @@ class Executor:
             if st.get("disagree_rounds"):
                 self.alert.critical(f"{st.trade_date}: RESOLVE NEEDED - the bot's fills and the broker disagree",
                                     f"bot's fills {st.owned:+d}, broker shows {st.get('last_broker_pos')}. Do NOT open new "
-                                    f"orders. If you closed it yourself, stop the daemon and run `met resolve {st.trade_date} "
+                                    f"orders. If you closed it yourself, stop the daemon and run `met resolve {st.trade_date}{self.CLI_LEG} "
                                     f"--price <your fill price>`.")
             else:
                 self.alert.critical(f"{st.trade_date}: EXIT FAILING - MANUAL INTERVENTION NEEDED",
-                                    f"{n} failed exit rounds; retrying only once an hour now. Close "
+                                    f"{n} failed exit rounds; retrying every 15 min for an hour, then hourly. Close "
                                     f"{st.get('contract_local_symbol')} {st.owned:+d} in TWS with Order Ref "
                                     f"{self.REF}{st.trade_date}-manual, or stop the daemon and run `met flatten`.")
 
@@ -530,7 +532,7 @@ class Executor:
                       last_broker_pos=pos)
             if n_dis == 3:
                 self.alert.critical(f"{trade_date}: RESOLVE NEEDED - bot's fills say {owned:+d} but the broker shows {pos:+g}",
-                                    f"If you closed it yourself (or IB liquidated it), run `met resolve {trade_date}` "
+                                    f"If you closed it yourself (or IB liquidated it), run `met resolve {trade_date}{self.CLI_LEG}` "
                                     f"(daemon stopped). Next time put Order Ref {self.REF}{trade_date}-manual on manual closes.")
             elif n_dis == 1:
                 self.alert.critical(f"{trade_date}: executions and broker position disagree",
@@ -608,7 +610,7 @@ class Executor:
             c = self.contract_for(st)
             pos = self.broker_pos(c)
             if pos != 0:
-                if st.get("executions_expired") or (st.phase == "ERROR" and self.broker.now().date() > dt.date.fromisoformat(st.trade_date)):
+                if st.get("executions_expired") or (st.phase == "ERROR" and self.broker.now().date() > self.entry_date(st)):
                     self.alert.critical(f"{trade_date}: {c.local_symbol} {pos:+g} open; the bot cannot tell whether it is its own",
                                         f"IB no longer reports that day's executions. Check TWS; if it is the bot's, close it "
                                         f"yourself in TWS (the bot will not touch it).")
@@ -653,7 +655,7 @@ class Executor:
                         self._unfinished_alert[d] = now
                         if st.get("disagree_rounds"):
                             self.alert.critical(f"{d}: unresolved trade (fills {st.owned:+d}, broker {st.get('last_broker_pos')})",
-                                                f"run `met resolve {d} --price <fill>` with the daemon stopped")
+                                                f"run `met resolve {d}{self.CLI_LEG} --price <fill>` with the daemon stopped")
                         else:
                             self.alert.critical(f"{d}: trade still open after its trade day", f"bot owns {st.owned:+d}; exiting")
                     if st.phase != "EXIT_SUBMITTED":

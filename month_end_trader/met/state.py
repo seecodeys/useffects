@@ -128,7 +128,7 @@ class TradeState:
 
 def all_trades(state_dir: str, prefix: str = "trade") -> list[dict]:
     out = []
-    for p in sorted(Path(state_dir).glob(f"{prefix}_*.json")):
+    for p in sorted(Path(state_dir).glob(f"{prefix}_[0-9]*.json")):
         try:
             out.append(json.loads(p.read_text()))
         except Exception:
@@ -140,7 +140,7 @@ def unfinished(state_dir: str, prefix: str = "trade") -> list[str]:
     """Trade dates whose state may still involve a position: ACTIVE phases, or FLAT not yet reconciled.
     Corrupt files are reported too (as dates) so the caller can raise the alarm."""
     out = []
-    for p in sorted(Path(state_dir).glob(f"{prefix}_*.json")):
+    for p in sorted(Path(state_dir).glob(f"{prefix}_[0-9]*.json")):
         date = p.stem[len(prefix) + 1:]
         try:
             t = TradeState(state_dir, date, prefix=prefix)

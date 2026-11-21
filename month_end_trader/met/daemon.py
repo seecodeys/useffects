@@ -20,6 +20,8 @@ class Daemon:
         self.cfg = legs[0].cfg
         self.broker = legs[0].broker
         self.alert = legs[0].alert
+        for leg in legs[1:]:
+            leg.peer = legs[0]          # the bond leg yields to leg A's exit window on month-end day
 
     def tick(self) -> dt.datetime:
         wakes = []

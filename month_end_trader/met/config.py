@@ -73,7 +73,7 @@ class BondConfig:
     hedge_ratio: float = 1.14        # IEF daily return ~= 1.14 x ZN return (2012-2026 regression, corr 0.96)
     hold_sessions: int = 3
     entry_lead_s: int = 120          # enter 2 min before the NYSE close (15:58 ET; 12:58 on half days)
-    exit_lead_s: int = 120
+    exit_lead_s: int = 300           # exit 15:55 ET on month-end, clear of leg A's 15:59:58 MES exit
     half_day_lead_s: int = 600       # on 1 pm closes enter/exit at 12:50 ET (CBOT rates halt at 13:00 ET)
     entry_grace_s: int = 90          # no entry later than entry time + this (and never in the last 20 s)
     fill_timeout_s: int = 30
@@ -84,6 +84,9 @@ class BondConfig:
     disaster_stop_pct_equity: float = 0.04   # flatten if the bond overlay loses 4% of equity (~1.25% ZN move); 0 = off
     disaster_poll_s: int = 30
     auto_derisk: bool = True         # bond decay monitor (SPRT) can halve or stop the leg
+    adopt_unknown_entry: bool = True # after a crash/timeout whose executions expired: if the broker shows EXACTLY the
+                                     # planned ZN quantity in the planned contract (preflight proved 0 before), treat it
+                                     # as the bot's entry (P&L ESTIMATED) instead of leaving it unmanaged
     edge_h1_bp: float = 20.0         # per-trade bp on IEF notional (2002-2026 mean 20.0, net of 2bp)
     sd_bp: float = 66.0
     price_min: float = 60.0          # ZN price sanity band

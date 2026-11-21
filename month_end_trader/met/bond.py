@@ -185,8 +185,8 @@ def bond_preflight(cfg: Config, broker: Broker, X: dt.date, today: dt.date | Non
 
     target = b.leverage * b.hedge_ratio
     qty, eff = size_contracts(acct.net_liquidation, price, contract.multiplier, target, derisk,
-                              min(b.max_leverage, HARD_MAX_BOND_LEVERAGE), min(b.max_contracts, HARD_MAX_BOND_CONTRACTS),
-                              b.sizing_rounding)
+                              b.max_leverage, b.max_contracts, b.sizing_rounding,
+                              hard_max_leverage=HARD_MAX_BOND_LEVERAGE, hard_max_contracts=HARD_MAX_BOND_CONTRACTS)
     if qty < 1:
         blockers.append(f"position size rounds to 0 contracts (net liq {acct.net_liquidation:,.0f}, "
                         f"1 ZN = {price * contract.multiplier:,.0f}, target {target * derisk:.2f}x)")
@@ -233,6 +233,7 @@ class _Prefixed:
 
 class BondExecutor(Executor):
     REF = BOND_REF
+    CLI_LEG = " --leg bond"
     STATE_PREFIX = "bond"
     LEG = "B"
 
@@ -290,6 +291,7 @@ class BondExecutor(Executor):
         if st.get("announced") or st.get("announce_attempts", 0) >= 3:
             return
         tm = self.times(X)
+        self._refresh_bond_monitor_if_stale()
         if not self.broker.is_connected():
             n = st.get("announce_attempts", 0) + 1
             st.update(self.ts(), note="announce: broker not connected", announce_attempts=n)
@@ -311,6 +313,8 @@ class BondExecutor(Executor):
 
     def do_preflight(self, X: dt.date, st):
         tm = self.times(X)
+        if not st.get("preflight_attempts"):
+            self._refresh_bond_monitor_if_stale()
         older = [d for d in self.unfinished() if d < str(X)]
         try:
             plan, blockers, warnings = bond_preflight(self.cfg, self.broker, X, today=self.broker.now().date())
@@ -342,6 +346,83 @@ class BondExecutor(Executor):
                         f"ref {plan.ref_price:.4f}, net liq {plan.net_liq:,.0f}, ZN notional {plan.effective_leverage:.2f}x "
                         f"(= {plan.ief_equiv_leverage:.2f}x IEF-equivalent), first notice {plan.first_notice}"
                         + ("\nWarnings: " + "; ".join(warnings) if warnings else ""))
+
+    # ------------------------------------------------------------------ review B1 fixes
+    def _refresh_bond_monitor_if_stale(self):
+        if not (self.reporter and self.cfg.bond.auto_derisk):
+            return
+        p = Path(self.cfg.monitoring.state_dir) / "bond_monitor.json"
+        stale = True
+        try:
+            asof = dt.date.fromisoformat(json.loads(p.read_text())["asof"])
+            stale = (self.broker.now().date() - asof).days > 40
+        except Exception:
+            pass
+        if stale:
+            try:
+                self.reporter(self.broker.now().date())
+            except Exception as e:
+                self.alert.warn("bond decay monitor could not be refreshed", repr(e))
+
+    def _try_adopt(self, X, st) -> bool:
+        """The entry's outcome is unknowable from executions (expired). If the broker shows exactly the planned
+        quantity in the planned contract, it can only be the bot's order (the preflight required 0 ZN): adopt it
+        with an ESTIMATED entry price so the position is exited at month-end instead of left unmanaged."""
+        p = st.get("plan") or {}
+        if not (self.cfg.bond.adopt_unknown_entry and p and st.owned == 0 and st.get("entry_status") != "Rejected"
+                and not st.get("adopted") and st.get("contract_con_id")):
+            return False
+        others = [d for d in self.unfinished() if d != st.trade_date]
+        try:
+            pos = self.broker_pos(self.contract_for(st))
+            allz = sum(x.quantity for x in self.broker.all_future_positions(self.instrument))
+        except Exception:
+            return False
+        if others or pos != p["qty"] or allz != pos:
+            return False
+        px = self._try_price(self.contract_for(st)) or p["ref_price"]
+        st.merge_fills([dict(exec_id=f"adopted-{self.ts()}", rev=0, ref=f"{self.REF}{X}-entry", side="BUY",
+                             qty=float(pos), price=float(p["ref_price"]), time=self.ts())])
+        today = self.broker.now().date()
+        late = today > dt.date.fromisoformat(st.trade_date) or self.broker.now() >= self.times(X)["exit"]
+        st.update(self.ts(), "EXIT_SUBMITTED" if late else "ENTERED", note=f"adopted {pos:+g} after an unknown entry outcome",
+                  adopted=True, pnl_estimated=True, reconciled=False, executions_expired=False,
+                  exit_reason="adopted after deadline" if late else None)
+        self.alert.critical(f"{X}: ADOPTED {pos:+g} {st.get('contract_local_symbol')} as the bot's entry",
+                            f"the entry's executions expired before the bot could read them; the broker shows exactly the "
+                            f"planned quantity. Entry price ESTIMATED at {p['ref_price']} (now {px}). "
+                            + ("Closing it now." if late else f"Held to the scheduled exit on {X}.")
+                            + " Set bond.adopt_unknown_entry: false to leave such positions to you.")
+        return True
+
+    def resolve_entry(self, trade_date, st, final_status=None, msg=""):
+        super().resolve_entry(trade_date, st, final_status, msg)
+        if st.phase == "ERROR" and st.get("executions_expired"):
+            self._try_adopt(trade_date, st)
+
+    def reconcile(self, trade_date, st):
+        if st.phase == "ERROR" and st.owned == 0 and self.broker.now().date() > self.entry_date(st) \
+                and self.sync(st) and st.owned == 0 and self._try_adopt(trade_date, st):
+            return
+        return super().reconcile(trade_date, st)
+
+    def flatten(self, trade_date, st, reason="scheduled") -> bool:
+        """Leg A's MES exit at close-2s has priority: no bond exit round (which can block ~45 s on a timeout) starts
+        from 2 min before it until 1 min after it."""
+        peer = getattr(self, "peer", None)
+        now = self.broker.now()
+        if peer is not None and cal.is_session(now.date()) and cal.next_trade_date(now.date()) == now.date():
+            try:
+                pst = peer.State(now.date())
+                a_exit = peer.times(now.date())["exit"]
+                if pst.phase in ("PLANNED", "ENTRY_SUBMITTED", "ENTERED", "EXIT_SUBMITTED") and \
+                        a_exit - dt.timedelta(seconds=120) <= now < a_exit + dt.timedelta(seconds=60):
+                    st.update(self.ts(), note="bond exit deferred: leg A exit window",
+                              next_exit_try=(a_exit + dt.timedelta(seconds=60)).isoformat())
+                    return False
+            except StateCorrupt:
+                pass
+        return super().flatten(trade_date, st, reason)
 
     def guard_while_holding(self, trade_date, st, exit_time):
         """Overnight / weekend: when CBOT is closed, only the kill switch is checked (the exit then waits for the

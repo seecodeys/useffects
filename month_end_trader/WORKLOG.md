@@ -24,8 +24,13 @@ Treasury bid, long ZN over the last 3 sessions). Backtest with IBKR costs: backt
 - [x] Full IBKR-cost backtest (backtest/: trades.csv, yearly.csv, equity.png, summary.md)
 
 ## TODO (take the top unchecked item each check-in)
-- [ ] Review round B1 (agents): bond leg correctness (ownership across days, exits, half days, holidays, CBOT hours
-      vs futures_open, first notice), and daemon interplay of legs A and B on the month-end day
+- [x] Review round B1 (bond leg correctness, 10 findings; repros became tests/test_bond_review.py) fixed:
+      `met resolve DATE --leg bond` (alerts name it), adoption of the bot's own entry after a crash/late fill whose
+      executions expired (exact planned qty in the planned contract only; bond.adopt_unknown_entry), reconcile uses
+      the entry date, bond exit 15:55 + yields to leg A's exit window (no MES exit after the close), bond monitor
+      refreshed when missing/stale, bond_monitor.json no longer globbed as a trade state, slow exit retry 15 min
+      (was 1 h), bond hard leverage caps honoured, `met flatten` reaches the bond leg when leg A fails.
+      Left as designed: a late entry fill AFTER the entry-day reconcile is closed at once (conservative)
 - [x] Review round B2 (IBKR adapter for ZN; reviews/B2_ibkr_zn.md): fixed CBOT half-day hours (rates_futures_open,
       13:00 ET halt; bond.half_day_lead_s -> 12:50 ET on 1 pm closes), roll_buffer_days capped at 15, CBOT data
       requirement documented. Paper-verify: localSymbol format, market orders at Sunday 18:00 reopen, IB close-out date
@@ -37,8 +42,9 @@ Treasury bid, long ZN over the last 3 sessions). Backtest with IBKR costs: backt
 - [ ] README + PAPER_TEST.md: leg B section (ZN permissions, CBOT data, first paper window 24 -> 30 Nov 2026)
 - [x] Combined-exposure guardrail: guardrails.max_total_leverage (default 7x, hard 8x) on all futures notional of
       both legs incl. the new order; permanent blocker (no retries). 3 tests
-- [ ] Granularity for small accounts (< ~$150k): option to express leg B in CME Micro 10-Year Yield futures (10Y,
-      ~$10 DV01 vs ~$65 for ZN) - needs a yield->price sign flip and its own sizing; ask the user before building
+- [ ] **User asked for it (2026-11-21):** leg B in CME Micro 10-Year Yield futures (10Y, $10 DV01, SELL = long bonds).
+      Build as bond.instrument: "10Y" (exchange CBOT, yield quoted; size = IEF-equiv notional x IEF duration x 1e-4 / $10;
+      direction SELL; disaster stop on yield move; FakeBroker support; tests). Small-account sim: backtest/small_account/
 - [ ] validate-data: add IEF; bond-check prints contract choice + first notice day
 - [x] IBKR adapter unit tests with fake ib_async objects (fill_summary, status mapping incl. Inactive/Timeout/Unknown, what-if NaN -> BrokerError, FX conversion SGD->USD, stale ticker, account rows filter)
 - [x] README: IBKR operational settings (bypass order precautions, Gateway restart time outside 09:00-16:30 ET, dedicated API username, US equity data for ADJUSTED_LAST); document MET_EXTRA_CLOSURES

@@ -63,6 +63,7 @@ def main(argv=None):
     ap.add_argument("--yes", action="store_true")
     ap.add_argument("date", nargs="?", help="trade date for `resolve`")
     ap.add_argument("--price", type=float, default=None, help="close price for `resolve` (default: current price)")
+    ap.add_argument("--leg", choices=["a", "bond"], default="a", help="`resolve`: which leg's state (default a)")
     ap.add_argument("-v", action="store_true")
     a = ap.parse_args(argv)
 
@@ -257,7 +258,13 @@ def main(argv=None):
         print("position now:", broker.future_position(c)); return 0
 
     if a.cmd == "resolve":
-        st = TradeState(cfg.monitoring.state_dir, a.date)
+        if a.leg == "bond":
+            if bx is None:
+                print("bond leg is not enabled in the config"); return 2
+            ex = bx                                   # same resolve logic, bond state / MEB- refs
+        st = TradeState(cfg.monitoring.state_dir, a.date, prefix=ex.STATE_PREFIX)
+        if not st.path.exists():
+            print(f"no {'bond' if a.leg == 'bond' else 'leg-A'} state for {a.date}"); return 2
         if st.get("fills") is None:
             print("no fills recorded for", a.date); return 2
         c = ex.contract_for(st)
@@ -276,7 +283,7 @@ def main(argv=None):
         if not a.yes and input(f"record a manual close of {-st.owned:+d} @ {px:.2f} (P&L ESTIMATED)? [y/N] ") != "y":
             return 1
         side = "SELL" if st.owned > 0 else "BUY"
-        st.merge_fills([dict(exec_id=f"manual-{ex.ts()}", rev=0, ref=f"MET-{a.date}-manual", side=side,
+        st.merge_fills([dict(exec_id=f"manual-{ex.ts()}", rev=0, ref=f"{ex.REF}{a.date}-manual", side=side,
                              qty=float(abs(st.owned)), price=float(px), time=ex.ts())])
         st.update(ex.ts(), "EXIT_SUBMITTED", note="manual resolve", exit_reason="manual", exit_price_estimated=True)
         ex._finalise(dt.date.fromisoformat(a.date), st)
@@ -290,11 +297,14 @@ def main(argv=None):
         st_t = TradeState(cfg.monitoring.state_dir, str(T))
         if st_t.phase in ("ENTRY_SUBMITTED", "ENTERED", "EXIT_SUBMITTED", "ERROR", "FLAT"):
             dates.add(str(T))
+        rc = 0
         for d in sorted(dates):
             st = TradeState(cfg.monitoring.state_dir, d)
+            if not st.get("contract_con_id"):
+                print(f"{d}: no contract recorded (never entered); skipping"); continue
             c = ex.contract_for(st)
             if not ex.sync(st):
-                print(f"{d}: cannot read executions from IB; not acting"); return 2
+                print(f"{d}: cannot read executions from IB; not acting on leg A"); rc = 2; continue
             pos = broker.future_position(c)
             print(f"{d}: state {st.phase}, broker {pos:+g} {c.local_symbol}")
             if pos == 0:
@@ -326,6 +336,9 @@ def main(argv=None):
                     print(f"BOND {d}: cannot read executions from IB; not acting"); return 2
                 pos = broker.future_position(c)
                 print(f"BOND {d}: state {st.phase}, bot owns {st.owned:+d}, broker {pos:+g} {c.local_symbol}")
+                if pos != 0 and st.owned == 0:
+                    print(f"  {c.local_symbol} {pos:+g} at the broker but the bot's fills own nothing: not touched. "
+                          f"If it is the bot's lost entry, close it in TWS with Order Ref MEB-{d}-manual")
                 if pos == 0 or st.owned == 0:
                     continue
                 if not a.yes and input(f"flatten the bond leg's {st.owned:+d} {c.local_symbol}? [y/N] ") != "y":
@@ -338,7 +351,7 @@ def main(argv=None):
                         break
                     broker.sleep(5)
         print("done. Broker futures positions:", broker.all_future_positions(cfg.strategy.instrument),
-              broker.all_future_positions(cfg.bond.instrument) if bx else ""); return 0
+              broker.all_future_positions(cfg.bond.instrument) if bx else ""); return rc
 
     ap.error(f"unknown command {a.cmd}")
 
