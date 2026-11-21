@@ -97,6 +97,7 @@ class BondConfig:
     adopt_unknown_entry: bool = True # after a crash/timeout whose executions expired: if the broker shows EXACTLY the
                                      # planned ZN quantity in the planned contract (preflight proved 0 before), treat it
                                      # as the bot's entry (P&L ESTIMATED) instead of leaving it unmanaged
+    financing_rate: float = 0.04     # annual rate futures returns are net of (vs IEF total return) for the exec-gap check
     edge_h1_bp: float = 20.0         # per-trade bp on IEF notional (2002-2026 mean 20.0, net of 2bp)
     sd_bp: float = 66.0
     price_min: float = 60.0          # ZN price sanity band

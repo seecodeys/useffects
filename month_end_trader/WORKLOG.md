@@ -55,6 +55,11 @@ Treasury bid, long ZN over the last 3 sessions). Backtest with IBKR costs: backt
       Small-account sim (with 10Y yield as proxy): backtest/small_account/. 3 tests
 - [x] Marketable limit orders for thin micros: bond.order_type auto (limit for MTN, market for ZN), limit_ticks 3 x 1/32,
       re-priced every exit round; no price -> market (an exit must go out). Leg A stays market (MES is deep). 2 tests
+- [x] Review round B3 (vol tilt, exposure cap, daemon, CLI, config, monitor, limits; 6 findings) fixed: test-order
+      never sells after an unfilled buy (could leave a short), futures with unknown portfolio value block the exposure
+      cap instead of counting 0 (ibkr: NaN), bond.instrument switch mid-hold keeps managing the open trade in its own
+      instrument (plan.instrument; hourly alert; no new window), provisional vol in CLI checks (labelled), bond exec gap
+      nets financing carry and only uses scheduled, non-adopted trades, daemon tick errors alerted at most every 15 min
 - [ ] Paper-verify MTN: IB symbol/exchange (MTN @ CBOT), localSymbol, lastTradeDateOrContractMonth = termination day,
       liquidity at 15:55 ET (thin: consider a marketable limit instead of a market order)
 - [ ] Optional: bond.instrument 10Y (yield-quoted, SELL = long bonds, monthly, 2nd month over month-end) if the user prefers it

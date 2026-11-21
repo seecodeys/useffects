@@ -267,14 +267,20 @@ def main(argv=None):
             print("price", broker.price(c), "| order type:", "limit" if bx.use_limit() else "market")
             r1 = broker.market_order(c, "BUY", 1, "TEST-buy", 30, limit_price=bx.limit_price(c, "BUY")); print("buy:", r1)
             broker.sleep(2)
-            r2 = broker.market_order(c, "SELL", r1.filled or 1, "TEST-sell", 30, limit_price=bx.limit_price(c, "SELL"))
+            if r1.filled <= 0:
+                print(f"buy did not fill ({r1.status}); nothing sold. Position now: {broker.future_position(c):+g}"
+                      + (" (raise bond.limit_ticks if MTN limits never fill)" if bx.use_limit() else ""))
+                return 2
+            r2 = broker.market_order(c, "SELL", r1.filled, "TEST-sell", 30, limit_price=bx.limit_price(c, "SELL"))
             print("sell:", r2)
             print("position now:", broker.future_position(c)); return 0
         c = broker.front_future(cfg.strategy.instrument, cfg.strategy.exchange, now().date() + dt.timedelta(days=3))
         print("contract", c.local_symbol, c.expiry, "price", broker.price(c))
         r1 = broker.market_order(c, "BUY", 1, "TEST-buy", 30); print("buy:", r1)
         broker.sleep(2)
-        r2 = broker.market_order(c, "SELL", r1.filled or 1, "TEST-sell", 30); print("sell:", r2)
+        if r1.filled <= 0:
+            print(f"buy did not fill ({r1.status}); nothing sold. Position now: {broker.future_position(c):+g}"); return 2
+        r2 = broker.market_order(c, "SELL", r1.filled, "TEST-sell", 30); print("sell:", r2)
         print("position now:", broker.future_position(c)); return 0
 
     if a.cmd == "resolve":

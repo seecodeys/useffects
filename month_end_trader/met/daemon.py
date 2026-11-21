@@ -20,6 +20,7 @@ class Daemon:
         self.cfg = legs[0].cfg
         self.broker = legs[0].broker
         self.alert = legs[0].alert
+        self._err_alert: dict = {}
         for leg in legs[1:]:
             leg.peer = legs[0]          # the bond leg yields to leg A's exit window on month-end day
 
@@ -30,7 +31,12 @@ class Daemon:
                 wakes.append(leg.tick())
             except Exception as e:
                 log.error(traceback.format_exc())
-                self.alert.critical(f"daemon tick error (leg {getattr(leg, 'LEG', '?')}): {e!r}")
+                key, now = (getattr(leg, "LEG", "?"), type(e).__name__), self.broker.now()
+                last = self._err_alert.get(key)
+                if not last or (now - last).total_seconds() > 900:      # same error: at most every 15 min
+                    self._err_alert[key] = now
+                    self.alert.critical(f"daemon tick error (leg {key[0]}): {e!r}",
+                                        "repeats of this error are logged, alerted at most every 15 min")
                 wakes.append(self.broker.now() + dt.timedelta(seconds=15))
         return min(wakes)
 

@@ -56,7 +56,7 @@ def size_contracts(net_liq: float, price: float, multiplier: float, leverage: fl
     return max(qty, 0), qty * per / net_liq
 
 
-def trailing_vol(closes, trade_date: dt.date, window: int) -> float:
+def trailing_vol(closes, trade_date: dt.date, window: int, provisional: bool = False) -> float:
     """Std of the `window` daily returns of adjusted closes ending at the T-1 close (research 168: rolling std
     shifted one day). Requires the exact T-1 close and window+1 consecutive closes; raises ValueError otherwise."""
     import pandas as pd
@@ -64,6 +64,11 @@ def trailing_vol(closes, trade_date: dt.date, window: int) -> float:
     s.index = [pd.Timestamp(i).date() for i in s.index]
     s = s[~pd.Index(s.index).duplicated(keep="last")].sort_index()
     t1 = cal.previous_session(trade_date)
+    if provisional and t1 not in s.index:
+        later = [d for d in s.index if d < t1]
+        if not later:
+            raise ValueError("no closes")
+        t1 = later[-1]                                    # CLI check before T-1's close: latest close instead
     if t1 not in s.index:
         raise ValueError(f"close for {t1} missing")
     s = s[s.index <= t1]
@@ -78,7 +83,7 @@ def trailing_vol(closes, trade_date: dt.date, window: int) -> float:
     return v
 
 
-def vol_scale(cfg: Config, trade_date: dt.date, fetchers: dict) -> tuple[float, float | None, list]:
+def vol_scale(cfg: Config, trade_date: dt.date, fetchers: dict, provisional: bool = False) -> tuple[float, float | None, list]:
     """(size scale, vol, warnings). Sources disagreeing on the regime, or no vol at all -> the low (smaller)
     size, never the larger one."""
     s = cfg.strategy
@@ -87,7 +92,7 @@ def vol_scale(cfg: Config, trade_date: dt.date, fetchers: dict) -> tuple[float, 
     vols, notes = {}, []
     for name, fetch in fetchers.items():
         try:
-            vols[name] = trailing_vol(fetch(cfg.signal.equity), trade_date, s.vol_window)
+            vols[name] = trailing_vol(fetch(cfg.signal.equity), trade_date, s.vol_window, provisional)
         except Exception as e:
             notes.append(f"vol tilt: source {name} unavailable ({e})")
     if not vols:
@@ -104,13 +109,20 @@ def vol_scale(cfg: Config, trade_date: dt.date, fetchers: dict) -> tuple[float, 
 def other_futures_notional(broker, exclude_symbol: str) -> float:
     """|notional| of every futures position on the account except `exclude_symbol` (USD market value; IB reports
     futures marketValue as quantity x price x multiplier)."""
-    return sum(abs(p.market_value) for p in broker.positions() if p.sec_type == "FUT" and p.symbol != exclude_symbol)
+    tot = 0.0
+    for p in broker.positions():
+        if p.sec_type in ("FUT", "FOP") and p.symbol != exclude_symbol and p.quantity != 0:
+            mv = p.market_value
+            if not (mv == mv) or mv == 0:
+                raise ValueError(f"market value unknown for {p.local_symbol or p.symbol} {p.quantity:+g}")
+            tot += abs(mv)
+    return tot
 
 
 def total_leverage_blocker(cfg: Config, broker, exclude_symbol: str, new_notional: float, net_liq: float) -> str | None:
     try:
         other = other_futures_notional(broker, exclude_symbol)
-    except Exception as e:
+    except Exception as e:                                  # transient (retried), never treated as 0 exposure
         return f"total exposure check failed: {e}"
     tot = (other + new_notional) / net_liq if net_liq > 0 else float("inf")
     if not (tot <= cfg.guardrails.max_total_leverage + 1e-9):
@@ -200,7 +212,9 @@ def preflight(cfg: Config, broker: Broker, trade_date: dt.date, fetchers: dict,
     if derisk <= 0 and not any("unreadable" in b for b in blockers):
         blockers.append(f"decay monitor says stop trading ({derisk_note})")
 
-    vscale, vol, vnotes = vol_scale(cfg, trade_date, fetchers)
+    vscale, vol, vnotes = vol_scale(cfg, trade_date, fetchers, provisional)
+    if provisional and cfg.strategy.vol_tilt and vol is not None:
+        vnotes = vnotes + [f"vol tilt PROVISIONAL (latest close, not T-1): {vol:.3%}/day -> size x{vscale:g}"]
     warnings.extend(vnotes)
 
     contract = price = None

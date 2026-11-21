@@ -141,9 +141,23 @@ class BondPlan:
     hedge_ratio: float
     derisk_multiplier: float
     warnings: list = field(default_factory=list)
+    instrument: str = ""             # bond.instrument at entry (the exit keeps using it if the config changes)
 
     def to_dict(self):
         return asdict(self)
+
+
+def state_instrument(st) -> str:
+    """Instrument of a persisted bond trade: plan.instrument, else the root of its local symbol (ZNZ5 / 'ZN   DEC 25')."""
+    import re
+    p = st.get("plan") or {}
+    if p.get("instrument"):
+        return p["instrument"]
+    ls = (st.get("contract_local_symbol") or p.get("contract_local_symbol") or "").strip()
+    if " " in ls:
+        return ls.split()[0]
+    m = re.match(r"^([A-Z0-9]+?)[FGHJKMNQUVXZ]\d+$", ls)
+    return m.group(1) if m else ""
 
 
 def read_bond_derisk(cfg: Config) -> tuple[float | None, str]:
@@ -255,7 +269,7 @@ def bond_preflight(cfg: Config, broker: Broker, X: dt.date, today: dt.date | Non
                     contract_con_id=contract.con_id, first_notice=str(fnd), ref_price=price,
                     multiplier=contract.multiplier, net_liq=acct.net_liquidation, target_leverage=target * derisk,
                     effective_leverage=eff, ief_equiv_leverage=eff / b.hedge_ratio, hedge_ratio=b.hedge_ratio,
-                    derisk_multiplier=derisk, warnings=warnings)
+                    derisk_multiplier=derisk, warnings=warnings, instrument=b.instrument)
     return plan, [], warnings
 
 
@@ -284,10 +298,36 @@ class BondExecutor(Executor):
         super().__init__(cfg, broker, _Prefixed(alerter), fetchers or {}, reporter)
         self._bond_overnight: set = set()
         self._bond_disc_alert: dt.datetime | None = None
+        self._held_instrument: str | None = None
+        self._switch_alert: dt.datetime | None = None
 
     @property
     def instrument(self) -> str:
-        return self.cfg.bond.instrument
+        return self._held_instrument or self.cfg.bond.instrument
+
+    def _check_instrument_switch(self, now):
+        """bond.instrument changed while a trade in the old instrument is unfinished: keep managing that trade in its
+        own instrument (positions, adoption, costs, overnight guard) until it is closed; no new window meanwhile
+        (older unfinished trades block the preflight)."""
+        held = set()
+        for d in self.unfinished():
+            try:
+                i = state_instrument(self.State(d))
+            except StateCorrupt:
+                continue
+            if i:
+                held.add(i)
+        other = held - {self.cfg.bond.instrument}
+        if not other:
+            self._held_instrument = None
+            return
+        self._held_instrument = sorted(other)[0]
+        if not self._switch_alert or (now - self._switch_alert).total_seconds() > 3600:
+            self._switch_alert = now
+            self.alert.critical(f"bond.instrument is {self.cfg.bond.instrument} but an unfinished trade is in "
+                                f"{self._held_instrument}",
+                                f"the bot manages that trade as {self._held_instrument} until it is closed; new "
+                                f"{self.cfg.bond.instrument} windows wait until then")
 
     @property
     def exchange(self) -> str:
@@ -518,13 +558,14 @@ class BondExecutor(Executor):
             except StateCorrupt:
                 pass
         if tot != owned:
-            self.alert.critical(f"{d}: ZN position after the close {tot:+g} differs from the bot's {owned:+d}",
+            self.alert.critical(f"{d}: {self.instrument} position after the close {tot:+g} differs from the bot's {owned:+d}",
                                 ", ".join(f"{p.local_symbol} {p.quantity:+g}" for p in pos) or "none at the broker")
 
     # ------------------------------------------------------------------ main tick
     def tick(self) -> dt.datetime:
         now = self.broker.now()
         today = now.date()
+        self._check_instrument_switch(now)
         E, X = window_for(today, self.cfg.bond.hold_sessions)
         tm = self.times(X)
         nxt = [now + dt.timedelta(seconds=60)]

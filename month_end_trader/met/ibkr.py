@@ -230,7 +230,9 @@ class IBKRBroker(Broker):
             if p.account != acct or p.position == 0:
                 continue
             c = p.contract
-            mv = _f(port[c.conId].marketValue, 0.0) if c.conId in port else 0.0   # contract currency (USD)
+            # contract currency (USD). Futures with no portfolio value: NaN, so exposure checks fail closed
+            miss = float("nan") if c.secType in ("FUT", "FOP") else 0.0
+            mv = _f(port[c.conId].marketValue, miss) if c.conId in port else miss
             out.append(Position(c.symbol, c.secType, float(p.position), c.localSymbol or "", mv))
         return out
 

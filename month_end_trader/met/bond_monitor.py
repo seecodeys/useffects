@@ -51,10 +51,16 @@ def live_rows(cfg: Config) -> pd.DataFrame:
     for t in all_trades(cfg.monitoring.state_dir, prefix="bond"):
         if t.get("phase") == "FLAT" and t.get("trade_bp") is not None:
             p = t.get("plan") or {}
-            rows.append(dict(date=dt.date.fromisoformat(t["trade_date"]),
-                             live_bp=float(t["trade_bp"]) * float(p.get("hedge_ratio", 1.0)),
-                             pnl_pct=t.get("pnl_pct_equity")))
-    return pd.DataFrame(rows).set_index("date") if rows else pd.DataFrame(columns=["live_bp", "pnl_pct"])
+            X = dt.date.fromisoformat(t["trade_date"])
+            E = dt.date.fromisoformat(p["entry_date"]) if p.get("entry_date") else X
+            # comparable with the paper window only if held for the whole window at the planned times
+            comparable = (t.get("exit_reason") == "scheduled close" and not t.get("adopted")
+                          and not t.get("pnl_estimated"))
+            rows.append(dict(date=X, live_bp=float(t["trade_bp"]) * float(p.get("hedge_ratio", 1.0)),
+                             pnl_pct=t.get("pnl_pct_equity"), days=(X - E).days, comparable=comparable,
+                             exit_reason=t.get("exit_reason")))
+    cols = ["live_bp", "pnl_pct", "days", "comparable", "exit_reason"]
+    return pd.DataFrame(rows).set_index("date") if rows else pd.DataFrame(columns=cols)
 
 
 def run_bond_report(cfg: Config, asof: dt.date | None = None, ief: pd.Series | None = None, write=True) -> dict:
@@ -80,9 +86,11 @@ def run_bond_report(cfg: Config, asof: dt.date | None = None, ief: pd.Series | N
     live = live_rows(cfg)
     exec_gap = None
     if len(live):
-        j = live.join(led[["paper_bp"]], how="inner")
+        j = live[live["comparable"].astype(bool)].join(led[["paper_bp"]], how="inner")
         if len(j):
-            exec_gap = float((j["live_bp"] - (j["paper_bp"] + COST_BP)).mean())
+            # futures earn the return in EXCESS of financing; IEF's adjusted close is a total return
+            carry = 1e4 * b.financing_rate * j["days"].astype(float) / 365
+            exec_gap = float((j["live_bp"] - (j["paper_bp"] + COST_BP - carry)).mean())
     warnings = []
     if len(led) >= 36 and led["paper_bp"].tail(36).mean() < 0:
         warnings.append("bond bid: last 36 months average below zero")

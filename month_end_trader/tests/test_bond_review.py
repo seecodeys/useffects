@@ -180,3 +180,84 @@ def test_cli_test_order_bond_leg(benv, monkeypatch, capsys, inst, sym, mult):
     tests = [o for o in b.orders if o["ref"].startswith("TEST-")]
     assert [o["action"] for o in tests] == ["BUY", "SELL"]
     assert (b.limits["TEST-buy"] is not None) == (inst == "MTN")
+
+
+# ---------------------------------------------------------------- review round B3
+def test_b3_test_order_unfilled_buy_sells_nothing(benv, monkeypatch, capsys):
+    cfg, clock, b, d, alerts, bx = benv(dt.datetime(2025, 9, 16, 11, 0), zn_fn=drift(108.0))
+    cfg.bond.instrument = "MTN"; cfg.bond.hedge_ratio = 0.0; cfg.bond.max_contracts = 0; cfg.validate()
+    b.connect()
+    b.reject_next = 1
+    monkeypatch.setattr(cli, "load_config", lambda *a, **k: cfg)
+    monkeypatch.setattr(cli, "_broker", lambda *a, **k: b)
+    monkeypatch.setattr(cli, "setup_logging", lambda *a, **k: None)
+    assert cli.main(["test-order", "--leg", "bond"]) == 2
+    assert b.zn_pos == 0 and not [o for o in b.orders if o["ref"] == "TEST-sell"]
+
+
+def test_b3_unknown_futures_value_blocks_instead_of_zero(benv):
+    from met.broker import Position
+    from met.guardrails import total_leverage_blocker
+    cfg, clock, b, d, alerts, bx = benv(dt.datetime(2025, 9, 25, 15, 0), zn_fn=drift())
+    b.connect()
+    orig = b.positions
+    b.positions = lambda: orig() + [Position("ZN", "FUT", 30, "ZNZ5", float("nan"))]
+    msg = total_leverage_blocker(cfg, b, "MES", 100_000, 120_000)
+    assert msg and "failed" in msg
+
+
+def test_b3_instrument_switch_mid_hold_keeps_old_instrument(benv):
+    cfg, clock, b, d, alerts, bx = benv(dt.datetime(2025, 9, 24, 8, 0), zn_fn=drift())
+    run(d, clock, dt.datetime(2025, 9, 26, 12, 0))
+    assert bst(cfg, dt.date(2025, 9, 30)).phase == "ENTERED"
+    cfg.bond.instrument = "MTN"; cfg.bond.hedge_ratio = 0.0; cfg.bond.max_contracts = 0; cfg.validate()
+    d2, bx2 = restart(cfg, b, d, bx)
+    run(d2, clock, dt.datetime(2025, 9, 30, 20, 0))
+    s = bst(cfg, dt.date(2025, 9, 30))
+    assert s.phase == "FLAT" and b.zn_pos == 0 and s.get("est_costs") == pytest.approx(6 * 1.70)
+    crit = lv(alerts, "CRITICAL")
+    assert not any("differs from the bot" in t for t in crit), crit
+    assert sum("unfinished trade is in ZN" in t for t in crit) >= 1
+
+
+def test_b3_provisional_vol(data):
+    from met.config import Config
+    from met.guardrails import vol_scale
+    spy, _ = data
+    cfg = Config(); cfg.strategy.vol_tilt = True
+    T = dt.date(2008, 10, 31)
+    early = spy["adjclose"][[x <= dt.date(2008, 10, 27) for x in spy.index]]
+    sc, v, notes = vol_scale(cfg, T, {"x": lambda s: early}, provisional=True)
+    assert v is not None and sc == 1.0
+    assert vol_scale(cfg, T, {"x": lambda s: early})[1] is None            # live: never provisional
+
+
+def test_b3_bond_exec_gap_excludes_stops_and_nets_carry(tmp_path):
+    from met.config import Config
+    cfg = Config(); cfg.ib.account = "DU1"; cfg.monitoring.state_dir = cfg.monitoring.report_dir = str(tmp_path)
+    cfg.monitoring.start = "2025-01"
+    led = bond_ledger_fixture()
+    X = dt.date(2025, 9, 30)
+    paper = float(led.loc[X, "paper_bp"]) + 2.0
+    carry = 1e4 * 0.04 * 5 / 365
+    for x, reason, bp in ((X, "scheduled close", paper - carry), (dt.date(2025, 8, 29), "disaster stop", -400.0)):
+        st = TradeState(str(tmp_path), str(x), prefix="bond")
+        E = {X: "2025-09-25", dt.date(2025, 8, 29): "2025-08-26"}[x]
+        st.update("t", "FLAT", plan=dict(entry_date=E, hedge_ratio=1.0), trade_bp=bp, exit_reason=reason)
+    res = run_bond_report(cfg, ief=ief_series())
+    assert res["execution_gap_bp"] == pytest.approx(0.0, abs=0.05)
+
+
+def ief_series():
+    import pandas as pd
+    from pathlib import Path
+    x = pd.read_csv(Path(__file__).resolve().parent / "fixtures" / "ief.csv")
+    return pd.Series(x["adjclose"].values, index=pd.to_datetime(x["date"]).dt.date)
+
+
+def bond_ledger_fixture():
+    from met.bond_monitor import bond_ledger
+    return bond_ledger(ief_series())
+
+
+from met.bond_monitor import run_bond_report  # noqa: E402
