@@ -1236,3 +1236,8 @@ follow. Dead.
 Raw prices + Yahoo dividends, 0.5bp/side per leg. Long SPY/short IVV on SPY ex-dates −1.3 / +0.8; long IVV/short SPY
 on IVV ex-dates +0.4 / −2.3; long VOO/short SPY on VOO ex-dates −1.8 / −1.4; pooled overnight −0.0 / −2.8. Median
 ex-day drop = 0.96-1.02× the dividend — fully priced; spreads ±1-4bp gross with flipping sign. Dead.
+
+## 350 — Twin bond-ETF residual reversion (agent-run; results/agent_350.md)  ·  2026-11-21
+Fade |z|>2 of the 3-day beta-residual between twins, beta-neutral, 3 sessions, 1bp/side per leg (lag-1; lag-0 best case
+also registered, 8 rows). Lag-1: HYG/JNK +1.2 / −0.1; stress-only +1.4 / +0.1; MUB/VTEB valid +0.9 (2020); EMB/PCY
++1.7 / −0.9. Lag-0: HYG/JNK +2.8 / +0.3, EMB/PCY +2.0 / +2.0 — closing-print noise, faded after 2011. Dead.
