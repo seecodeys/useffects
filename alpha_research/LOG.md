@@ -1154,3 +1154,8 @@ momentum nor reversal survives costs. Dead. Registry: 494.
 Shock month = dealer basket (GS/MS/JPM/C/BAC) minus SPY in the bottom quintile (cut from 2000-14); 36 train / 20 valid
 months; lag-1, credit duration-hedged with IEF. HYG−0.5 IEF +0.0 / +0.4; LQD−1.1 IEF −0.8 / +0.1; long SPY −0.1 / +0.8;
 size-scaled HYG +/− ~0. 2008-09 shocks were followed by further losses. Dead.
+
+## 338 — Risk-parity deleveraging when the stock-bond correlation flips positive (agent-run; results/agent_338.md)  ·  2026-11-21
+Trigger: 21d SPY-TLT correlation crosses above +0.2 after being <0 within 63 days (12 train / 11 valid events); hold
+10d, lag-1. Short 50/50 SPY+TLT −0.9 / −0.1; short TLT −0.7 / −0.9; high-vol only −0.8 / −0.1; placebo −0.3 / +0.4.
+Wrong-signed and underpowered. Dead.
