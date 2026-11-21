@@ -1211,3 +1211,8 @@ mostly duration premium; train leans on 2008. Weak; fails gate.
 FRED revised H.8 data (first-release vintages need an ALFRED API key — results are, if anything, flattered), entered the
 Monday after the Friday release, ~1 week. IEF 1w change +0.5 / +0.1; MBB on MBS change −1.8 / +0.0; IEF 4w change
 +1.7 / +0.6 (2008/2022-driven); SPY control −1.0 / −1.2. Dead.
+
+## 349 — BCOM/GSCI January reweight (agent-run; results/agent_349.md)  ·  2026-11-21
+10 commodity ETFs ranked on prior-year return; long bottom 3 / short top 3, close of January BD4 → BD10, lag-1, 2bp/side.
+Main −1.6 / −0.1 (−150 / +19bp per event); Feb-Dec roll-window placebo −1.0 / +0.2; BD10→20 reversal +1.8 / +0.5
+(2009/2014-driven). January looks like the placebo months. Dead. (6 rows incl. 3 superseded by a short-January fix.)

@@ -305,3 +305,4 @@ is an opening-print artifact (015). New tests use prior-close information only.
 - [x] 343 Closing-auction reversal (agent) — dead.
 - [x] 340 Dealer inventory → IEF (agent) — weak, mostly duration premium; fails gate.
 - [x] 345 Bank securities H.8 (agent) — dead.
+- [x] 349 Commodity index January reweight (agent) — dead.
