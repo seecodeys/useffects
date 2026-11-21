@@ -69,3 +69,10 @@ existed, so the holdout is slightly contaminated for SPY + overseas-index signal
    2026-11-20: "keep going, don't stop the loop"). When the backlog runs low, brainstorm new hypotheses with an
    economic story (flows, scheduled events, structural constraints), add them to BACKLOG.md, and keep testing.
    Stay honest as N grows: prefer few, pre-specified, well-motivated variants over parameter sweeps.
+
+## 7. Forward paper-trading ledger (added 2026-11-21)
+`tools/paper_ledger.py` keeps a pre-committed, timestamped out-of-sample record of the two findings in
+`results/paper_trades.csv`. Each tick: run `python tools/paper_ledger.py plan` (adds/refreshes the next month-end's
+EQ and BOND rows; the EQ side is final only when planned with data through the session before the last trading day)
+and `python tools/paper_ledger.py settle` (fills realized bp once the exit date has data), then commit. Never edit a
+settled row or a row marked final=True by hand. Git history is the timestamp proof.

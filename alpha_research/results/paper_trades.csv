@@ -1,0 +1,3 @@
+trade,month,entry,exit,side,size,gap_at_plan,planned_at,data_through,final,ret_bp,settled_at
+EQ,2026-11,2026-11-30 open,2026-11-30 close,LONG,1.0,-0.0866,2026-11-21T00:02:35Z,2026-11-20,False,,
+BOND,2026-11,2026-11-24 close,2026-11-30 close,LONG,1.0,,2026-11-21T00:02:35Z,2026-11-20,True,,

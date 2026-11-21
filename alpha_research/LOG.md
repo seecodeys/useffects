@@ -1038,3 +1038,8 @@ Yield decline over the last 3 sessions (bp, t): Aaa 1983-92 +0.5 (0.7) | 1993-01
 Baa +1.8 (2.5) | +1.8 (2.1) | +2.4 (4.5). Pre-2002 permutation p = 0.03 (Aaa), <0.001 (Baa). The month-end bid shows up
 in investment-grade corporate yields too, from the 1980s-90s on, matching LQD (277) — consistent with a broad
 bond-index extension bid (part of it is the Treasury move these yields embed). Not registered.
+
+## Forward paper ledger started  ·  2026-11-21
+tools/paper_ledger.py + results/paper_trades.csv: pre-committed trades for each month-end, written before the event.
+November 2026 (planned with data through 2026-11-20): EQ LONG SPY 2026-11-30 open→close, full size (high vol;
+gap −8.66%, provisional until the 11-27 close); BOND long IEF 2026-11-24 close → 2026-11-30 close (final).
