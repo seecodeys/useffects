@@ -1102,3 +1102,8 @@ driven); B after-minus-before contrast +0.4 / +0.3; C QQQ−SPY after +0.6 / −
 Blackout = ≥8 of 15 mega-caps in pre-earnings blackout (EDGAR dates from 328). Long SPY t+1→t+4 after a −1.5% day:
 open-window dips +0.7 / −0.5; blackout dips −0.5 / +1.5; open−blackout contrast +0.9 / −1.4 (−1.0% trigger +0.7 / −0.9).
 Sign flips between periods (2008 vs 2020). Dead — agrees with 113/328.
+
+## 332 — Mortgage convexity-hedging continuation (agent-run; results/agent_332.md)  ·  2026-11-21
+Trigger: 5-day |Δ10y| > 21bp (train 90th pct); follow the move 5 sessions (lag-1), 1bp/side; "near the money" = Freddie
+30y within ±75bp of its 3-7y-earlier average. A TLT all triggers +0.5 / +0.2; B TLT in-zone +0.7 / −0.4; C IEF in-zone
++0.1 / +0.1; D short MBB / long IEF in-zone +1.1 / +0.4 (2008-09 driven). Dead.
