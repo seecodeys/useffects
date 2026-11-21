@@ -13,6 +13,11 @@ What is new here:
     P&L model "ief" (before 2016 and as a check): MTN notional x (IEF total return - T-bills) / 0.885.
   * Leg A rounding variants: "floor" (skip when 0 MES) or "nearest" (round half up, capped at MAX_LEV_A).
   * Margin per trade (MES and MTN % of notional) vs net liq, flagged above MARGIN_FLAG.
+  * BOT_FAITHFUL=True (default): the live bot's defaults, as in ../simulate.py: A at 2.8x (vol tilt 0.5) capped at
+    40 MES and 3x, B capped at bond.max_contracts = 200 MTN (default for MTN; hard limit 400), both caps in today's
+    dollars (S.CAP_MODE), 7x total; disaster stops (A 6% of equity intraday from ^GSPC/SPY extremes, B 4% from
+    ZN=F daily lows scaled to MTN by trailing beta / 0.885); leg B on 12:50 days at the previous session's close.
+    BOT_FAITHFUL=False reproduces the earlier research run exactly (A 2.85x uncapped, B 400 MTN, no stops, 16:00).
 Run:  python3 simulate_small.py      (writes trades_18k*.csv, yearly_18k.csv, periods_18k.csv, scenarios_small.csv,
                                       equity_18k.png, summary.md in this directory)
 """
@@ -35,8 +40,13 @@ from met.guardrails import size_contracts                       # noqa: E402  (t
 OUT = HERE
 HEADLINE_EQUITY = 18_000.0
 ACCOUNT_SIZES = [10_000, 18_000, 25_000, 50_000, 100_000]
-LEV_A = S.LEV_A                          # 2.85x MES at full size (half = 1.425x)
-MAX_LEV_A = 3.0                          # "nearest" rounding may not exceed this MES notional / net liq
+BOT_FAITHFUL = True                      # see the docstring; False = the earlier research run
+BOT_LEVERAGE = BOT_FAITHFUL              # A 2.8x (bot) vs 2.85x (research); leg B is 2.8 x 0.885 either way
+BOT_TIMES = BOT_FAITHFUL                 # leg B at the previous close on 12:50 days
+BOT_CAPS = "default" if BOT_FAITHFUL else None   # None: research (A uncapped, B 400 MTN literal) | "lev" | "default" | "hard"
+BOT_STOPS = BOT_FAITHFUL
+LEV_A = S.LEV_A_BOT if BOT_LEVERAGE else S.LEV_A_RESEARCH   # MES notional / net liq at full size
+MAX_LEV_A = S.A_MAX_LEV                  # 3.0: "nearest" rounding (and the bot) may not exceed this MES notional / net liq
 START = S.START
 
 # Micro Ultra 10-Year T-Note futures, exactly as the bot uses them
@@ -46,7 +56,8 @@ HEDGE = SPEC["hedge"]                    # 0.885 = beta of IEF daily returns on 
 _BC = BondConfig()
 LEV_B = _BC.leverage                     # 2.8 IEF-equivalent notional / net liq (bot default; research 2.81)
 B_MAX_LEV = _BC.max_leverage             # 4.5 futures notional / net liq ceiling
-B_MAX_CONTRACTS = SPEC["max_contracts"]  # 400
+B_MAX_CONTRACTS = SPEC["max_contracts"]  # 400 = MTN hard limit (the research run's cap)
+B_CAPS = {"default": SPEC["default_contracts"], "hard": SPEC["max_contracts"]}   # 200 / 400 MTN
 ROLL_BUFFER = _BC.roll_buffer_days       # 5 sessions
 MTN_TICK = 1 / 32                        # points; the bot's FakeBroker uses 1/32 for MTN = $3.125 per contract
 MTN_LAUNCH = "2024-01-01"                # CME launched MTN in 2024; earlier trades are hypothetical
@@ -163,24 +174,40 @@ def load():
     ratio = (tc / th).dropna()
     info["theo_ratio"] = ratio.median(); info["theo_ratio_rng"] = (ratio.quantile(0.05), ratio.quantile(0.95))
     d["mtn_px"] = tcf.where(tcf.notna() & (idx >= pd.Timestamp(TN_START)), th * info["theo_ratio"])
+    d["znf_model_ret"] = d.zn_ret_n * d.beta / HEDGE                       # ZN=F return scaled to MTN (TN per ZN)
     d["mtn_px_src"] = np.where(tcf.notna() & (idx >= pd.Timestamp(TN_START)), "TN=F", "synthetic")
     return d, info
 
 
 def simulate(d, equity0=HEADLINE_EQUITY, cost="base", a_round="floor", b_model=B_MODEL, mes_margin_pct=MES_MARGIN_PCT,
-             mtn_margin_pct=MTN_MARGIN_PCT, today=None):
+             mtn_margin_pct=MTN_MARGIN_PCT, today=None, bot_lev="param", bot_times="param", caps="param", stops="param"):
     """today: None, or dict(levA={1.0: x, 0.5: y}, levB=z, spx_now=...) = "today's rounding held fixed":
     MES leverage and MTN notional per $ of equity frozen at what a fresh account of this size gets at today's
-    prices (fractional contracts scale with equity, MES costs scaled to today's cost in bp of notional)."""
+    prices (fractional contracts scale with equity, MES costs scaled to today's cost in bp of notional).
+    b_model: "auto" (TN=F 2016+, IEF model before), "ief" (IEF model throughout), "znf" (TN=F 2016+, ZN=F x
+    trailing beta / 0.885 before: real futures prices throughout). bot_lev / bot_times / caps / stops default to
+    the module switches (BOT_LEVERAGE, BOT_TIMES, BOT_CAPS, BOT_STOPS)."""
+    P_ = lambda v, dflt: dflt if (isinstance(v, str) and v == "param") else v
+    bot_lev, bot_times, caps, stops = P_(bot_lev, BOT_LEVERAGE), P_(bot_times, BOT_TIMES), P_(caps, BOT_CAPS), P_(stops, BOT_STOPS)
+    lev_a = S.LEV_A_BOT if bot_lev else S.LEV_A_RESEARCH
     c = COSTS[cost]
     dd = d.loc[START:]
     idx = dd.index
-    pos = {t: i for i, t in enumerate(idx)}
     core, cash, nl_prev = equity0, 0.0, equity0
     B = None
     rows, trades = [], []
     rf_prev = dd.irx.iloc[0]
     tick_usd = MTN_TICK * MTN_MULT
+    mtn_now = d.mtn_px.iloc[-1]
+
+    def b_cap(t, P0):
+        if caps is None:
+            return B_MAX_CONTRACTS                                         # research run: 400 MTN, literal
+        if caps == "lev":
+            return 10 ** 9
+        n = B_CAPS[caps]
+        return n if S.CAP_MODE == "contracts" else int(math.floor(n * mtn_now / P0 + 1e-9))
+    alt = lambda r: r.znf_model_ret if b_model == "znf" else r.ief_model_ret   # pre-2016 return of the main path
     for i, t in enumerate(idx):
         r = dd.loc[t]
         core_ret = core * r.spy_cc if i > 0 else 0.0
@@ -194,34 +221,71 @@ def simulate(d, equity0=HEADLINE_EQUITY, cost="base", a_round="floor", b_model=B
             cash += interest
         rf_d = rf_prev * r.days / 360
         a_pnl = b_pnl = cost_day = 0.0
-        # --- leg B mark / exit at the close
+        # --- leg B mark / disaster stop / exit
         if B is not None:
-            p_tn = B["n"] * MTN_MULT * B["P_tn"] * (r.tn_ret if B["model"] == "tn" else r.ief_model_ret)
-            p_ief = B["n"] * MTN_MULT * B["P_ief"] * r.ief_model_ret
-            B["P_tn"] *= 1 + (r.tn_ret if B["model"] == "tn" else r.ief_model_ret)
-            B["P_ief"] *= 1 + r.ief_model_ret
+            early_exit = bot_times and r.rank_bwd == 1 and r.b_early      # 12:50 exit: previous close
+            r_tn = 0.0 if early_exit else (r.tn_ret if B["model"] == "tn" else alt(r))
+            r_ief = 0.0 if early_exit else r.ief_model_ret
+            main_ief = b_model == "ief"
+            Pm = B["P_ief"] if main_ief else B["P_tn"]
+            Pm_new = Pm * (1 + (r_ief if main_ief else r_tn))
+            stopped = False
+            if stops and not early_exit:
+                worst = min(Pm * (1 + B["k"] * r.zn_low_r), Pm_new)        # ZN=F low, scaled to MTN
+                P_stop = B["P0"] - S.B_STOP * B["nl0"] / (B["n"] * MTN_MULT)
+                if worst <= P_stop + 1e-12:
+                    Pm_new = P_stop - S.STOP_EXTRA_SLIP_TICKS * MTN_TICK
+                    stopped = True
+            p_tn = B["n"] * MTN_MULT * B["P_tn"] * r_tn
+            p_ief = B["n"] * MTN_MULT * B["P_ief"] * r_ief
+            if stopped:                                                      # the main path exits at the stop
+                if main_ief:
+                    p_ief = B["n"] * MTN_MULT * (Pm_new - B["P_ief"]); B["P_ief"] = Pm_new; B["P_tn"] *= 1 + r_tn
+                else:
+                    p_tn = B["n"] * MTN_MULT * (Pm_new - B["P_tn"]); B["P_tn"] = Pm_new; B["P_ief"] *= 1 + r_ief
+            else:
+                B["P_tn"] *= 1 + r_tn
+                B["P_ief"] *= 1 + r_ief
             B["g_tn"] += p_tn; B["g_ief"] += p_ief; B["roll_days"] += int(r.tn_roll)
-            pnl = p_tn if b_model == "auto" else p_ief
+            pnl = p_ief if main_ief else p_tn
             b_pnl += pnl; cash += pnl
-            if r.rank_bwd == 1:
+            if r.rank_bwd == 1 or stopped:
                 fee = B["n"] * c["mtn_fee"]; slip = B["n"] * c["mtn_slip_ticks"] * tick_usd
                 cash -= fee + slip; b_pnl -= fee + slip; cost_day += fee + slip
                 B["fee"] += fee; B["slip"] += slip
-                B.update(exit_date=t, exit_time=r.close_time, closed=True)
+                B.update(exit_date=t, closed=True,
+                         exit_time="disaster stop" if stopped else ("12:50" if early_exit else ("15:55" if bot_times else r.close_time)),
+                         exit_reason="disaster stop (4% of equity)" if stopped else
+                         ("12:50 exit (previous close)" if early_exit else "month-end close"))
         # --- leg A (intraday on the last session)
         if r.rank_bwd == 1 and np.isfinite(r.gap) and r.gap != 0 and np.isfinite(r.vol20):
             dirn = -np.sign(r.gap)
             px_prev = dd.gspc_close.iloc[i - 1] if i > 0 else r.gspc_close
-            want = LEV_A * r.sizeA * nl_prev / (S.MES_MULT * px_prev)
+            want = lev_a * r.sizeA * nl_prev / (S.MES_MULT * px_prev)
+            capn = S.cap_contracts(caps, "A", d, t) if caps is not None else 10 ** 9
             if today is not None:
-                n = today["levA"][r.sizeA] * nl_prev / (S.MES_MULT * px_prev)
-            elif a_round == "floor":
+                n = min(today["levA"][r.sizeA] * nl_prev / (S.MES_MULT * px_prev), capn)
+            elif caps is None and a_round == "floor":
                 n = math.floor(want + 1e-9)
-            else:
+            elif caps is None:
                 n = int(math.floor(want + 0.5))
                 while n > 0 and n * S.MES_MULT * px_prev / nl_prev > MAX_LEV_A + 1e-9:
                     n -= 1
+            else:
+                n, _ = size_contracts(nl_prev, px_prev, S.MES_MULT, lev_a * r.sizeA, 1.0, MAX_LEV_A, capn, a_round,
+                                      hard_max_contracts=capn)
+            note = ""
+            if caps is not None and n > 0:
+                b_not = B["n"] * MTN_MULT * B["P_tn"] if (B is not None and not B.get("closed")) else 0.0
+                if (n * S.MES_MULT * px_prev + b_not) / nl_prev > S.TOTAL_MAX_LEV + 1e-9:
+                    n, note = 0, "blocked: total leverage > 7x"
             p_in = r.gspc_close / (1 + r.spy_oc); p_out = r.gspc_close
+            reason, adv, src = "close", np.nan, ""
+            if stops and n > 0:
+                adv, src = S.a_adverse(r, dirn, p_in, p_out)
+                if n * S.MES_MULT * p_in * adv >= S.A_STOP * nl_prev:
+                    p_out = p_in - dirn * S.A_STOP * nl_prev / (n * S.MES_MULT) - dirn * S.STOP_EXTRA_SLIP_TICKS * S.MES_TICK
+                    reason = "disaster stop (6% of equity)"
             gross = dirn * n * S.MES_MULT * (p_out - p_in)
             fee = 2 * n * c["mes_fee"]; slip = 2 * n * c["mes_slip_ticks"] * S.MES_TICK * S.MES_MULT
             if today is not None:
@@ -232,8 +296,8 @@ def simulate(d, equity0=HEADLINE_EQUITY, cost="base", a_round="floor", b_model=B
             m_b = B["n"] * mtn_margin_pct * MTN_MULT * B["P0"] if B else 0.0   # B is still open during the last session
             trades.append(dict(
                 leg="A", hypothetical=t < pd.Timestamp(MES_LAUNCH), entry_date=t.date(), entry_time="09:30",
-                exit_date=t.date(), exit_time=r.close_time,
-                direction=("long" if dirn > 0 else "short") if n > 0 else "skipped (0 contracts)",
+                exit_date=t.date(), exit_time="disaster stop" if reason != "close" else r.close_time,
+                direction=("long" if dirn > 0 else "short") if n > 0 else (note or "skipped (0 contracts)"),
                 contracts=n, contracts_wanted=want, contract_notional=S.MES_MULT * p_in,
                 position_notional=n * S.MES_MULT * p_in, lev_x_netliq=n * S.MES_MULT * p_in / nl_prev,
                 entry_price=p_in, exit_price=p_out, gross_pnl=gross, gross_pnl_alt_model=np.nan,
@@ -241,12 +305,14 @@ def simulate(d, equity0=HEADLINE_EQUITY, cost="base", a_round="floor", b_model=B
                 netliq_at_entry=nl_prev, margin_futures=m_a + m_b, margin_pct_netliq=100 * (m_a + m_b) / nl_prev,
                 total_req_pct_netliq=100 * (m_a + m_b + SPY_MAINT * core) / nl_prev,
                 margin_flag=(m_a + m_b) / nl_prev > MARGIN_FLAG, vol_tilt_size=r.sizeA,
-                signal_gap_pct=100 * r.gap))
+                signal_gap_pct=100 * r.gap, capped=bool(n < math.floor(want + 1e-9)),
+                exit_reason=reason if n > 0 else (note or "0 contracts"), adverse_pct=100 * adv, adverse_source=src))
         nl = core + cash
         if B is not None and B.get("closed"):
-            g_main = B["g_tn"] if b_model == "auto" else B["g_ief"]
-            g_alt = B["g_ief"] if b_model == "auto" else B["g_tn"]
-            used = B["model"] if b_model == "auto" else "ief"
+            main_ief = b_model == "ief"
+            g_main = B["g_ief"] if main_ief else B["g_tn"]
+            g_alt = B["g_tn"] if main_ief else B["g_ief"]
+            used = "ief" if main_ief else (B["model"] if b_model == "auto" or B["model"] == "tn" else "znf")
             net = g_main - B["fee"] - B["slip"]
             m = B["n"] * mtn_margin_pct * MTN_MULT * B["P0"]
             trades.append(dict(
@@ -256,7 +322,7 @@ def simulate(d, equity0=HEADLINE_EQUITY, cost="base", a_round="floor", b_model=B
                 contracts_wanted=B["want"], contract_notional=MTN_MULT * B["P0"],
                 position_notional=B["n"] * MTN_MULT * B["P0"], lev_x_netliq=B["n"] * MTN_MULT * B["P0"] / B["nl0"],
                 ief_equiv_lev=B["n"] * MTN_MULT * B["P0"] / B["nl0"] / HEDGE,
-                entry_price=B["P0"], exit_price=B["P_tn"] if used == "tn" else B["P_ief"], price_source=B["src"],
+                entry_price=B["P0"], exit_price=B["P_ief"] if main_ief else B["P_tn"], price_source=B["src"],
                 b_model=used, roll_days_neutralised=B["roll_days"],
                 gross_pnl=g_main, gross_pnl_alt_model=g_alt if B["model"] == "tn" else np.nan,
                 gross_pnl_tn=B["g_tn"] if B["model"] == "tn" else np.nan, gross_pnl_ief=B["g_ief"],
@@ -264,28 +330,39 @@ def simulate(d, equity0=HEADLINE_EQUITY, cost="base", a_round="floor", b_model=B
                 net_pct_account=100 * net / B["nl0"], netliq_at_entry=B["nl0"], margin_futures=m,
                 margin_pct_netliq=100 * m / B["nl0"],
                 total_req_pct_netliq=100 * (m + SPY_MAINT * B["core0"]) / B["nl0"],
-                margin_flag=m / B["nl0"] > MARGIN_FLAG))
+                margin_flag=m / B["nl0"] > MARGIN_FLAG, capped=B["capped"], exit_reason=B["exit_reason"]))
             B = None
         if r.rank_bwd == S.B_HOLD_RANK and t < idx[-1]:
             X = idx[min(i + S.B_HOLD_RANK - 1, len(idx) - 1)]                  # month-end exit session
             y_, m_, lsd = contract_month_for(X.date(), ROLL_BUFFER, "MTN")
             sym = "MTN" + "FGHJKMNQUVXZ"[m_ - 1] + str(y_)[-1]
-            P0 = r.mtn_px
-            want = LEV_B * HEDGE * nl / (P0 * MTN_MULT)
+            early_entry = bot_times and r.b_early                             # 12:50 entry: previous close
+            P0 = dd.mtn_px.iloc[i - 1] if early_entry else r.mtn_px
+            nl_s = nl_prev if early_entry else nl
+            want = LEV_B * HEDGE * nl_s / (P0 * MTN_MULT)
+            capb = b_cap(t, P0)
             if today is None:
-                n, _ = size_contracts(nl, P0, MTN_MULT, LEV_B * HEDGE, 1.0, B_MAX_LEV, B_MAX_CONTRACTS, "floor",
-                                      hard_max_leverage=HARD_MAX_BOND_LEVERAGE, hard_max_contracts=B_MAX_CONTRACTS)
+                n, _ = size_contracts(nl_s, P0, MTN_MULT, LEV_B * HEDGE, 1.0, B_MAX_LEV, capb, "floor",
+                                      hard_max_leverage=HARD_MAX_BOND_LEVERAGE, hard_max_contracts=capb)
             else:
-                n = today["levB"] * nl / (P0 * MTN_MULT)
-            hold = dd.iloc[i + 1:i + S.B_HOLD_RANK]
+                n = min(today["levB"] * nl_s / (P0 * MTN_MULT), capb)
+            hold = dd.iloc[(i if early_entry else i + 1):i + S.B_HOLD_RANK]
             model = "tn" if (r.mtn_px_src == "TN=F" and hold.tn_ret.notna().all()
-                             and len(hold) == S.B_HOLD_RANK - 1) else "ief"
+                             and len(hold) >= S.B_HOLD_RANK - 1) else "ief"
             if n > 0:
                 fee = n * c["mtn_fee"]; slip = n * c["mtn_slip_ticks"] * tick_usd
                 cash -= fee + slip; b_pnl -= fee + slip; cost_day += fee + slip
                 B = dict(n=n, want=want, P0=P0, P_tn=P0, P_ief=P0, model=model, src=r.mtn_px_src, sym=sym, lsd=lsd,
-                         g_tn=0.0, g_ief=0.0, fee=fee, slip=slip, entry_date=t, entry_time=r.close_time, nl0=nl,
-                         core0=core, roll_days=0)
+                         g_tn=0.0, g_ief=0.0, fee=fee, slip=slip, entry_date=t, nl0=nl_s, core0=core, roll_days=0,
+                         entry_time="12:50" if early_entry else ("15:58" if bot_times else r.close_time),
+                         k=r.beta / HEDGE, capped=bool(n < math.floor(want + 1e-9)))
+                if early_entry:                                              # today's move from the previous close
+                    r_tn = r.tn_ret if model == "tn" else alt(r)
+                    p_tn = n * MTN_MULT * P0 * r_tn; p_ief = n * MTN_MULT * P0 * r.ief_model_ret
+                    B["P_tn"] *= 1 + r_tn; B["P_ief"] *= 1 + r.ief_model_ret
+                    B["g_tn"] += p_tn; B["g_ief"] += p_ief
+                    pnl = p_ief if b_model == "ief" else p_tn
+                    b_pnl += pnl; cash += pnl
             else:
                 trades.append(dict(
                     leg="B", hypothetical=t < pd.Timestamp(MTN_LAUNCH), entry_date=t.date(), entry_time=r.close_time,
@@ -293,9 +370,9 @@ def simulate(d, equity0=HEADLINE_EQUITY, cost="base", a_round="floor", b_model=B
                     contract_last_trade=lsd, contracts=0, contracts_wanted=want, contract_notional=MTN_MULT * P0,
                     position_notional=0, lev_x_netliq=0, ief_equiv_lev=0, entry_price=P0, exit_price=np.nan,
                     price_source=r.mtn_px_src, b_model=model, gross_pnl=0, gross_pnl_alt_model=np.nan,
-                    commissions=0, slippage=0, net_pnl=0, net_pct_account=0, netliq_at_entry=nl, margin_futures=0,
-                    margin_pct_netliq=0, total_req_pct_netliq=100 * SPY_MAINT * core / nl, margin_flag=False,
-                    equity_after=nl))
+                    commissions=0, slippage=0, net_pnl=0, net_pct_account=0, netliq_at_entry=nl_s, margin_futures=0,
+                    margin_pct_netliq=0, total_req_pct_netliq=100 * SPY_MAINT * core / nl_s, margin_flag=False,
+                    equity_after=nl, capped=False, exit_reason="0 contracts"))
         # --- core rebalance (10% band)
         nl = core + cash
         reb = 0.0
@@ -470,7 +547,8 @@ TCOLS = ["leg", "hypothetical", "entry_date", "entry_time", "exit_date", "exit_t
          "lev_x_netliq", "ief_equiv_lev", "entry_price", "exit_price", "price_source", "b_model",
          "roll_days_neutralised", "gross_pnl", "gross_pnl_alt_model", "gross_pnl_tn", "gross_pnl_ief", "commissions",
          "slippage", "net_pnl", "net_pct_account", "netliq_at_entry", "equity_after", "margin_futures",
-         "margin_pct_netliq", "total_req_pct_netliq", "margin_flag", "vol_tilt_size", "signal_gap_pct"]
+         "margin_pct_netliq", "total_req_pct_netliq", "margin_flag", "vol_tilt_size", "signal_gap_pct", "capped",
+         "exit_reason", "adverse_pct", "adverse_source"]
 
 
 def main():
