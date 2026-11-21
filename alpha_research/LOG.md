@@ -1363,3 +1363,8 @@ close → QRA Wednesday close +0.4 / −1.1; QRA Wednesday only −1.2 / −0.4;
 Settlement/funding mechanics (361-365) and four new free data sources (366-369: SPDR shares outstanding, FINRA margin
 debt, auction allotments by investor class, VX open interest). Nothing passed the gate. Data audit (363) confirmed the
 bond-bid estimates are unaffected by ETF ex-dates. Registry: 656.
+
+## 370 — Treasury TIC foreign flows (agent-run; results/agent_370.md)  ·  2026-11-21
+TIC S-form 2002-22 (revised figures), month m used at end of m+2, held 1 month, 3-month flow z>|1|. Official Treasury
+flow → IEF +0.1 / −1.2; private → IEF +1.5 / −0.4 (2008); Caribbean build-up → short TLT −1.6 / +1.0 (2022);
+foreign US-stock buying → SPY−EFA −0.6 / −0.2. Dead.

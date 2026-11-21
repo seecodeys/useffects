@@ -1,0 +1,30 @@
+A: months 502 from 1981-03  z>+1 116  z<-1 109
+B: months 502 from 1981-03  z>+1 139  z<-1 94
+C: months 226 from 2004-03  z>+1 47  z<-1 42
+D: months 514 from 1980-03  z>+1 132  z<-1 111
+
+370A official net UST purchases 3m z>+1 long / <-1 short IEF 1m lag1
+  train_sharpe=+0.04  train_t=+0.14  valid_sharpe=-0.42  valid_t=-1.18  valid_bp_per_trade=-1.39  valid_traded_%=+40.57  gate=False
+  train: signal months 87 (long 38)  net bp/month +2.3  monthly t +0.13  timing-value daily t -0.15  hit 52%
+  valid: signal months 49 (long 13)  net bp/month -23.4  monthly t -1.14  timing-value daily t -1.11  hit 53%
+  per-year net bp: 2002:-354 2003:+1290 2004:+366 2005:-160 2006:-285 2007:-387 2008:-300 2009:-113 2010:+92 2011:+190 2012:+117 2013:+386 2014:-623 2015:-71 2016:-123 2017:-20 2018:-129 2019:-88 2020:-638 2021:-66
+
+370B private net UST purchases 3m z>+1 long / <-1 short IEF 1m lag1
+  train_sharpe=+0.41  train_t=+1.46  valid_sharpe=-0.14  valid_t=-0.40  valid_bp_per_trade=-0.65  valid_traded_%=+35.55  gate=False
+  train: signal months 95 (long 44)  net bp/month +27.3  monthly t +1.39  timing-value daily t +0.97  hit 54%
+  valid: signal months 47 (long 20)  net bp/month -10.2  monthly t -0.44  timing-value daily t -0.43  hit 40%
+  per-year net bp: 2002:+610 2003:+253 2004:-126 2005:-92 2006:-365 2008:+1824 2009:+38 2010:+864 2011:-1069 2012:+225 2013:+472 2014:-12 2015:+238 2016:+349 2017:-73 2018:+171 2019:-226 2020:-22 2021:-25 2022:-879
+
+370C Caribbean net UST purchases 3m z>+1 -> short TLT 1m lag1
+  train_sharpe=-0.46  train_t=-1.64  valid_sharpe=+0.36  valid_t=+1.01  valid_bp_per_trade=+4.82  valid_traded_%=+25.07  gate=False
+  train: signal months 27 (long 0)  net bp/month -120.5  monthly t -1.27  timing-value daily t -0.92  hit 37%
+  valid: signal months 30 (long 0)  net bp/month +80.9  monthly t +1.03  timing-value daily t +1.04  hit 60%
+  per-year net bp: 2004:-790 2005:-157 2008:-2785 2009:+1188 2010:-721 2011:-405 2012:+423 2015:-1066 2016:+1070 2018:+356 2021:-423 2022:+2494
+
+370D foreign net US-stock purchases 3m z>+1 long SPY/short EFA, <-1 reverse, 1m lag1
+  train_sharpe=-0.18  train_t=-0.62  valid_sharpe=-0.08  valid_t=-0.24  valid_bp_per_trade=-0.41  valid_traded_%=+56.01  gate=False
+  train: signal months 89 (long -)  net bp/month -18.8  monthly t -0.90  timing-value daily t -0.58  hit 44%
+  valid: signal months 66 (long -)  net bp/month -7.4  monthly t -0.26  timing-value daily t -0.24  hit 36%
+  per-year net bp: 2002:-330 2003:+97 2004:+349 2005:+98 2006:-794 2007:-719 2008:-45 2009:+545 2011:-399 2012:-297 2013:+26 2014:-152 2015:-106 2016:-46 2017:-444 2018:-38 2019:-493 2020:+245 2021:+48 2022:+377
+
+registry size (this agent): 4
