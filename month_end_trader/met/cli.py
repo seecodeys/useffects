@@ -210,7 +210,8 @@ def main(argv=None):
     if a.cmd == "validate-data":
         from .signal import yahoo_daily
         bad = 0
-        for sym in (cfg.signal.equity, cfg.signal.bond):
+        syms = [cfg.signal.equity, cfg.signal.bond] + (["IEF"] if cfg.bond.enabled else [])   # IEF: bond-leg monitor
+        for sym in syms:
             ib_s = broker.daily_adjusted_closes(sym, days=150)
             yh = yahoo_daily(sym, days=220)["adjclose"]
             j = ib_s.to_frame("ib").join(yh.rename("yahoo"), how="inner").dropna()
