@@ -291,3 +291,4 @@ is an opening-print artifact (015). New tests use prior-close information only.
 - [x] 328 Mega-cap earnings clusters via EDGAR (agent) — dead.
 - [x] 333 Buyback dip support by blackout window (agent) — dead.
 - [x] 332 Mortgage convexity hedging (agent) — dead.
+- [x] 329 Gotobi Tokyo fix (agent) — real but decayed; net ~0 after costs (weak).

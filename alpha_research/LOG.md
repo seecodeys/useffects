@@ -1107,3 +1107,10 @@ Sign flips between periods (2008 vs 2020). Dead — agrees with 113/328.
 Trigger: 5-day |Δ10y| > 21bp (train 90th pct); follow the move 5 sessions (lag-1), 1bp/side; "near the money" = Freddie
 30y within ±75bp of its 3-7y-earlier average. A TLT all triggers +0.5 / +0.2; B TLT in-zone +0.7 / −0.4; C IEF in-zone
 +0.1 / +0.1; D short MBB / long IEF in-zone +1.1 / +0.4 (2008-09 driven). Dead.
+
+## 329 — Gotobi (Tokyo 09:55 JST fix) USD buying (agent-run; results/agent_329.md)  ·  2026-11-21
+USDJPY 1-min (HistData), hand-built Japanese holiday calendar, 0.5bp/side. Long 08:00→09:55 JST on gotobi days:
+train t **+3.68** / valid +0.62 (+0.4bp/trade net); post-fix fade 09:55→11:00 +0.4 / −1.7; 25th/month-end only +1.6 / −0.9;
+non-gotobi control −1.6 / −2.2. Gotobi beat non-gotobi days by +2.4bp gross (t 4.0) in 2001-14 and +1.1bp (t 1.6) in
+2015-22, positive in 19/22 years — a real, well-known flow, but it halved after 2014 and the net edge is ~0 after costs.
+Weak — documented, not tradeable at retail costs. Registry: 470.
