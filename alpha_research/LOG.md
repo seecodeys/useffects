@@ -1422,3 +1422,8 @@ the curve bid.
 2nd/3rd/4th Wednesdays (prior session on holidays), 540 train / 288 valid events, calendar-known. Long SPY on payment
 days, timing value −2.0 / −0.7; plus next session −0.7 / −0.8; payment-Wed minus other-Wed −2.6 / −1.6; BIL placebo =
 cost drag. Wrong sign (the 1st Wednesday sits in the turn-of-month window). Dead.
+
+## 379 — Target-date glide-path January reset (agent-run; results/agent_379.md)  ·  2026-11-21
+Short SPY / long vol-matched TLT or AGG, calendar-known. First 5 January sessions (TLT) −1.5 / −0.3; first 10 +0.1 / +0.4;
+AGG −0.3 / −0.4; first 5 sessions of every quarter −1.7 / −1.5. Early January favours stocks, not bonds, and the effect
+gets worse (not better) as target-date AUM grew after 2010. Dead.
