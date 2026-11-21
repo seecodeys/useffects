@@ -1097,3 +1097,8 @@ weekend +0.5 / −1.6. Dead (A weak, mostly market exposure).
 New data: SEC EDGAR 8-K Item 2.02 filing dates for 15 long-lived mega-caps (tools/edgar_earnings.py), 72 cluster
 quarters 2005-22. A long SPY 5 sessions after the cluster week (lag-1): +1.3 / +2.1 (timing t 0.9 / 1.6; 2008/2020
 driven); B after-minus-before contrast +0.4 / +0.3; C QQQ−SPY after +0.6 / −1.0; D contrast −/+ ~0. Dead (agrees with 113).
+
+## 333 — Buyback-desk dip support: open window vs blackout (agent-run; results/agent_333.md)  ·  2026-11-21
+Blackout = ≥8 of 15 mega-caps in pre-earnings blackout (EDGAR dates from 328). Long SPY t+1→t+4 after a −1.5% day:
+open-window dips +0.7 / −0.5; blackout dips −0.5 / +1.5; open−blackout contrast +0.9 / −1.4 (−1.0% trigger +0.7 / −0.9).
+Sign flips between periods (2008 vs 2020). Dead — agrees with 113/328.

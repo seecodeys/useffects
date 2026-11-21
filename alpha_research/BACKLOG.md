@@ -289,3 +289,4 @@ is an opening-print artifact (015). New tests use prior-close information only.
 - [x] 326 Big-day next-session reversal (agent) — dead.
 - [x] 327 Holiday-week flows (agent) — dead.
 - [x] 328 Mega-cap earnings clusters via EDGAR (agent) — dead.
+- [x] 333 Buyback dip support by blackout window (agent) — dead.
