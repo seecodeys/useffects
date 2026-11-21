@@ -1,14 +1,28 @@
 # Month-end trader (IBKR)
 
-Automates research strategy 013: hold SPY as the core, and on the **last NYSE trading day of each month** add
-an **MES futures overlay of 2x net liquidation** from the open to the close.
+Automates two month-end research strategies on top of a SPY core:
 
+**Leg A (research 013 + 168):** on the **last NYSE trading day of each month**, an MES (or ES) futures overlay from the open to the close.
 - **Direction:** −sign(SPY MTD − TLT MTD), measured through the previous close. If stocks lagged bonds this month the bot goes LONG; if they beat bonds it goes SHORT.
-- **Entry:** 09:30:01 ET.
-- **Exit:** 15:59:58 ET, or 12:59:58 on 1 pm half days.
-- **Overnight:** never holds anything overnight. Your SPY core is never touched.
+- **Size:** `strategy.leverage` x net liquidation. With `vol_tilt: true`, months where SPY's 20-day vol is at or below 0.837%/day (the fixed 2002-14 median) trade `low_vol_scale` (0.5x) of that.
+- **Entry / exit:** 09:30:01 ET to 15:59:58 ET (12:59:58 on 1 pm half days). Never held overnight.
 
-> Research code, not investment advice. Run it in **paper mode** first, for at least one or two month-ends.
+**Leg B (research 276, `bond:`):** the month-end Treasury bid. Long 10-year Treasury futures over the last 3 sessions of each month.
+- **Timing:** enter 15:58 ET on the 4th-last session, exit 15:55 ET on the month-end session (12:50 ET on 1 pm closes). The position is held overnight and over weekends and holidays.
+- **Instrument:** `ZN` (about $107k per contract) or, for accounts below about $150k, `MTN` (Micro Ultra 10-Year, about $11k, cash settled, traded with marketable limit orders).
+- **Size:** `bond.leverage` x net liq of IEF-equivalent exposure; futures notional = that x `hedge_ratio` (ZN 1.14, MTN 0.885).
+- **Contract choice:** never a contract whose first notice / last trade day is within 5 sessions of the exit. In Feb/May/Aug/Nov this means the next-but-one quarterly contract.
+- **Guards** run whenever CBOT trades: disaster stop (4% of equity), kill switch, broker-vs-fills check. An SPRT decay monitor (`met bond-report`) can halve or stop the leg.
+
+**Both legs:**
+- One daemon runs both on one IB connection.
+- Order refs keep them apart: `MET-<date>-…` for leg A, `MEB-<month-end>-…` for leg B.
+- `guardrails.max_total_leverage` (default 7x) caps all futures notional together.
+- Your SPY core is never touched.
+
+Backtest with IBKR costs and whole contracts: `backtest/summary.md` ($100k-$1M) and `backtest/small_account/summary.md` ($18k, MTN).
+
+> Research code, not investment advice. Run it in **paper mode** first, for at least one or two month-ends (see PAPER_TEST.md).
 
 ## How a trade day runs (all times ET)
 
@@ -132,15 +146,16 @@ The daemon is a single loop of idempotent `tick()`s over the state saved in `sta
 
 | Command | What it does |
 |---|---|
-| `run` | Start the daemon |
-| `status` | Show the next trade date, the current state and the monitor result |
-| `signal` | Compute the signal for the next trade date |
-| `check` | Connect and run the full preflight, with no orders |
-| `test-order` | Paper only: buy 1 contract and sell it immediately |
-| `flatten` | Close any position the bot owns (asks first; daemon must be stopped) |
-| `resolve DATE [--price P]` | Record a manual close the bot cannot see, e.g. one done in TWS without the MET ref (daemon stopped) |
-| `kill` / `unkill` | Create or remove the kill switch file |
-| `report` | Run the decay monitor now |
+| `run` | Start the daemon (both legs when `bond.enabled`) |
+| `status` | Show the next trade date / bond window, the current states and the monitor results |
+| `signal` | Compute the leg-A signal for the next trade date |
+| `check` | Connect and run the full leg-A preflight, with no orders |
+| `bond-check` | Connect and run the full leg-B preflight for the next window (contract, size, margin), with no orders |
+| `test-order [--leg bond]` | Paper only: buy 1 contract and sell it immediately (MES, or the bond leg's contract) |
+| `flatten` | Close any position either leg owns (asks first; daemon must be stopped) |
+| `resolve DATE [--leg bond] [--price P]` | Record a manual close the bot cannot see, e.g. one done in TWS without the MET-/MEB- ref (daemon stopped) |
+| `kill` / `unkill` | Create or remove the kill switch file (both legs) |
+| `report` / `bond-report` | Run the leg-A / leg-B decay monitor now |
 | `dry-run --months N` | Run the whole daemon against the simulated broker |
 
 ## Tests

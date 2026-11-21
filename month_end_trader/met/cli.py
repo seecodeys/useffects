@@ -63,7 +63,7 @@ def main(argv=None):
     ap.add_argument("--yes", action="store_true")
     ap.add_argument("date", nargs="?", help="trade date for `resolve`")
     ap.add_argument("--price", type=float, default=None, help="close price for `resolve` (default: current price)")
-    ap.add_argument("--leg", choices=["a", "bond"], default="a", help="`resolve`: which leg's state (default a)")
+    ap.add_argument("--leg", choices=["a", "bond"], default="a", help="`resolve` / `test-order`: which leg (default a)")
     ap.add_argument("-v", action="store_true")
     a = ap.parse_args(argv)
 
@@ -248,8 +248,27 @@ def main(argv=None):
         from .state import unfinished
         if cfg.mode != "paper":
             print("test-order is paper-only"); return 2
-        if now().date() == cal.next_trade_date(now().date()) or unfinished(cfg.monitoring.state_dir):
-            print("refusing on a trade day or while a trade is unfinished"); return 2
+        if now().date() == cal.next_trade_date(now().date()) or unfinished(cfg.monitoring.state_dir) or \
+                unfinished(cfg.monitoring.state_dir, prefix="bond"):
+            print("refusing on a trade day or while a trade (either leg) is unfinished"); return 2
+        if a.leg == "bond":
+            if bx is None:
+                print("bond leg is not enabled in the config"); return 2
+            from .bond import contract_month_for, window_for
+            from .config import BOND_SPECS
+            _, X = window_for(broker.now().date(), cfg.bond.hold_sessions)
+            y, m, safe = contract_month_for(X, cfg.bond.roll_buffer_days, cfg.bond.instrument)
+            spec = BOND_SPECS[cfg.bond.instrument]
+            c = broker.front_future(cfg.bond.instrument, cfg.bond.exchange,
+                                    safe - dt.timedelta(days=7) if spec["cash_settled"] else dt.date(y, m, 1))
+            print(f"bond contract for the {X} window: {c.local_symbol} (conId {c.con_id}), IB last trade {c.expiry}, "
+                  f"bot's last safe day {safe}, multiplier {c.multiplier:g} (expected {spec['multiplier']:g})")
+            print("price", broker.price(c), "| order type:", "limit" if bx.use_limit() else "market")
+            r1 = broker.market_order(c, "BUY", 1, "TEST-buy", 30, limit_price=bx.limit_price(c, "BUY")); print("buy:", r1)
+            broker.sleep(2)
+            r2 = broker.market_order(c, "SELL", r1.filled or 1, "TEST-sell", 30, limit_price=bx.limit_price(c, "SELL"))
+            print("sell:", r2)
+            print("position now:", broker.future_position(c)); return 0
         c = broker.front_future(cfg.strategy.instrument, cfg.strategy.exchange, now().date() + dt.timedelta(days=3))
         print("contract", c.local_symbol, c.expiry, "price", broker.price(c))
         r1 = broker.market_order(c, "BUY", 1, "TEST-buy", 30); print("buy:", r1)

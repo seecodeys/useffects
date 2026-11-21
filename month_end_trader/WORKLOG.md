@@ -41,7 +41,8 @@ Treasury bid, long ZN over the last 3 sessions). Backtest with IBKR costs: backt
       default runs 24, MET_SLOW=1 all 286
 - [ ] CBOT holiday/early-close calendar: SIFMA-only early closes (14:00 ET, e.g. day before Good Friday / Christmas Eve when
       NYSE is a full day) and Good Friday rates sessions - check whether any E/X ever falls on one (2003-2030)
-- [ ] README + PAPER_TEST.md: leg B section (ZN permissions, CBOT data, first paper window 24 -> 30 Nov 2026)
+- [x] README + PAPER_TEST.md for both legs (first window 24 -> 30 Nov 2026, H7 contract, alert timeline, -manual refs,
+      resolve --leg bond); `met test-order --leg bond` (prints IB's contract, last trade day, multiplier; limit for MTN)
 - [x] Combined-exposure guardrail: guardrails.max_total_leverage (default 7x, hard 8x) on all futures notional of
       both legs incl. the new order; permanent blocker (no retries). 3 tests
 - [x] Small accounts (user asked 2026-11-21): bond.instrument: MTN (Micro Ultra 10-Year T-Note, $100 x price, cash

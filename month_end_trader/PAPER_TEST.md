@@ -1,8 +1,22 @@
-# Paper-test checklist (before the first trade, 30 Nov 2026)
+# Paper-test checklist: first window 24 → 30 Nov 2026 (both legs)
 
 Run everything on the always-on machine against your **paper** account (DU…). Tick each box. Commands assume you are in `month_end_trader/` with the venv active, and `config.yaml` has `mode: paper`.
 
-## A. Once, any day before the trade (about 30 min)
+**This month's schedule (ET)**
+
+| When | Leg | What |
+|---|---|---|
+| Mon 23 Nov 16:30 | B | Alert `BOND Bond window 2026-11-24 -> 2026-11-30 starts tomorrow` |
+| Tue 24 Nov 15:28 | B | Preflight, then `BOND … PLANNED BUY n ZNH7` (or `MTNH7`) |
+| Tue 24 Nov 15:58 | B | Entry, long ZN/MTN, held over Wed, Thanksgiving (closed) and the Fri half day |
+| Fri 27 Nov 13:25 | A | `Tomorrow (2026-11-30) month-end trade: LONG/SHORT` |
+| Mon 30 Nov 09:10 / 09:30:01 | A | MES preflight, then entry |
+| Mon 30 Nov 15:55 | B | Bond exit (clear of leg A's exit) |
+| Mon 30 Nov 15:59:58 | A | MES exit |
+
+The bond contract is **March 2027** (ZNH7 / MTNH7). December's last safe day (first notice for ZN, last trade for MTN) falls inside the window, so the bot rolls to March.
+
+## A. Once, before Mon 23 Nov (about 45 min)
 
 **IB Gateway / TWS settings**
 - [ ] Paper login works, under a **dedicated API username** if you have one.
@@ -10,99 +24,114 @@ Run everything on the always-on machine against your **paper** account (DU…). 
 - [ ] **Bypass Order Precautions for API orders** on (Configure → API → Precautions).
 - [ ] Timezone **America/New_York**.
 - [ ] Auto-restart time outside 09:00–16:30 ET.
+- [ ] Market data on the API username:
+  - CME real-time L1 (MES) **and CBOT real-time L1 (ZN/MTN)**, e.g. the non-pro "US Securities Snapshot and Futures Value Bundle".
+  - US equity data for the SPY/TLT daily bars.
+- [ ] Trading permission: futures, United States.
+
+**Config:** leg B is in `bond:`.
+- [ ] `enabled: true`.
+- [ ] `instrument: ZN` above about $150k, or `MTN` below that (micro, cash settled; the bot uses limit orders for it).
+- [ ] `leverage: 2.8` (IEF-equivalent) and `strategy.leverage: 2.8` with `vol_tilt: true`. Lower both for the first paper run if you prefer.
 
 **Bot checks.** Each should succeed before you go on:
 
 ```bash
-python -m met.cli signal --config config.yaml
+python -m met.cli status --config config.yaml
 ```
-- [ ] Both `ibkr` and `yahoo` lines are printed (marked "provisional" before Friday's close) and agree. It says LONG for 30 Nov if the gap stays negative.
+- [ ] Shows the leg-A trade date 2026-11-30 and `bond leg: … next window entry 2026-11-24 … -> exit 2026-11-30`.
 
 ```bash
 python -m met.cli check --config config.yaml
+python -m met.cli bond-check --config config.yaml
 ```
-- [ ] Prints `preflight for 2026-11-30: OK` and a plan. Before Friday 27 Nov's close it says **PROVISIONAL**: the signal uses the latest close, and nothing is traded.
-- [ ] Any other BLOCK line has been read and resolved.
+- [ ] `check` prints `preflight for 2026-11-30: OK` (PROVISIONAL before Fri 27 Nov's close).
+- [ ] `bond-check` prints `bond preflight for window 2026-11-24 -> 2026-11-30: OK` with a plan for the **H7** contract.
+- [ ] Read and resolve any BLOCK line.
 
 ```bash
+python -m met.cli signal --config config.yaml
 python -m met.cli validate-data --config config.yaml
+python -m met.cli bond-report --config config.yaml
 ```
-- [ ] Prints `OK: sources consistent`.
+- [ ] Both `ibkr` and `yahoo` signal lines agree.
+- [ ] `OK: sources consistent`.
+- [ ] The bond report prints a status (it writes `state/bond_monitor.json`).
 
-```bash
-python -m met.cli rehearse
-```
-- [ ] Read the alert timeline. These are the messages you will get on 27 and 30 Nov.
-
-**Order and execution test.** Not on a trade day, and with the daemon stopped:
+**Order and execution tests.** Run these on a day that is not a trade day (e.g. Sat 21 or Mon 23 Nov), with the daemon stopped:
 
 ```bash
 python -m met.cli test-order --config config.yaml
+python -m met.cli test-order --leg bond --config config.yaml
 ```
-- [ ] It buys 1 MES and sells it.
-- [ ] The position returns to 0.
-- [ ] Both fills appear in TWS → Trades with Order Ref `TEST-buy` / `TEST-sell`.
+- [ ] Leg A buys and sells 1 MES; the position returns to 0.
+- [ ] The bond test prints the contract IB resolved. Check:
+  - its **localSymbol** and **IB last trade** date;
+  - `multiplier 1000` (ZN) or `100` (MTN);
+  - whether MTN's limit orders filled. If they don't fill, raise `bond.limit_ticks`.
+- [ ] All four fills appear in TWS → Trades with Order Ref `TEST-buy` / `TEST-sell`.
+- [ ] In TWS **Contract Info** for the H7 contract, note IBKR's close-out date (ZN). It must be well after 30 Nov.
 
 **Execution reports survive a Gateway restart.** This is what the bot's ownership depends on:
-- [ ] After the test order, restart IB Gateway (File → Restart, or `docker compose -f deploy/docker-compose.yml restart ib-gateway`).
-- [ ] Run this; it should list the two TEST fills from today:
+- [ ] After the test orders, restart IB Gateway.
+- [ ] This lists today's TEST fills:
   ```bash
   python -c "from met.config import load_config; from met.ibkr import IBKRBroker; c=load_config('config.yaml'); b=IBKRBroker(c); b.connect(); print(b.executions('TEST-'))"
   ```
 
 **Alerts**
-- [ ] `python -m met.cli alert-test --config config.yaml` prints `alert delivered`, and the message arrives on your phone or email.
+- [ ] `python -m met.cli alert-test --config config.yaml` prints `alert delivered`, and the message arrives.
 
-## B. Start the daemon (by Friday 27 Nov, 13:00 ET)
+## B. Start the daemon by Mon 23 Nov 15:00 ET
 
 ```bash
-# systemd: the unit runs from /opt/month_end_trader as user `met` (see deploy/met.service). Install it first:
 sudo cp deploy/met.service /etc/systemd/system/ && sudo systemctl daemon-reload && sudo systemctl enable --now met
 # or Docker:
 docker compose -f deploy/docker-compose.yml up -d
 python -m met.cli status --config config.yaml
 ```
-**Docker users:** run CLI commands inside the container, so they share its state and environment. For example:
-```bash
-docker compose -f deploy/docker-compose.yml exec trader python -m met.cli status --config /app/config.yaml
-docker compose -f deploy/docker-compose.yml exec trader python -m met.cli kill --config /app/config.yaml
-```
-**systemd users:** load the daemon's environment first, `set -a; . /etc/met.env; set +a` (or put `ib.account` in config.yaml).
+- **Docker users:** run CLI commands inside the container (`docker compose -f deploy/docker-compose.yml exec trader python -m met.cli …`).
+- **systemd users:** load `/etc/met.env` first.
+- **Run every `met` command as the daemon's user and from its folder**, so it sees the same `state/` (especially `kill`).
+- [ ] The daemon is running, and its start alert lists both legs.
+- [ ] `status` shows no unfinished trades.
 
-**Important:** run every `met` command, especially `kill`, from the same folder and as the same user as the daemon (`/opt/month_end_trader`, user `met`), so they share the same `state/` folder. Otherwise the daemon won't see the kill switch.
-- [ ] The daemon is running.
-- [ ] `status` shows `next trade date 2026-11-30` and no unfinished trades.
-- [ ] The heartbeat ping (if configured) is green.
+## C. What you should see
 
-## C. Trade day, Monday 30 Nov. What you should see (all ET)
-
-| Time | Alert | If not |
+| Time (ET) | Alert | If not |
 |---|---|---|
-| Fri 27 Nov 13:25 | `Tomorrow (2026-11-30) month-end trade: LONG/SHORT` | Check the daemon log, then run `met signal` |
-| Mon 08:00 | `Weekly status: bot running` | The daemon is down: start it |
-| 09:10 | `PLANNED BUY/SELL N MESZ6` | A SKIPPED alert lists the reasons |
-| 09:30:01 | `ENTERED …` | ENTRY FAILED: read the alert; the bot keeps watching its executions |
-| 15:59:58 | `FLAT. Net P&L …` | Exit alerts: the bot retries; see "if something goes wrong" |
-| 18:00 | `Decay monitor after 2026-11-30` | Harmless if missing (Yahoo rate limits); run `met report` later |
+| Mon 23 16:30 | `BOND Bond window … starts tomorrow` with a size estimate | Check the log; run `met bond-check` |
+| Tue 24 15:28 | `BOND 2026-11-30: PLANNED BUY n ZNH7 at 15:58 ET` | A `BOND … SKIPPED` alert lists the reasons |
+| Tue 24 15:58 | `BOND 2026-11-30: ENTERED BUY n/n …` | `BOND … ENTRY FAILED`: the bot watches its executions until midnight |
+| Wed–Fri | nothing (guards run whenever CBOT trades; Thanksgiving closed; Fri closes 13:00) | `BOND … DISASTER STOP` means the bond overlay lost 4% of equity |
+| Fri 27 13:25 | `Tomorrow (2026-11-30) month-end trade: LONG/SHORT` | Check the log; `met signal` |
+| Mon 30 08:00 | `Weekly status` (includes the bond leg and ZN positions) | The daemon is down: start it |
+| Mon 30 09:10 / 09:30 | `PLANNED …` / `ENTERED … MESZ6` | SKIPPED lists the reasons |
+| Mon 30 15:55 | `BOND 2026-11-30: FLAT. Net P&L …` | Exit alerts: the bot retries |
+| Mon 30 15:59:58 | `2026-11-30: FLAT. Net P&L …` | Same |
+| Mon 30 18:00 | decay monitor reports (both legs) | Harmless if missing; run `met report` / `met bond-report` |
 
-Verify in TWS after the close:
-- [ ] Two MES trades with Order Refs `MET-2026-11-30-entry` and `MET-2026-11-30-exit1`.
-- [ ] The MES position is 0.
+Verify in TWS after the close on 30 Nov:
+- [ ] Orders `MEB-2026-11-30-entry`, `MEB-2026-11-30-exit1`, `MET-2026-11-30-entry` and `MET-2026-11-30-exit1`.
+- [ ] MES and ZN/MTN positions are 0.
 - [ ] `met status` shows no unfinished trades.
 
 ## If something goes wrong
 
-- **Stop everything now:** `python -m met.cli kill`. The bot flattens what it owns and makes no new trades. Undo it with `unkill`.
-- **Close the bot's position yourself in TWS:** use Order Ref **`MET-2026-11-30-manual`**, so the bot sees the close.
-- **Closed it without the ref, or IB liquidated it:** stop the daemon, then run `python -m met.cli resolve 2026-11-30 --price <your fill price> --config config.yaml`.
-- **"Outcome UNKNOWN" / "cannot tell whether it is its own":** check TWS. If the bot's order did fill, close it yourself in TWS. The bot will not touch a position it cannot prove is its own.
-- **"RESOLVE NEEDED" (the bot's fills say it holds something, the broker shows nothing):** do **not** place new orders. Stop the daemon and run `met resolve <date> --price <your fill price>`.
-- Logs are in `logs/met.log`, and the state is in `state/trade_2026-11-30.json`.
+- **Stop everything now:** `python -m met.cli kill`. Both legs flatten what they own (the bond leg at the next CBOT reopen if it is closed) and make no new trades. Undo with `unkill`.
+- **Close a bot position yourself in TWS:** use Order Ref **`MET-2026-11-30-manual`** (MES) or **`MEB-2026-11-30-manual`** (ZN/MTN). The key is the trade's month-end date, even for the bond leg.
+- **Closed it without the ref, or IB liquidated it:** stop the daemon, then run `met resolve 2026-11-30 --price <fill> --config config.yaml`. Add **`--leg bond`** for ZN/MTN.
+- **`BOND … ADOPTED`:** after a crash or late fill the bot proved the broker holds exactly its planned bond quantity and took it over (P&L estimated). It exits on schedule. Check TWS.
+- **"Outcome UNKNOWN" / "cannot tell whether it is its own":** check TWS. If it is the bot's, close it with the `-manual` ref.
+- **"RESOLVE NEEDED":** place no new orders. Stop the daemon and run `met resolve <date> [--leg bond] --price <fill>`.
+- Logs are in `logs/met.log`. State files are `state/trade_2026-11-30.json` (leg A) and `state/bond_2026-11-30.json` (leg B).
 
 ## Then
 
-- [ ] Paper-trade 31 Dec 2026 as well. 31 Dec is a full session, and the contract rolls to MESH7.
+- [ ] Paper-trade December too:
+  - Bond window 28 → 31 Dec, still in H7.
+  - Leg A on 31 Dec, rolling to MESH7.
 - [ ] Only then consider live:
   - `mode: live`, the live account `U…` and port 4001.
-  - `MET_LIVE_CONFIRM=U…` in the environment.
+  - `MET_LIVE_CONFIRM=U…`.
   - Restart the daemon.

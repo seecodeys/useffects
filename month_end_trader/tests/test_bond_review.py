@@ -164,3 +164,19 @@ def test_r10_bond_leverage_above_leg_a_hard_cap(benv):
     from met.guardrails import size_contracts
     q, eff = size_contracts(100_000, 100.0, 1000.0, 5.0, 1.0, 5.5, 20, "floor", hard_max_leverage=6.0, hard_max_contracts=50)
     assert q == 5 and eff == pytest.approx(5.0)
+
+
+@pytest.mark.parametrize("inst,sym,mult", [("ZN", "ZNZ5", 1000.0), ("MTN", "MTNZ5", 100.0)])
+def test_cli_test_order_bond_leg(benv, monkeypatch, capsys, inst, sym, mult):
+    cfg, clock, b, d, alerts, bx = benv(dt.datetime(2025, 9, 16, 11, 0), zn_fn=drift(108.0))
+    cfg.bond.instrument = inst; cfg.bond.hedge_ratio = 0.0; cfg.bond.max_contracts = 0; cfg.validate()
+    b.connect()
+    monkeypatch.setattr(cli, "load_config", lambda *a, **k: cfg)
+    monkeypatch.setattr(cli, "_broker", lambda *a, **k: b)
+    monkeypatch.setattr(cli, "setup_logging", lambda *a, **k: None)
+    assert cli.main(["test-order", "--leg", "bond"]) == 0
+    out = capsys.readouterr().out
+    assert sym in out and f"multiplier {mult:g}" in out and b.zn_pos == 0
+    tests = [o for o in b.orders if o["ref"].startswith("TEST-")]
+    assert [o["action"] for o in tests] == ["BUY", "SELL"]
+    assert (b.limits["TEST-buy"] is not None) == (inst == "MTN")
