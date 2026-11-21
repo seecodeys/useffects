@@ -1092,3 +1092,8 @@ lag-0 +0.9 / +1.7. Valid strength is mostly 2020 (79-99% of A/D's valid P&L). De
 Calendar-known (lag 0). A long SPY through holiday weeks +1.4 / +2.5 (timing t 1.0 / 1.9; 2020 dominates); B SPY
 open→close after a holiday +0.7 / +0.1; C short TLT after a holiday −0.0 / −1.5; D short SPY Friday before a long
 weekend +0.5 / −1.6. Dead (A weak, mostly market exposure).
+
+## 328 — Mega-cap earnings clusters / buyback blackout (agent-run; results/agent_328.md)  ·  2026-11-21
+New data: SEC EDGAR 8-K Item 2.02 filing dates for 15 long-lived mega-caps (tools/edgar_earnings.py), 72 cluster
+quarters 2005-22. A long SPY 5 sessions after the cluster week (lag-1): +1.3 / +2.1 (timing t 0.9 / 1.6; 2008/2020
+driven); B after-minus-before contrast +0.4 / +0.3; C QQQ−SPY after +0.6 / −1.0; D contrast −/+ ~0. Dead (agrees with 113).

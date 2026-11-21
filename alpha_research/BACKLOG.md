@@ -288,3 +288,4 @@ is an opening-print artifact (015). New tests use prior-close information only.
 - [x] 325 Vol-spike re-leveraging — valid-only (2015-22 t 2.0 timing), fails train; weak.
 - [x] 326 Big-day next-session reversal (agent) — dead.
 - [x] 327 Holiday-week flows (agent) — dead.
+- [x] 328 Mega-cap earnings clusters via EDGAR (agent) — dead.
