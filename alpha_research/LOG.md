@@ -1310,3 +1310,8 @@ need data we can't get freely (NDX reconstitution list, HKMA episodes, bond-inde
 Calendar-known (lag 0), 1bp/side/leg, MBB 2007-22. The 25th-day window can't be separated from the month-end bond bid
 (P+2 always lands in the last 3 sessions) → V1/V2 no events. Pre-25th long MBB −1.5 / +0.9 (sign flip); Ginnie 20th
 MBB−β·IEF −0.5 / −1.2. Dead.
+
+## 365 — Corporate issuance-window Treasury hedging (agent-run; results/agent_365.md)  ·  2026-11-21
+Calendar-known (lag 0), 1bp/side. Short TLT Friday-before-Labor-Day → 7th session after +0.4 / +1.8 (valid Sharpe 0.63,
++154bp/event; positive 6/13 train vs 6/8 valid years — post-2012 regime); short TLT January sessions 1-8 −0.1 / −0.5;
+LQD−β·IEF both windows −0.9 / −0.6; post-window long TLT control +1.8 / −0.0. Dead (A weak, regime-dependent).
