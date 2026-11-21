@@ -1273,3 +1273,9 @@ between periods (A positive 2011-16, negative 2017-22). Dead.
 FXI/EWH/ASHR/EWT/EWY/EWJ/EWZ; closure = 2-8 US sessions without a home-index bar; fade ETF−β·SPY from the last
 closure close to the close after reopening; 229 windows 2002-22. lag-1 |X|>1% +1.0 / +0.4; Lunar New Year only
 +0.1 / −0.1; |X|>2% +1.2 / −0.8; same-close best case +0.7 / +1.6. Partial reversion, too noisy. Dead.
+
+## 355 — Event-vol premium around FOMC and CPI (agent-run; results/agent_355.md)  ·  2026-11-21
+CPI release dates from ALFRED CPIAUCSL vintages (data/cpi_release_dates.csv). Hold close(t−1)→close(t), lag-1, 2bp/side;
+timing value vs an always-on position. Short VIXY on FOMC day +1.4 / +1.7 (+96bp/event valid, right sign 10/12 years,
+only 32 train events); short VIXY on CPI day −0.5 / +0.6; WPUT in FOMC weeks +0.6 / −1.7; WPUT in CPI weeks ~0.
+Dead except V1 = weak-but-consistent (fails train t on few events). Follow-up: longer train sample via VIX futures index.
