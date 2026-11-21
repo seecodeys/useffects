@@ -1,0 +1,14 @@
+V1: train t=-1.28 bp/trade=-7.9 (n=46) | valid t=+0.18 Sh=+0.06 bp/trade=+0.8 (n=32) | gate=False
+V2: train t=-1.63 bp/trade=-6.9 (n=46) | valid t=-0.29 Sh=-0.10 bp/trade=-1.2 (n=32) | gate=False
+V3: train t=-0.22 bp/trade=-2.9 (n=11) | valid t=+0.79 Sh=+0.28 bp/trade=+4.0 (n=32) | gate=False
+V4: train t=-1.50 bp/trade=-10.4 (n=46) | valid t=-1.52 Sh=-0.54 bp/trade=-11.2 (n=32) | gate=False
+BENCH: train t=+0.48 bp/trade=+2.9 (n=46) | valid t=-0.92 Sh=-0.33 bp/trade=-4.5 (n=32) | gate=False
+pooled V1+V3 train: n=57 mean=-6.9bp t=-1.25
+pooled V1+V3 valid: n=64 mean=+2.4bp t=+0.70
+V1 timing value train: signed -7.9bp vs unconditional +2.9bp/event
+V1 timing value valid: signed +0.8bp vs unconditional -4.5bp/event
+RSP train: corr(g, D oc spread)=+0.12, mean|g|=160bp, n=46
+RSP valid: corr(g, D oc spread)=-0.18, mean|g|=183bp, n=32
+V1 yearly net bp: {2003: -101.0, 2004: -35.0, 2005: -29.0, 2006: -32.0, 2007: -50.0, 2008: -160.0, 2009: 30.0, 2010: 14.0, 2011: -22.0, 2012: 47.0, 2013: 15.0, 2014: -40.0, 2015: -27.0, 2016: -66.0, 2017: 1.0, 2018: 96.0, 2019: 1.0, 2020: 47.0, 2021: -82.0, 2022: 59.0}
+V3 yearly net bp: {2012: -14.0, 2013: 19.0, 2014: -37.0, 2015: 139.0, 2016: -31.0, 2017: -11.0, 2018: 12.0, 2019: 30.0, 2020: 47.0, 2021: -13.0, 2022: -46.0}
+registry rows (agent file): 5

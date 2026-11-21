@@ -333,3 +333,4 @@ is an opening-print artifact (015). New tests use prior-close information only.
 - [x] 371 Index-eligibility controls (STRIPS, loans) — STRIPS share the bid per duration; it's a curve move.
 - [x] 372 Hedged/local bond bid (agent) — weak; Australia right-signed, others no.
 - [x] 373 Fallen-angel index exit (agent) — weak; month-start rebound only.
+- [x] 374 Equal-weight quarterly reset (agent) — dead.

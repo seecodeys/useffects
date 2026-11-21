@@ -1389,3 +1389,8 @@ ANGL−0.27·HYG (ANGL from 2012 → 32 train month-ends), 2bp/side/leg. Short o
 sign); long over the first 3 sessions of the next month +0.8 / +2.8 (valid Sharpe 0.97, 7/8 valid years, 2020 ≈60%);
 after credit sell-offs only 17 events; LQD−IEF relief −0.8 / −0.9. A month-start rebound without month-end weakness —
 half the mechanism; mostly ANGL credit beta. Weak; fails gate (short train).
+
+## 374 — Equal-weight quarterly reset (idea E6; agent-run, results/agent_374.md)  ·  2026-11-21
+Rebalance after the close of the 3rd Friday of Mar/Jun/Sep/Dec (Invesco 485APOS; NDXE moves to Feb/May/Aug/Nov from
+5/2026). Fade QTD RSP−SPY drift open→close −1.3 / +0.2; close→close lag-1 −1.6 / −0.3; QQQE−QQQ −0.2 / +0.8; next-day
+reversal −1.5 / −1.5. Wrong sign in train throughout. Dead.
