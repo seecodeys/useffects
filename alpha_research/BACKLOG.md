@@ -314,3 +314,4 @@ is an opening-print artifact (015). New tests use prior-close information only.
 - [x] 352 Implied-correlation premium (agent) — dead/weak.
 - [x] 351 QYLD covered-call roll (agent) — dead/weak; recheck if AUM grows.
 - [x] 354 VVIX tail-hedge (agent) — dead.
+- [x] 357 Dealer gamma regime (agent) — dead.

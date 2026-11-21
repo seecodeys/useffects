@@ -1263,3 +1263,8 @@ Registry: 580. The two findings (013 month-end rebalancing; month-end bond bid) 
 Timing value vs always-on hedge legs, lag-1, cut-offs from 2006-14. Short VIXY 5d after high VVIX/60d +0.7 / −0.2;
 short PPUT−SPXTR in top VVIX tercile −0.2 / −0.1; same on VVIX/VIX −/+ 0.1 / −1.9; short VXTH−SPXTR −0.4 / −0.8.
 No monotonic pattern; VVIX's post-2014 level shift leaves B/D on ~96% of valid days. Dead.
+
+## 357 — Dealer gamma regime from distance to the last OPEX (agent-run; results/agent_357.md)  ·  2026-11-21
+SPX CFD (clock-corrected), 15:30→16:00, 0.5bp/side. Momentum when SPX >2% below last OPEX close +1.7 / −1.1 net;
+reversal when >2% above −1.0 / −1.7; combined +1.0 / −1.9; momentum when >4% below +0.7 / −1.0. Gross also flips sign
+between periods (A positive 2011-16, negative 2017-22). Dead.
