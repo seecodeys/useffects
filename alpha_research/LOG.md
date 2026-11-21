@@ -1206,3 +1206,8 @@ NY Fed PD statistics (weekly net positions ex-TIPS, series breaks stitched, 2001
 4-week-change z>+1 → long IEF 4w +2.04 / +1.75 (+62 / +54bp/trade); symmetric +0.4 / +1.6; TLT 1w +1.3 / +1.5; coupons
 only +1.8 / +1.7. Right sign in both periods but timing value over exposure-matched holdings is only t 0.2-0.5 / ~1.6 —
 mostly duration premium; train leans on 2008. Weak; fails gate.
+
+## 345 — Commercial-bank securities buying (Fed H.8) → IEF/MBB (agent-run; results/agent_345.md)  ·  2026-11-21
+FRED revised H.8 data (first-release vintages need an ALFRED API key — results are, if anything, flattered), entered the
+Monday after the Friday release, ~1 week. IEF 1w change +0.5 / +0.1; MBB on MBS change −1.8 / +0.0; IEF 4w change
++1.7 / +0.6 (2008/2022-driven); SPY control −1.0 / −1.2. Dead.
