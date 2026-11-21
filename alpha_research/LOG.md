@@ -1200,3 +1200,9 @@ all slots in valid; the chosen midday slots keep ~0.85bp gross, below the 1bp ro
 Fade the 15:50→16:00 move from the 16:01 bar, 0.5bp/side: SPX to 16:14 −6.3 / −4.0; SPX to next 09:29 −0.6 / +0.2;
 big moves only −3.4 / −2.2; NSX to 16:14 −2.3 / −2.7. No index-level post-close reversal (train even shows continuation;
 valid gross ≈ 0, so net = cost). Implementable via ES/NQ, but no edge. Dead.
+
+## 340 — Primary-dealer Treasury inventory build-ups → IEF/TLT (agent-run; results/agent_340.md)  ·  2026-11-21
+NY Fed PD statistics (weekly net positions ex-TIPS, series breaks stitched, 2001+), released Thursday W+8, lag-1, 1bp/side.
+4-week-change z>+1 → long IEF 4w +2.04 / +1.75 (+62 / +54bp/trade); symmetric +0.4 / +1.6; TLT 1w +1.3 / +1.5; coupons
+only +1.8 / +1.7. Right sign in both periods but timing value over exposure-matched holdings is only t 0.2-0.5 / ~1.6 —
+mostly duration premium; train leans on 2008. Weak; fails gate.
