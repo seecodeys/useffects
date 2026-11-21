@@ -1368,3 +1368,13 @@ bond-bid estimates are unaffected by ETF ex-dates. Registry: 656.
 TIC S-form 2002-22 (revised figures), month m used at end of m+2, held 1 month, 3-month flow z>|1|. Official Treasury
 flow → IEF +0.1 / −1.2; private → IEF +1.5 / −0.4 (2008); Caribbean build-up → short TLT −1.6 / +1.0 (2022);
 foreign US-stock buying → SPY−EFA −0.6 / −0.2. Dead.
+
+## 371 — Index-eligibility controls: STRIPS and leveraged loans (idea E2)  ·  2026-11-21
+Last-3-session bp/month 2008-22 (t): EDV (STRIPS, not in the Aggregate) +53.5 (3.2); ZROZ +67.4 (4.2); TLT +42.4 (4.0);
+BKLN (floating-rate loans) +9.3 (2.1); HYG +19.5 (2.2). Registered timing values: EDV +1.7 / +2.2, ZROZ +2.4 / +2.2,
+TLT +2.1 / +2.4, BKLN +1.0 / +0.6, HYG +0.8 / +1.4.
+**The prediction fails for STRIPS:** zero-coupon STRIPS get the same bid per unit of duration (~2.2-2.5bp/yr of duration
+vs TLT's ~2.5), so the effect is a month-end move in the Treasury curve itself, passed to STRIPS by stripping/
+reconstitution arbitrage — not something confined to index-eligible securities. Floating-rate loans (no duration) show
+about half HYG's bid. Refines the mechanism: index-driven demand moves Treasury yields at month-end, and every rate
+instrument tied to them follows (bills <1y don't, 318). Not a gate test (consistency check).
