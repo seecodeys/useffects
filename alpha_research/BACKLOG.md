@@ -283,5 +283,6 @@ is an opening-print artifact (015). New tests use prior-close information only.
       decay and are bought back -> SPY drifts up Mon-Thu of OPEX week. Conditional on VIX > its 20d mean at prior Friday.
 - [x] 322 (dead, wrong sign) OPEX strike pinning: on monthly OPEX Fridays (and Thursday afternoons), does the SPX move TOWARD the nearest
       25/50-point strike in the afternoon (dealers long gamma at big OI strikes)? Fade distance-from-strike 13:00->16:00.
-- [x] 323 (underpowered, ~20 events) "Spot up, vol up": days when SPY rises AND VIX rises (hedgers/call buyers chasing — unstable) vs normal days;
+- [x] 323 (underpowered; 324 loosened: weak) "Spot up, vol up": days when SPY rises AND VIX rises (hedgers/call buyers chasing — unstable) vs normal days;
       does the next day/week reverse? Lag-1 close->close per protocol.
+- [x] 325 Vol-spike re-leveraging — valid-only (2015-22 t 2.0 timing), fails train; weak.

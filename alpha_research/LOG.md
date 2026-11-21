@@ -1072,3 +1072,13 @@ AWAY from round strikes on expiry afternoons (caveat: the CFD level can be offse
 323 "Spot up, vol up" (SPY > +0.5% and VIX > +5% same day; lag-1): short 1d −1.1 / +0.4; short 5d +1.0 / +0.8;
 mirror "spot down, vol down" long 5d +0.6 / +2.7 — but only ~20 events per side in 2000-22: right-signed, underpowered,
 not tradeable as specified. Registry: 439 rows.
+
+## 324 — "Spot up / vol up" with looser pre-set thresholds (power check of 323)  ·  2026-11-21
+Timing value t (2000-14 / 2015-22): short 5d after SPY up & VIX up (581 events) +0.6 / +0.4; with SPY>+0.25% & VIX>+2%
+(101) −0.4 / +0.1; long 5d after SPY down & VIX down (552) +1.0 / +1.1; with thresholds (99) −0.1 / +2.3. With power, the
+effect mostly disappears; the 'down/down' long is mostly just being long. Dead/weak. Registry: 443.
+
+## 325 — Re-leveraging after a volatility spike fades (vol-target funds adding back)  ·  2026-11-21
+Trigger: VIX ≥25% below its 20d high, high ≥25 (first in 20 sessions; 37/28 events). Long SPY (lag-1): 10d timing t
+−0.9 / +1.1; 20d +0.1 / +2.0 (valid Sharpe 0.85, t 2.40); spike ≥30, 10d −1.1 / +1.3. Works only in 2015-22 (the
+vol-target era?) — fails train; weak. Registry: 446.

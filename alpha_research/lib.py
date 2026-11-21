@@ -16,7 +16,7 @@ import requests
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 DATA = os.path.join(HERE, "data")
-REGISTRY = os.path.join(HERE, "results", "registry.csv")
+REGISTRY = os.environ.get("ALPHA_REGISTRY") or os.path.join(HERE, "results", "registry.csv")   # agents set their own file
 
 TRAIN = ("2000-01-01", "2014-12-31")
 VALID = ("2015-01-01", "2022-12-31")
