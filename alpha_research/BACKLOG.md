@@ -293,3 +293,4 @@ is an opening-print artifact (015). New tests use prior-close information only.
 - [x] 332 Mortgage convexity hedging (agent) — dead.
 - [x] 329 Gotobi Tokyo fix (agent) — real but decayed; net ~0 after costs (weak).
 - [x] 331 Auction dealer takedown (agent) — dead.
+- [x] 334 Intraday momentum (clock-fixed) — dead (290's t was cost drag).

@@ -1143,3 +1143,9 @@ Affected: 003, 005, 197, 287-297, 309, 311, 322 (329/330 handled time themselves
 - 288 sign(prev close→10:00) on 15:30→16:00: +0.3 / −6.0; 289 +0.5 / −1.9; **290 fade 09:30→15:30 on the last half hour:
   −3.9 / −2.3, i.e. intraday MOMENTUM (continuation into the close) is strong in both periods on the correct clock.**
   Followed up in 334. 291 FOMC fade ~0; 292 OPEX segments now front-loaded in the first hour (+8.5bp, t 2.4).
+
+## 334 — Intraday momentum into the close, clock-corrected (single pre-set rule)  ·  2026-11-21
+Follow sign(09:30→15:30) over 15:30→16:00 on the SPX CFD, direction taken from 2010-14: train +1.52 / valid −1.04
+(gross +2.2bp/day 2010-14, +0.4bp 2015-22; net of the 1bp round trip ~0 or negative). Fails the gate; no holdout look.
+Note: the large negative t of the clock-fixed 290 'fade' was mostly the cost drag on a ~zero gross edge — neither
+momentum nor reversal survives costs. Dead. Registry: 494.
