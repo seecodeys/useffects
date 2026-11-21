@@ -1268,3 +1268,8 @@ No monotonic pattern; VVIX's post-2014 level shift leaves B/D on ~96% of valid d
 SPX CFD (clock-corrected), 15:30→16:00, 0.5bp/side. Momentum when SPX >2% below last OPEX close +1.7 / −1.1 net;
 reversal when >2% above −1.0 / −1.7; combined +1.0 / −1.9; momentum when >4% below +0.7 / −1.0. Gross also flips sign
 between periods (A positive 2011-16, negative 2017-22). Dead.
+
+## 356 — Country-ETF holiday-closure fade (agent-run; results/agent_356.md)  ·  2026-11-21
+FXI/EWH/ASHR/EWT/EWY/EWJ/EWZ; closure = 2-8 US sessions without a home-index bar; fade ETF−β·SPY from the last
+closure close to the close after reopening; 229 windows 2002-22. lag-1 |X|>1% +1.0 / +0.4; Lunar New Year only
++0.1 / −0.1; |X|>2% +1.2 / −0.8; same-close best case +0.7 / +1.6. Partial reversion, too noisy. Dead.
