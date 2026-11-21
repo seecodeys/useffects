@@ -1,0 +1,27 @@
+GI weekly obs 730 2009-01-09..2022-12-30  dGI>+2bn 206  dGI<-2bn 168
+(c) train corr(z, fwd5) = +0.083 over 112 weeks -> sign +1
+358a dGI>+2bn long EURCHF 5d lag-1
+   episodes train/valid 22/75
+   train_sharpe=-0.29  train_t=-0.47  valid_sharpe=+0.09  valid_t=+0.26  valid_bp_per_trade=+0.11  valid_traded_%=+100.00  gate=False
+   net bp per episode train/valid -26.8 / +5.0
+   timing-value t -0.32 / +0.85
+   yearly bp: {2009: -33, 2010: -75, 2011: -522, 2015: 321, 2016: 143, 2017: 396, 2018: -194, 2019: -111, 2020: -1, 2021: -142, 2022: -190}
+358b dGI<-2bn short EURCHF 5d lag-1
+   episodes train/valid 23/63
+   train_sharpe=+0.38  train_t=+0.64  valid_sharpe=+0.01  valid_t=+0.03  valid_bp_per_trade=+0.01  valid_traded_%=+100.00  gate=False
+   net bp per episode train/valid +21.5 / +2.3
+   timing-value t +0.34 / -0.47
+   yearly bp: {2009: 105, 2010: 499, 2011: -156, 2015: 101, 2016: 245, 2017: -467, 2018: 107, 2019: -142, 2020: 13, 2021: 143, 2022: 20}
+358c z-scaled dGI (train sign) EURCHF 5d lag-1
+   episodes train/valid 6/22
+   train_sharpe=-0.10  train_t=-0.17  valid_sharpe=-0.14  valid_t=-0.40  valid_bp_per_trade=-0.16  valid_traded_%=+100.00  gate=False
+   net bp per episode train/valid -19.0 / -14.4
+   timing-value t -0.16 / -0.26
+   yearly bp: {2009: 7, 2010: 356, 2011: -480, 2015: 343, 2016: 319, 2017: -313, 2018: -53, 2019: -317, 2020: -22, 2021: -28, 2022: -264}
+358d dGI>+2bn long USDCHF 5d lag-1
+   episodes train/valid 22/75
+   train_sharpe=-0.03  train_t=-0.06  valid_sharpe=+0.04  valid_t=+0.13  valid_bp_per_trade=+0.07  valid_traded_%=+100.00  gate=False
+   net bp per episode train/valid -1.8 / +4.0
+   timing-value t +0.01 / +0.20
+   yearly bp: {2009: -174, 2010: 218, 2011: -126, 2015: 610, 2016: -156, 2017: -168, 2018: -63, 2019: -102, 2020: 107, 2021: -162, 2022: 82}
+registry size: 4  luck t for best of N ~ 1.67

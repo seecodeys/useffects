@@ -317,3 +317,4 @@ is an opening-print artifact (015). New tests use prior-close information only.
 - [x] 357 Dealer gamma regime (agent) — dead.
 - [x] 356 Country-ETF holiday closure fade (agent) — dead.
 - [x] 355 FOMC/CPI event-vol premium (agent) — V1 short VIXY on FOMC day weak-consistent; rest dead.
+- [x] 358 SNB sight deposits (agent) — dead.

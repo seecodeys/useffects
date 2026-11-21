@@ -1285,3 +1285,8 @@ No free VIX-futures series before 2009 (Yahoo lacks SPVXSTR), so spot VIX (not t
 days 2000-07 −2.2% (t −2.7, falls 71%), 2008-14 −2.9% (t −2.7, 63%), 2015-22 −1.6% (t −1.4, 58%) vs ~0 on all days.
 The event-vol premium into FOMC is a long-standing pattern, weaker recently. 355 V1 stays weak-consistent (VIXY history
 too short to pass the train gate). Not registered.
+
+## 358 — SNB sight deposits as an intervention gauge → EURCHF (agent-run; results/agent_358.md)  ·  2026-11-21
+SNB data portal (cube snbgwdchfsgw, domestic banks' sight deposits, weekly 2009+), released Monday, entered Tuesday close
+(lag-1), 5-day hold, 2bp/side, 2011-15 floor excluded (short train). ΔGI>+2bn long EURCHF −0.5 / +0.3; ΔGI<−2bn short
++0.6 / +0.0; z-score signal −0.2 / −0.4; USDCHF +/− ~0. Dead.
