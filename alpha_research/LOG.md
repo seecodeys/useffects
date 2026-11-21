@@ -1169,3 +1169,14 @@ intraday as overnight, so the day/night split doesn't translate to the ETP. Dead
 SPX CFD (clock-corrected), 0.5bp/side: long every day −0.0 / −1.2; after a negative 15:00-16:00 hour +1.0 / +0.3;
 −sign(last hour) −0.4 / −1.5; NSX after a weak last hour +0.6 / +0.5. The drift exists (02-03h ≈ +0.9 / +0.6bp vs
 ~0.1bp other hours) but can't pay a 1bp round trip. Dead.
+
+## 337 — TIPS seasonal inflation accrual (Gapen 2003; agent-run, results/agent_337.md)  ·  2026-11-21
+Known excess accrual NSA CPI(M-2)/CPI(M-3) minus its 12m trend (only CPI released by the decision date); monthly,
+1bp/side; spread TIP − β·IEF. A sign(excess accrual) +2.25 / +1.10; B sized +1.6 / +0.4; C VTIP − β·SHY +1.7 / +0.4;
+D IEF-only control −0.7 / −1.0. Spread-on-accrual slope 0.33 / 0.21 (not significant): the market prices most of the
+known carry. Weak (A train leans on 2008-09); fails gate.
+
+## Agent round summary (321-339)  ·  2026-11-21
+Two idea scouts (results/ideas_behaviour.md, results/ideas_papers.md) + 14 tester agents. Nothing passed the gate.
+Real-but-sub-cost flows: Gotobi fix (329), WM/R fix reversal (330), European-open drift (335). Weak: TIPS seasonal (337),
+vol-spike re-leveraging (325). Bonus: agent 330 found the HistData clock bug (corrected above). Registry: 518.
