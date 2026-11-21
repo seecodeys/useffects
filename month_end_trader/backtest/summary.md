@@ -65,6 +65,19 @@ Sensitivities around the headline:
 
 ![legs](legs_contribution.png)
 
+
+### Stop-level sensitivity ($100k, bot-faithful otherwise)
+
+| Leg-B disaster stop | CAGR | Worst leg-B trade (% of account) |
+|---|---|---|
+| 4% (bot default) | 18.55% | −4.1% |
+| 6% | 18.85% | −6.1% |
+| 8% / off | 18.95% | −6.9% |
+
+The 4% stop costs ~0.4pp a year: most stopped windows recovered by month-end. It is insurance against a larger gap
+(e.g. a CPI/FOMC shock during the hold), which the 2003–2026 sample barely contains. Set `bond.disaster_stop_pct_equity`
+to taste; leg A's 6% stop never fired on clean data.
+
 ## What "bot-faithful" means here
 
 - **Leverages** (`config.example.yaml`): leg A `strategy.leverage` 2.8 at full size, x0.5 when SPY's 20-day vol
