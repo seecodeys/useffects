@@ -1082,3 +1082,8 @@ effect mostly disappears; the 'down/down' long is mostly just being long. Dead/w
 Trigger: VIX ≥25% below its 20d high, high ≥25 (first in 20 sessions; 37/28 events). Long SPY (lag-1): 10d timing t
 −0.9 / +1.1; 20d +0.1 / +2.0 (valid Sharpe 0.85, t 2.40); spike ≥30, 10d −1.1 / +1.3. Works only in 2015-22 (the
 vol-target era?) — fails train; weak. Registry: 446.
+
+## 326 — Next-session reversal after the biggest days (agent-run; write-up results/agent_326.md)  ·  2026-11-21
+Fade top-5% |moves| (vs trailing 252d) on a 50/50 SPY+QQQ book; 427 train / 271 valid events. Train t / valid t:
+A close→next open −0.9 / +1.5; B next-day open→close +1.3 / +0.6; C close→close lag-1 +0.3 / −0.6; D close→close
+lag-0 +0.9 / +1.7. Valid strength is mostly 2020 (79-99% of A/D's valid P&L). Dead.
