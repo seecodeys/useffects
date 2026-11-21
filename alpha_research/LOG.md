@@ -1195,3 +1195,8 @@ Wrong sign in train (losers lagged in 11/15 Novembers); valid gain is 2020+2022.
 SPX/NSX CFD 2010-22, trade a half-hour when the same slot's lag-1 and lag-5 returns agree, 0.5bp/side per trade.
 SPX all 13 slots −3.2 / −4.9; 3 best train slots +1.6 / −0.3; NSX all −2.1 / −4.5; 3 best +1.1 / −0.4. Gross ≈ 0 for
 all slots in valid; the chosen midday slots keep ~0.85bp gross, below the 1bp round trip. Dead.
+
+## 343 — Closing-auction price pressure reversal (Bogousslavsky-Muravyev; agent-run, results/agent_343.md)  ·  2026-11-21
+Fade the 15:50→16:00 move from the 16:01 bar, 0.5bp/side: SPX to 16:14 −6.3 / −4.0; SPX to next 09:29 −0.6 / +0.2;
+big moves only −3.4 / −2.2; NSX to 16:14 −2.3 / −2.7. No index-level post-close reversal (train even shows continuation;
+valid gross ≈ 0, so net = cost). Implementable via ES/NQ, but no edge. Dead.

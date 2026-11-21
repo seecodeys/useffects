@@ -302,3 +302,4 @@ is an opening-print artifact (015). New tests use prior-close information only.
 - [x] 341 Foreign custody drawdowns (agent) — dead.
 - [x] 342 Oct-31 fund tax-loss (agent) — dead.
 - [x] 344 Same-half-hour persistence (agent) — dead.
+- [x] 343 Closing-auction reversal (agent) — dead.
