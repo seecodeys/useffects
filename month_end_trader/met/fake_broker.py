@@ -11,6 +11,7 @@ from . import calendar as cal
 from .broker import (AccountSnapshot, Broker, BrokerError, FutureContract, MarginCheck, OrderResult, Position)
 
 ET = cal.ET
+RATES = ("ZN", "MTN")
 
 
 def _third_friday(y, m):
@@ -93,6 +94,7 @@ class FakeBroker(Broker):
         self.zn_commission = 1.70
         self.zn_local = ""
         self.zn_expiries = [_zn_last_trade(y, m) for y in range(1993, 2041) for m in (3, 6, 9, 12)]
+        self.zn_symbol = "ZN"             # the rates book holds one instrument: ZN or MTN (set by the first order)
 
     # ---------------------------------------------------------------- connection & time
     def connect(self):
@@ -145,7 +147,7 @@ class FakeBroker(Broker):
         self._need()
         if self.price_unavailable:
             raise BrokerError("no market data (simulated)")
-        return self.zn_price_now() if contract.symbol == "ZN" else self.fut_price_now()
+        return self.zn_price_now() if contract.symbol in RATES else self.fut_price_now()
 
     # ---------------------------------------------------------------- account
     def unrealised(self):
@@ -173,7 +175,7 @@ class FakeBroker(Broker):
             out.append(Position("MES", "FUT", shown, self._local(self._front(self.clock.now().date())),
                                 shown * self.fut_price_now() * self.multiplier))
         if self.zn_pos and not glitch:
-            out.append(Position("ZN", "FUT", self.zn_pos, self.zn_local, self.zn_pos * self.zn_price_now() * self.zn_multiplier))
+            out.append(Position(self.zn_symbol, "FUT", self.zn_pos, self.zn_local, self.zn_pos * self.zn_price_now() * self.zn_multiplier))
         return out
 
     def _front(self, min_expiry):
@@ -187,8 +189,15 @@ class FakeBroker(Broker):
         self._need()
         if symbol == "ZN":
             e = next(x for x in self.zn_expiries if x >= min_expiry)
-            return FutureContract("ZN", e, self.zn_multiplier, "ZN" + "FGHJKMNQUVXZ"[e.month - 1] + str(e.year)[-1],
+            return FutureContract("ZN", e, 1000.0, "ZN" + "FGHJKMNQUVXZ"[e.month - 1] + str(e.year)[-1],
                                   con_id=2000 + e.year % 100 * 100 + e.month)
+        if symbol == "MTN":
+            from .bond import last_safe_day
+            months = [(y, m) for y in range(2024, 2041) for m in (3, 6, 9, 12)]
+            y, m = next((y, m) for y, m in months if last_safe_day(y, m, "MTN") >= min_expiry)
+            e = last_safe_day(y, m, "MTN")
+            return FutureContract("MTN", e, 100.0, "MTN" + "FGHJKMNQUVXZ"[m - 1] + str(y)[-1],
+                                  con_id=4000 + y % 100 * 100 + m)
         e = self._front(min_expiry)
         return FutureContract(symbol, e, self.multiplier, self._local(e), con_id=1000 + e.month)
 
@@ -204,7 +213,7 @@ class FakeBroker(Broker):
 
     def _apply_fill(self, action, qty, ref, symbol="MES"):
         sgn = 1 if action == "BUY" else -1
-        if symbol == "ZN":
+        if symbol in RATES:
             return self._apply_zn_fill(sgn, action, qty, ref)
         px = self.fut_price_now() + sgn * 0.25 * self.slippage_ticks
         if self.stale_after_fill:
@@ -221,13 +230,14 @@ class FakeBroker(Broker):
 
     def _apply_zn_fill(self, sgn, action, qty, ref):
         px = self.zn_price_now() + sgn * self.zn_tick * self.slippage_ticks / 2
+        mult = self.zn_multiplier
         if not self.zn_local:
             self.zn_local = self._last_zn_local or "ZN?"
         self.zn_pos += sgn * qty
         self.zn_cost += sgn * qty * px
         self.cash -= self.zn_commission * qty
         if self.zn_pos == 0:
-            self.cash -= self.zn_cost * self.zn_multiplier
+            self.cash -= self.zn_cost * mult
             self.zn_cost = 0.0
         self.execs.append(dict(exec_id=f"E{len(self.execs) + 1}", rev=0, ref=ref, side=action, qty=float(qty), price=px,
                                time=str(self.clock.t), local_symbol=self.zn_local))
@@ -266,9 +276,9 @@ class FakeBroker(Broker):
         self._need()
         nl = self.account_snapshot().net_liquidation
         init = qty * self.fut_price_now() * self.multiplier * 0.079   # ~$2,900 per MES at 7,340
-        if contract.symbol == "ZN":
-            init = qty * self.zn_price_now() * self.zn_multiplier * 0.02          # ~$2,200 per ZN
-        init += abs(self.zn_pos) * self.zn_price_now() * self.zn_multiplier * 0.02 if contract.symbol != "ZN" else 0
+        if contract.symbol in RATES:
+            init = qty * self.zn_price_now() * contract.multiplier * 0.02          # ~$2,200 per ZN, ~$220 per MTN
+        init += abs(self.zn_pos) * self.zn_price_now() * self.zn_multiplier * 0.02 if contract.symbol not in RATES else 0
         if self.whatif_excess is not None:
             return MarginCheck(nl - self.whatif_excess, nl, init * 0.9)
         return MarginCheck(init, nl, init * 0.9)
@@ -276,15 +286,19 @@ class FakeBroker(Broker):
     # ---------------------------------------------------------------- orders
     def market_order(self, contract, action, qty, ref, timeout_s):
         oid = str(next(self._ids))
-        if contract.symbol == "ZN":
+        if contract.symbol in RATES:
             self._last_zn_local = contract.local_symbol
             if self.zn_pos == 0:
                 self.zn_local = contract.local_symbol
+                self.zn_symbol = contract.symbol
+                self.zn_multiplier = contract.multiplier
+                if contract.symbol == "MTN":
+                    self.zn_commission, self.zn_tick = 0.60, 1 / 32
         if not self.is_connected():
             self.orders.append(dict(id=oid, ref=ref, action=action, qty=qty, status="NotConnected"))
             return OrderResult(oid, "Rejected", qty, 0, 0.0, "not connected")
         from .executor import futures_open, rates_futures_open
-        if not (rates_futures_open if contract.symbol == "ZN" else futures_open)(self.clock.now()):
+        if not (rates_futures_open if contract.symbol in RATES else futures_open)(self.clock.now()):
             self.orders.append(dict(id=oid, ref=ref, action=action, qty=qty, status="Rejected", t=self.clock.now()))
             return OrderResult(oid, "Rejected", qty, 0, 0.0, "market closed (simulated)")
         if self.reject_next > 0:

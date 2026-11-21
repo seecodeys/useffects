@@ -377,3 +377,43 @@ def test_roll_buffer_capped():
     c = Config(); c.ib.account = "DU1"; c.bond.roll_buffer_days = 19
     with pytest.raises(ConfigError, match="roll_buffer_days"):
         c.validate()
+
+
+# ------------------------------------------------------------------------------------------ MTN (micro, small accounts)
+def test_mtn_last_safe_day_and_contract_choice():
+    from met.bond import last_safe_day
+    assert last_safe_day(2026, 12, "MTN") == dt.date(2026, 11, 27)      # 2 sessions before Tue 1 Dec: Mon 30, Fri 27
+    assert contract_month_for(dt.date(2026, 11, 30), 5, "MTN")[:2] == (2027, 3)
+    assert contract_month_for(dt.date(2026, 10, 30), 5, "MTN")[:2] == (2026, 12)
+    assert contract_month_for(dt.date(2026, 11, 30), 5, "ZN")[:2] == (2027, 3)
+    for y in range(2025, 2031):
+        for m in range(1, 13):
+            X = cal.last_session_of_month(y, m)
+            _, _, safe = contract_month_for(X, 5, "MTN")
+            assert len(cal.sessions(X + dt.timedelta(days=1), safe)) > 5
+
+
+def test_mtn_small_account_happy_path(benv):
+    """~$18k account: leg B in 4 MTN (~2.4x IEF-equivalent); leg A's half-size month rounds to 0 MES and is skipped."""
+    cfg, clock, b, d, alerts, bx = benv(dt.datetime(2025, 9, 24, 8, 0), zn_fn=drift(108.0), cash=3_000.0, core_shares=23)
+    cfg.bond.instrument = "MTN"; cfg.bond.hedge_ratio = 0.0
+    cfg.validate()
+    assert cfg.bond.hedge_ratio == 0.885
+    run(d, clock, dt.datetime(2025, 9, 30, 20, 0))
+    s = bst(cfg, dt.date(2025, 9, 30))
+    p = s.get("plan")
+    assert s.phase == "FLAT" and p["contract_local_symbol"] == "MTNZ5" and p["multiplier"] == 100.0
+    assert 3 <= p["qty"] <= 5 and 2.0 <= p["ief_equiv_leverage"] <= 3.0
+    assert s.get("net_pnl") > 0 and b.zn_pos == 0
+    a = TradeState(cfg.monitoring.state_dir, "2025-09-30")
+    assert a.phase in ("FLAT", "SKIPPED")
+    assert not lv(alerts, "CRITICAL"), lv(alerts, "CRITICAL")
+
+
+def test_mtn_validation():
+    c = Config(); c.ib.account = "DU1"; c.bond.instrument = "MTN"; c.bond.max_contracts = 300
+    c.validate()
+    assert c.bond.hedge_ratio == 0.885
+    c = Config(); c.ib.account = "DU1"; c.bond.instrument = "XYZ"
+    with pytest.raises(ConfigError, match="bond.instrument"):
+        c.validate()

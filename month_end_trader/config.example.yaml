@@ -25,10 +25,11 @@ signal:
 
 bond:                       # leg B: long 10y T-note futures over the last 3 sessions of each month
   enabled: true
-  leverage: 2.8             # IEF-equivalent notional / net liq; ZN notional = leverage x hedge_ratio (~3.2x)
-  hedge_ratio: 1.14
+  instrument: ZN            # ZN (~$107k/contract) or MTN (Micro Ultra 10-Year, ~$11k, cash settled) below ~$150k
+  leverage: 2.8             # IEF-equivalent notional / net liq; futures notional = leverage x hedge_ratio
+  hedge_ratio: 0            # 0 = per instrument: ZN 1.14, MTN 0.885 (IEF beta on the futures, 2017-2026)
   entry_lead_s: 120         # enter 15:58 ET on the 4th-last session, exit 15:58 ET on the month-end session
-  exit_lead_s: 120
+  exit_lead_s: 300         # 15:55 ET on month-end, clear of leg A's 15:59:58 exit (12:50 on 1 pm closes)
   roll_buffer_days: 5       # never hold a contract within 5 sessions of its first notice day
   disaster_stop_pct_equity: 0.04   # flatten if the bond overlay loses 4% of equity (checked whenever CBOT trades)
   max_contracts: 20

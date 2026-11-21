@@ -30,7 +30,7 @@ from pathlib import Path
 
 from . import calendar as cal
 from .broker import Broker
-from .config import Config, HARD_MAX_BOND_CONTRACTS, HARD_MAX_BOND_LEVERAGE
+from .config import BOND_SPECS, Config, HARD_MAX_BOND_LEVERAGE
 from .executor import Executor, PERMANENT_PREFIXES, rates_futures_open
 from .guardrails import size_contracts
 from .state import StateCorrupt, kill_switch_active
@@ -38,7 +38,8 @@ from .state import StateCorrupt, kill_switch_active
 log = logging.getLogger("met.bond")
 
 BOND_REF = "MEB-"
-BOND_PERMANENT = PERMANENT_PREFIXES + ("total futures exposure", "existing ZN", "bond decay monitor says stop", "no ZN contract",
+BOND_PERMANENT = PERMANENT_PREFIXES + ("total futures exposure", "existing ZN", "existing MTN", "bond decay monitor says stop",
+                                       "no ZN contract", "no MTN contract",
                                        "not the bond entry session")
 
 
@@ -70,15 +71,26 @@ def sessions_between(a: dt.date, b: dt.date) -> int:
     return len([d for d in cal.sessions(a + dt.timedelta(days=1), b)])
 
 
-def contract_month_for(X: dt.date, buffer: int) -> tuple[int, int, dt.date]:
-    """First quarterly contract (y, m) whose first notice day is more than `buffer` sessions after X."""
+def last_safe_day(year: int, month: int, instrument: str = "ZN") -> dt.date:
+    """Last day a position in the (year, month) contract may be held by this bot.
+    ZN: first notice day (IBKR closes physically delivered longs before it).
+    MTN (cash settled): trading terminates 2 business days before the first delivery day of the underlying Ultra
+    10-Year contract (= the first business day of the contract month), i.e. inside the PREVIOUS month."""
+    if instrument == "MTN":
+        first = cal.next_session(dt.date(year, month, 1) - dt.timedelta(days=1))
+        return cal.previous_session(cal.previous_session(first))
+    return first_notice_day(year, month)
+
+
+def contract_month_for(X: dt.date, buffer: int, instrument: str = "ZN") -> tuple[int, int, dt.date]:
+    """First quarterly contract (y, m) whose last safe day is more than `buffer` sessions after X."""
     y, m = X.year, X.month
     for _ in range(8):
         m += 1
         if m > 12:
             y, m = y + 1, 1
         if m in (3, 6, 9, 12):
-            fnd = first_notice_day(y, m)
+            fnd = last_safe_day(y, m, instrument)
             if sessions_between(X, fnd) > buffer:
                 return y, m, fnd
     raise ValueError(f"no contract month found for {X}")
@@ -155,7 +167,7 @@ def bond_preflight(cfg: Config, broker: Broker, X: dt.date, today: dt.date | Non
         blockers.append(f"net liquidation {acct.net_liquidation:,.0f} below minimum {g.min_net_liq:,.0f}")
     open_zn = broker.all_future_positions(b.instrument)
     if open_zn:
-        blockers.append("existing ZN positions before entry: " +
+        blockers.append(f"existing {b.instrument} positions before entry: " +
                         ", ".join(f"{p.local_symbol} {p.quantity:+g}" for p in open_zn))
 
     derisk, note = read_bond_derisk(cfg)
@@ -169,13 +181,21 @@ def bond_preflight(cfg: Config, broker: Broker, X: dt.date, today: dt.date | Non
 
     contract = price = fnd = None
     try:
-        y, m, fnd = contract_month_for(X, b.roll_buffer_days)
-        contract = broker.front_future(b.instrument, b.exchange, dt.date(y, m, 1))
-        if (contract.expiry.year, contract.expiry.month) != (y, m):
-            blockers.append(f"no ZN contract for {y}-{m:02d} (broker returned {contract.local_symbol} {contract.expiry})")
+        spec = BOND_SPECS[b.instrument]
+        y, m, fnd = contract_month_for(X, b.roll_buffer_days, b.instrument)
+        if spec["cash_settled"]:
+            # last trade date sits in the month BEFORE the contract month: look up by expiry, then verify it
+            contract = broker.front_future(b.instrument, b.exchange, fnd - dt.timedelta(days=7))
+            ok = sessions_between(X, contract.expiry) > b.roll_buffer_days and contract.expiry <= fnd + dt.timedelta(days=7)
+        else:
+            contract = broker.front_future(b.instrument, b.exchange, dt.date(y, m, 1))
+            ok = (contract.expiry.year, contract.expiry.month) == (y, m)
+        if not ok:
+            blockers.append(f"no {b.instrument} contract for {y}-{m:02d} (broker returned {contract.local_symbol} "
+                            f"{contract.expiry})")
         price = broker.price(contract)
-        if abs(contract.multiplier - 1000.0) > 1e-9:
-            blockers.append(f"contract multiplier {contract.multiplier} != expected 1000")
+        if abs(contract.multiplier - spec["multiplier"]) > 1e-9:
+            blockers.append(f"contract multiplier {contract.multiplier} != expected {spec['multiplier']:g}")
         if not (b.price_min <= price <= b.price_max):
             blockers.append(f"ZN price {price} outside sanity band [{b.price_min}, {b.price_max}]")
     except Exception as e:
@@ -186,10 +206,10 @@ def bond_preflight(cfg: Config, broker: Broker, X: dt.date, today: dt.date | Non
     target = b.leverage * b.hedge_ratio
     qty, eff = size_contracts(acct.net_liquidation, price, contract.multiplier, target, derisk,
                               b.max_leverage, b.max_contracts, b.sizing_rounding,
-                              hard_max_leverage=HARD_MAX_BOND_LEVERAGE, hard_max_contracts=HARD_MAX_BOND_CONTRACTS)
+                              hard_max_leverage=HARD_MAX_BOND_LEVERAGE, hard_max_contracts=spec["max_contracts"])
     if qty < 1:
         blockers.append(f"position size rounds to 0 contracts (net liq {acct.net_liquidation:,.0f}, "
-                        f"1 ZN = {price * contract.multiplier:,.0f}, target {target * derisk:.2f}x)")
+                        f"1 {b.instrument} = {price * contract.multiplier:,.0f}, target {target * derisk:.2f}x)")
         return None, blockers, warnings
     if target * derisk * acct.net_liquidation / (price * contract.multiplier) > b.max_contracts:
         warnings.append(f"size capped at bond.max_contracts={b.max_contracts}")

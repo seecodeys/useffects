@@ -38,7 +38,7 @@ PERMANENT_PREFIXES = ("kill switch", "live mode requires", "connected account", 
                       "existing ", "decay monitor says stop", "|gap|", "signal gap is exactly zero",
                       "unfinished older trade", "contract multiplier", "position size rounds",
                       "total futures exposure")
-COST_PER_CONTRACT_SIDE = {"MES": 0.62, "ES": 2.25, "ZN": 1.70, "ZF": 1.70}   # IBKR commission + exchange + regulatory (estimate)
+COST_PER_CONTRACT_SIDE = {"MES": 0.62, "ES": 2.25, "ZN": 1.70, "MTN": 0.60}   # IBKR commission + exchange + regulatory (estimate)
 BOT_REF = "MET-"            # bot orders: MET-<date>-entry / -exitN (user '-manual' orders are excluded by the broker)
 RESET_EXIT = dict(next_exit_try=None, exit_failures=0, disagree_rounds=0, manual_alerted=False,
                   closed_market_alerted=False, reversal_alerted=False)

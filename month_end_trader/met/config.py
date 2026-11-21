@@ -14,6 +14,10 @@ HARD_MIN_EXIT_LEAD_S = 1
 HARD_MAX_ENTRY_GRACE_S = 600
 HARD_MAX_BOND_LEVERAGE = 6.0     # ZN notional / net liquidation
 HARD_MAX_BOND_CONTRACTS = 50
+# hedge: beta of IEF daily returns on the futures' daily returns, 2017-2026 (roll days excluded): ZN 1.13 (corr 0.96),
+# TN (MTN's underlying, Ultra 10-Year) 0.885 (corr 0.96). cost = IBKR all-in estimate per contract per side.
+BOND_SPECS = {"ZN": dict(multiplier=1000.0, hedge=1.14, cost=1.70, max_contracts=50, cash_settled=False),
+              "MTN": dict(multiplier=100.0, hedge=0.885, cost=0.60, max_contracts=400, cash_settled=True)}
 HARD_MAX_TOTAL_LEVERAGE = 8.0    # all futures notional of both legs / net liquidation
 
 
@@ -67,10 +71,11 @@ class BondConfig:
     enter just before the close of the session `hold_sessions` before month-end, exit just before the month-end
     close. Sized as IEF-equivalent notional: ZN notional = leverage x hedge_ratio x net liq."""
     enabled: bool = False
-    instrument: str = "ZN"           # 10-Year T-Note futures ($1,000 x price)
+    instrument: str = "ZN"           # ZN: 10-Year T-Note ($1,000 x price, ~$107k, physically delivered)
+                                     # MTN: Micro Ultra 10-Year T-Note ($100 x price, ~$11k, cash settled) for small accounts
     exchange: str = "CBOT"
     leverage: float = 2.8            # IEF-equivalent notional / net liq (research: 2.81)
-    hedge_ratio: float = 1.14        # IEF daily return ~= 1.14 x ZN return (2012-2026 regression, corr 0.96)
+    hedge_ratio: float = 0.0         # IEF daily return = hedge_ratio x futures return; 0 = per instrument (BOND_SPECS)
     hold_sessions: int = 3
     entry_lead_s: int = 120          # enter 2 min before the NYSE close (15:58 ET; 12:58 on half days)
     exit_lead_s: int = 300           # exit 15:55 ET on month-end, clear of leg A's 15:59:58 MES exit
@@ -203,8 +208,10 @@ class Config:
         if not (0 < s.low_vol_scale <= 1):
             errs.append("strategy.low_vol_scale must be in (0, 1]")
         bd = self.bond
-        if bd.instrument not in ("ZN",):
-            errs.append("bond.instrument must be ZN")
+        if bd.instrument not in BOND_SPECS:
+            errs.append(f"bond.instrument must be one of {sorted(BOND_SPECS)}")
+        elif bd.hedge_ratio == 0:
+            bd.hedge_ratio = BOND_SPECS[bd.instrument]["hedge"]
         if bd.sizing_rounding not in ("floor", "nearest"):
             errs.append("bond.sizing_rounding must be floor or nearest")
         if not (0 < bd.leverage * bd.hedge_ratio <= bd.max_leverage):
@@ -213,8 +220,9 @@ class Config:
             errs.append("bond.hedge_ratio must be in [0.5, 2.0]")
         if bd.max_leverage > HARD_MAX_BOND_LEVERAGE:
             errs.append(f"bond.max_leverage exceeds hard limit {HARD_MAX_BOND_LEVERAGE}")
-        if not (0 < bd.max_contracts <= HARD_MAX_BOND_CONTRACTS):
-            errs.append(f"bond.max_contracts must be in (0, {HARD_MAX_BOND_CONTRACTS}]")
+        cap = BOND_SPECS.get(bd.instrument, {}).get("max_contracts", HARD_MAX_BOND_CONTRACTS)
+        if not (0 < bd.max_contracts <= cap):
+            errs.append(f"bond.max_contracts must be in (0, {cap}] for {bd.instrument}")
         if not (1 <= bd.hold_sessions <= 5):
             errs.append("bond.hold_sessions must be in [1, 5]")
         for k in ("entry_lead_s", "exit_lead_s"):
