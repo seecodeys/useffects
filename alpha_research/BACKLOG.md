@@ -277,3 +277,11 @@ is an opening-print artifact (015). New tests use prior-close information only.
 - [x] 318 Bill vs note control — bid follows index eligibility.
 - [x] 319 Early-month reversal back-cast — only post-2002 in 10y; keep long-only.
 - [x] 320 JPY fiscal-year-end repatriation — dead (wrong sign).
+
+## Market-behaviour ideas (user request 2026-11-21)
+- [x] 321 (dead) "Vanna/charm" OPEX-week rally: when VIX is elevated and falling into monthly OPEX week, dealers' put hedges
+      decay and are bought back -> SPY drifts up Mon-Thu of OPEX week. Conditional on VIX > its 20d mean at prior Friday.
+- [x] 322 (dead, wrong sign) OPEX strike pinning: on monthly OPEX Fridays (and Thursday afternoons), does the SPX move TOWARD the nearest
+      25/50-point strike in the afternoon (dealers long gamma at big OI strikes)? Fade distance-from-strike 13:00->16:00.
+- [x] 323 (underpowered, ~20 events) "Spot up, vol up": days when SPY rises AND VIX rises (hedgers/call buyers chasing — unstable) vs normal days;
+      does the next day/week reverse? Lag-1 close->close per protocol.

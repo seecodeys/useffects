@@ -1062,3 +1062,13 @@ window itself (315) is the stable part — keep the trade long-only into month-e
 Short USDJPY over the last 10 sessions of March: −1.3 / −0.4 (−84 / −26bp per window); March+September: −1.0 / −1.2;
 long USDJPY first 10 sessions of April: +1.1 / −0.6. Wrong-signed: the yen if anything WEAKENS into fiscal period-ends
 (repatriation is presumably hedged/spread out, or swamped by other flows). Dead. Registry: 430 rows.
+
+## 321-323 — Market-behaviour round (user request 2026-11-21)  ·  2026-11-21
+321 "Vanna/charm" OPEX-week drift (long SPY Mon-Thu of monthly OPEX week): unconditional +0.7 / +0.2; only when VIX was
+elevated at the prior Friday −0.5 / +0.3; elevated and falling −1.4 / +0.3. Dead — no dealer-hedge-unwind drift on daily data.
+322 OPEX strike pinning (SPX CFD 1-min, bet on moving toward the nearest 25/50-point strike 13:00→15:55): OPEX Fridays
+K=25 −0.7 / −1.2 (−6.4bp/trade, 42% hit); K=50 −1.8 / −1.2; other Fridays −/+ ~0. Wrong-signed: the index tends to move
+AWAY from round strikes on expiry afternoons (caveat: the CFD level can be offset from cash SPX by a few points). Dead.
+323 "Spot up, vol up" (SPY > +0.5% and VIX > +5% same day; lag-1): short 1d −1.1 / +0.4; short 5d +1.0 / +0.8;
+mirror "spot down, vol down" long 5d +0.6 / +2.7 — but only ~20 events per side in 2000-22: right-signed, underpowered,
+not tradeable as specified. Registry: 439 rows.
