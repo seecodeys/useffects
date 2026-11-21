@@ -1180,3 +1180,8 @@ known carry. Weak (A train leans on 2008-09); fails gate.
 Two idea scouts (results/ideas_behaviour.md, results/ideas_papers.md) + 14 tester agents. Nothing passed the gate.
 Real-but-sub-cost flows: Gotobi fix (329), WM/R fix reversal (330), European-open drift (335). Weak: TIPS seasonal (337),
 vol-spike re-leveraging (325). Bonus: agent 330 found the HistData clock bug (corrected above). Registry: 518.
+
+## 341 — Foreign-official custody drawdowns → Treasuries (agent-run; results/agent_341.md)  ·  2026-11-21
+FRED WMTSECL1 4-week % change (from 2007), known Friday, lag-1, 1bp/side, thresholds from train. Drop <10th pct → short
+TLT 20d −0.4 / +0.7; with UUP rising −0.5 / +1.4; short IEF 10d −0.1 / +0.8; rise >90th → long IEF +0.1 / no events.
+Signs flip between periods (valid gains = 2022); holdings trend down after 2014. Dead.

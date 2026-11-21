@@ -299,3 +299,4 @@ is an opening-print artifact (015). New tests use prior-close information only.
 - [x] 336 VIXY day/night split (agent) — dead.
 - [x] 335 European-open drift (agent) — real but sub-cost; dead.
 - [x] 337 TIPS seasonal accrual (agent) — weak, fails gate.
+- [x] 341 Foreign custody drawdowns (agent) — dead.

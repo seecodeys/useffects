@@ -1,0 +1,26 @@
+weekly obs 809 first 2007-07-04  train g n=388 p10=-0.0071 p90=+0.0293
+341a g<p10 -> short TLT 20d lag-1
+   trigger weeks train/valid 39/88, episodes 31
+   train_sharpe=-0.15  train_t=-0.40  valid_sharpe=+0.23  valid_t=+0.65  valid_bp_per_trade=+0.98  valid_traded_%=+100.00  train_bp/day=-0.40 gate=False
+   net bp per round-trip trade train/valid -81.1 / +90.4
+   timing-value t +0.37 / +0.70  timing bp/held-day +1.88 / +2.42
+   yearly bp: {2007: -431, 2008: -204, 2009: 0, 2010: 0, 2011: -439, 2012: 464, 2013: 549, 2014: -677, 2015: 639, 2016: 894, 2017: -138, 2018: -560, 2019: -192, 2020: -186, 2021: -274, 2022: 1786}
+341b g<p10 & UUP20d>0 -> short TLT 20d lag-1
+   trigger weeks train/valid 22/56, episodes 29
+   train_sharpe=-0.19  train_t=-0.52  valid_sharpe=+0.51  valid_t=+1.43  valid_bp_per_trade=+1.87  valid_traded_%=+100.00  train_bp/day=-0.44 gate=False
+   net bp per round-trip trade train/valid -91.3 / +189.7
+   timing-value t +0.13 / +1.47  timing bp/held-day +0.79 / +6.10
+   yearly bp: {2007: -601, 2008: -204, 2009: 0, 2010: 0, 2011: -184, 2012: 253, 2013: 422, 2014: -517, 2015: 841, 2016: 1094, 2017: -138, 2018: -872, 2019: 469, 2020: -260, 2021: 180, 2022: 2461}
+341c g<p10 -> short IEF 10d lag-1
+   trigger weeks train/valid 39/88, episodes 43
+   train_sharpe=-0.05  train_t=-0.14  valid_sharpe=+0.29  valid_t=+0.81  valid_bp_per_trade=+0.45  valid_traded_%=+100.00  train_bp/day=-0.05 gate=False
+   net bp per round-trip trade train/valid -7.4 / +30.2
+   timing-value t +0.78 / +0.94  timing bp/held-day +2.28 / +1.78
+   yearly bp: {2007: -275, 2008: -72, 2009: 0, 2010: 0, 2011: 173, 2012: -16, 2013: 53, 2014: 38, 2015: 187, 2016: 556, 2017: -48, 2018: -345, 2019: -23, 2020: -58, 2021: 36, 2022: 600}
+341d g>p90 -> long IEF 20d lag-1
+   trigger weeks train/valid 39/0, episodes 9
+   train_sharpe=+0.03  train_t=+0.09  valid_sharpe=+nan  valid_t=+nan  valid_bp_per_trade=+0.00  valid_traded_%=+100.00  train_bp/day=+0.06 gate=False
+   net bp per round-trip trade train/valid +12.6 / +0.0
+   timing-value t -0.75 / +nan  timing bp/held-day -2.32 / +nan
+   yearly bp: {2007: 0, 2008: 922, 2009: -404, 2010: -475, 2011: 0, 2012: 0, 2013: 0, 2014: 61, 2015: 0, 2016: 0, 2017: 0, 2018: 0, 2019: 0, 2020: 0, 2021: 0, 2022: 0}
+registry size: 4  luck t for best of N ~ 1.67
