@@ -322,3 +322,4 @@ is an opening-print artifact (015). New tests use prior-close information only.
 - [x] 359 GLD holdings flows (agent) — dead.
 - [x] 362 MBS payment-day reinvestment (agent) — dead.
 - [x] 365 Corporate issuance windows (agent) — dead (post-Labor-Day short TLT weak, post-2012 only).
+- [x] 361 Treasury futures roll window (agent) — dead.

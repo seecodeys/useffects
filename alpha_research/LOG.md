@@ -1315,3 +1315,13 @@ MBB−β·IEF −0.5 / −1.2. Dead.
 Calendar-known (lag 0), 1bp/side. Short TLT Friday-before-Labor-Day → 7th session after +0.4 / +1.8 (valid Sharpe 0.63,
 +154bp/event; positive 6/13 train vs 6/8 valid years — post-2012 regime); short TLT January sessions 1-8 −0.1 / −0.5;
 LQD−β·IEF both windows −0.9 / −0.6; post-window long TLT control +1.8 / −0.0. Dead (A weak, regime-dependent).
+
+## 361 — Treasury-futures quarterly roll window (agent-run; results/agent_361.md)  ·  2026-11-21
+FND = last business day of Feb/May/Aug/Nov; window days −8..−4 (excludes the month-end bid), event months vs same days
+in other months (+1/−0.5), 1bp/side. IEF +1.5 / +0.0; TLT +1.8 / +0.3; IEF first 5 days of delivery months +0.2 / −0.4;
+IEF after a 'rich' ZN roll jump +0.6 / −1.0. Train edge from 2006-11; ~0 since. Dead.
+
+## New data sources verified (scout; results/data_sources_new.md)  ·  2026-11-21
+SPDR NAV/shares-outstanding history (2006+), FINRA margin statistics (1997+), Treasury TIC, auction allotments by investor
+class (2000+), OFR money-fund data, Cboe VX futures per-contract volume/OI (2005+), EIA weekly petroleum, ECB weekly
+balance sheet, JPX investor-type flows (2016+), Fed Z.1. Testers launched on the first four flow uses (366-369).
