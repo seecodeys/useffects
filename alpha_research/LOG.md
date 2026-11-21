@@ -1258,3 +1258,8 @@ QQQ−β·SPY open→close −0.5 / +0.8 (+3bp/trade, rising with fund AUM but t
 14 more agent tests from 3 more idea scouts (cross-asset, options/ETF, papers). Nothing passed the gate. Real but sub-cost
 or decayed: gold PM fix pre-2015 (346). Weak: dealer inventory (340, duration premium), covered-call roll (351).
 Registry: 580. The two findings (013 month-end rebalancing; month-end bond bid) remain the only robust results.
+
+## 354 — VVIX and tail-hedge returns (agent-run; results/agent_354.md)  ·  2026-11-21
+Timing value vs always-on hedge legs, lag-1, cut-offs from 2006-14. Short VIXY 5d after high VVIX/60d +0.7 / −0.2;
+short PPUT−SPXTR in top VVIX tercile −0.2 / −0.1; same on VVIX/VIX −/+ 0.1 / −1.9; short VXTH−SPXTR −0.4 / −0.8.
+No monotonic pattern; VVIX's post-2014 level shift leaves B/D on ~96% of valid days. Dead.
