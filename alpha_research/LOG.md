@@ -1087,3 +1087,8 @@ vol-target era?) — fails train; weak. Registry: 446.
 Fade top-5% |moves| (vs trailing 252d) on a 50/50 SPY+QQQ book; 427 train / 271 valid events. Train t / valid t:
 A close→next open −0.9 / +1.5; B next-day open→close +1.3 / +0.6; C close→close lag-1 +0.3 / −0.6; D close→close
 lag-0 +0.9 / +1.7. Valid strength is mostly 2020 (79-99% of A/D's valid P&L). Dead.
+
+## 327 — Holiday-shortened weeks / long-weekend flows (agent-run; results/agent_327.md)  ·  2026-11-21
+Calendar-known (lag 0). A long SPY through holiday weeks +1.4 / +2.5 (timing t 1.0 / 1.9; 2020 dominates); B SPY
+open→close after a holiday +0.7 / +0.1; C short TLT after a holiday −0.0 / −1.5; D short SPY Friday before a long
+weekend +0.5 / −1.6. Dead (A weak, mostly market exposure).
