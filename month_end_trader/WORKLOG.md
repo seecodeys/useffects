@@ -69,7 +69,9 @@ Treasury bid, long ZN over the last 3 sessions). Backtest with IBKR costs: backt
       1.000). Headline overstated vs the bot: no contract caps (bot default 40 MES / 20 ZN -> 18.9% CAGR at $100k vs 24.3%;
       $18k: 20.7% vs 22.7%), stops not modelled (~-0.7pp), IEF-vs-ZN pricing (~-1.4pp). Corrections added on top of both
       summaries; MTN default-cap note fixed. Not re-run (numbers from the review's scripts in scratchpad/review_b5)
-- [ ] Optional: add contract caps, stops and bot leverages as switches in backtest/simulate.py and re-run
+- [x] Backtests made bot-faithful (BOT_FAITHFUL switch: default caps held at today's notional, 6%/4% stops, bot
+      leverages, 15:55/12:50 times; False reproduces the research run exactly): $100k 18.5% CAGR (Sharpe 0.90),
+      $18k 21.2% (0.98); 9 leg-B stops, 0 leg-A stops (4 with raw SPY lows -> 17.9%)
 - [ ] Paper-verify MTN: IB symbol/exchange (MTN @ CBOT), localSymbol, lastTradeDateOrContractMonth = termination day,
       liquidity at 15:55 ET (thin: consider a marketable limit instead of a market order)
 - [ ] Optional: bond.instrument 10Y (yield-quoted, SELL = long bonds, monthly, 2nd month over month-end) if the user prefers it
