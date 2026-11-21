@@ -1417,3 +1417,8 @@ CWB index rebalances on the last business day (SSGA). Residual = ETF − βs·SP
 2bp/side/leg. CWB residual +0.9 / −0.6; PFF residual +1.6 / +0.6; pooled +1.7 / −0.0; raw CWB+PFF +2.3 / +1.1 (timing t
 +0.8 / +0.5). PFF has a small extra pre-cost bid (random-window p 0.011) eaten by hedge costs. Dead/weak — nothing beyond
 the curve bid.
+
+## 381 — Social Security payment Wednesdays (agent-run; results/agent_381.md)  ·  2026-11-21
+2nd/3rd/4th Wednesdays (prior session on holidays), 540 train / 288 valid events, calendar-known. Long SPY on payment
+days, timing value −2.0 / −0.7; plus next session −0.7 / −0.8; payment-Wed minus other-Wed −2.6 / −1.6; BIL placebo =
+cost drag. Wrong sign (the 1st Wednesday sits in the turn-of-month window). Dead.
