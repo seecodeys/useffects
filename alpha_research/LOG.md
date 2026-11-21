@@ -1348,3 +1348,8 @@ End-investor allotments (total − SOMA − dealers; independent of 331's dealer
 (assumed public by end of next month from 2009-10, quarterly before) → slow signal, lag-1. Investment-fund share surprise
 10d −0.1 / −0.8; foreign share −0.6 / +0.5; real-money regime IEF vs TLT −1.0 / +0.6; foreign share falling 3 months
 → short TLT/long SHY +0.9 / +0.3 (9/11 events). Dead.
+
+## 369 — Cboe VX futures open interest (agent-run; results/agent_369.md)  ·  2026-11-21
+Per-contract VX OI (2005+), lagged one day. Long VIXY 5d after OI z>+2 in contango −1.7 / −0.5; short SPY same signal
+−1.6 / +0.0; 'slow roll' front-month OI share → long VIXY +1.1 / never fires in valid (share fell after 2014);
+OI surge in backwardation → long SPY 1 event / 0. Dead (C/D effectively untestable as pre-specified).

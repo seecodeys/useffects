@@ -1,0 +1,29 @@
+VX OI first 2005-11-01 | contracts 209 | VIXY first 2011-01-04
+total OI (k contracts) yearly mean <=2022: {2005: 10.0, 2006: 34.0, 2007: 56.0, 2008: 49.0, 2009: 32.0, 2010: 94.0, 2011: 181.0, 2012: 259.0, 2013: 393.0, 2014: 389.0, 2015: 332.0, 2016: 414.0, 2017: 589.0, 2018: 462.0, 2019: 407.0, 2020: 302.0, 2021: 339.0, 2022: 303.0}
+contango share <=2022: 0.817
+   fwd5 VIXY train by (z bucket, contango): ('z<-2', False): +363bp n=19  ('z<-2', True): -295bp n=11  ('mid', False): -34bp n=99  ('mid', True): -102bp n=799  ('z>2', True): -559bp n=43
+   fwd5 VIXY valid by (z bucket, contango): ('z<-2', False): -194bp n=43  ('z<-2', True): +163bp n=8  ('mid', False): -92bp n=316  ('mid', True): -69bp n=1575  ('z>2', True): -46bp n=65
+   fwd5 SPY train by (z bucket, contango): ('z<-2', False): +25bp n=43  ('z<-2', True): +37bp n=34  ('mid', False): +16bp n=372  ('mid', True): +17bp n=1625  ('z>2', False): -44bp n=3  ('z>2', True): +77bp n=50
+   fwd5 SPY valid by (z bucket, contango): ('z<-2', False): +207bp n=43  ('z<-2', True): -9bp n=8  ('mid', False): +39bp n=316  ('mid', True): +16bp n=1575  ('z>2', True): +2bp n=65
+C thresholds (front OI share, train p67 by sessions-to-expiry): {1: np.float64(0.383), 2: np.float64(0.424), 3: np.float64(0.443), 4: np.float64(0.498), 5: np.float64(0.515)}
+369A long VIXY 5d after VX OI 20d z>2 in contango (timing value)
+   train_sharpe=-0.83  train_t=-1.65  valid_sharpe=-0.18  valid_t=-0.52  valid_bp_per_trade=-0.97  valid_traded_%=+100.00  gate=False
+   train: episodes 5, exposure 0.059, net -3029.8 bp/round-trip, strat Sharpe -1.02 vs always-on -0.87, timing value -1200 bp/yr
+   valid: episodes 14, exposure 0.054, net -393.5 bp/round-trip, strat Sharpe -0.33 vs always-on -0.50, timing value -244 bp/yr
+   timing value bp by year: {2011: -128, 2012: -3266, 2013: -1484, 2014: 92, 2015: -290, 2016: -1948, 2017: -1279, 2018: -434, 2019: 395, 2020: -313, 2021: 542, 2022: 1379}
+369B short SPY 5d after VX OI 20d z>2 in contango (timing value)
+   train_sharpe=-0.55  train_t=-1.63  valid_sharpe=+0.01  valid_t=+0.03  valid_bp_per_trade=+0.01  valid_traded_%=+100.00  gate=False
+   train: episodes 9, exposure 0.037, net -369.9 bp/round-trip, strat Sharpe -0.71 vs always-on -0.45, timing value -134 bp/yr
+   valid: episodes 14, exposure 0.054, net -51.6 bp/round-trip, strat Sharpe -0.16 vs always-on -0.61, timing value +3 bp/yr
+   timing value bp by year: {2006: 39, 2007: 23, 2008: 47, 2009: -524, 2010: 57, 2011: 17, 2012: -649, 2013: -230, 2014: 49, 2015: 38, 2016: -99, 2017: -135, 2018: -17, 2019: -40, 2020: 122, 2021: 141, 2022: 16}
+369C long VIXY final week when front OI share > train p67 (slow roll; timing value)
+   train_sharpe=+0.56  train_t=+1.12  valid_sharpe=+nan  valid_t=+nan  valid_bp_per_trade=+0.00  valid_traded_%=+100.00  gate=False
+   train: episodes 7, exposure 0.035, net +413.0 bp/round-trip, strat Sharpe 0.43 vs always-on -0.87, timing value +914 bp/yr
+   valid: episodes 0, exposure 0.000, net +0.0 bp/round-trip, strat Sharpe nan vs always-on -0.50, timing value +0 bp/yr
+   timing value bp by year: {2011: 3417, 2012: -156, 2013: 331, 2014: 54, 2015: 0, 2016: 0, 2017: 0, 2018: 0, 2019: 0, 2020: 0, 2021: 0, 2022: 0}
+369D long SPY 10d after VX OI 20d z>2 in backwardation (timing value)
+   train_sharpe=-0.15  train_t=-0.43  valid_sharpe=+nan  valid_t=+nan  valid_bp_per_trade=+0.00  valid_traded_%=+100.00  gate=False
+   train: episodes 1, exposure 0.005, net -188.5 bp/round-trip, strat Sharpe -0.12 vs always-on 0.45, timing value -27 bp/yr
+   valid: episodes 0, exposure 0.000, net +0.0 bp/round-trip, strat Sharpe nan vs always-on 0.61, timing value +0 bp/yr
+   timing value bp by year: {2006: -6, 2007: -192, 2008: 20, 2009: -15, 2010: -9, 2011: -2, 2012: -9, 2013: -16, 2014: -7, 2015: 0, 2016: 0, 2017: 0, 2018: 0, 2019: 0, 2020: 0, 2021: 0, 2022: 0}
+registry size: 4 | luck t for best of N ~ 1.67
