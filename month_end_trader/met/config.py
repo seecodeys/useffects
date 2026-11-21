@@ -80,7 +80,9 @@ class BondConfig:
     hold_sessions: int = 3
     entry_lead_s: int = 120          # enter 2 min before the NYSE close (15:58 ET; 12:58 on half days)
     exit_lead_s: int = 300           # exit 15:55 ET on month-end, clear of leg A's 15:59:58 MES exit
-    half_day_lead_s: int = 600       # on 1 pm closes enter/exit at 12:50 ET (CBOT rates halt at 13:00 ET)
+    half_day_lead_s: int = 600       # on 1 pm closes enter/exit at 12:50 ET (CBOT rates halt at 13:00 ET); also on
+                                     # SIFMA early-close days (rates settle 13:00 ET): 31 Dec, before Good Friday/Memorial Day
+    extra_early_days: list = field(default_factory=list)   # more YYYY-MM-DD dates to treat like that (CME notices)
     entry_grace_s: int = 90          # no entry later than entry time + this (and never in the last 20 s)
     fill_timeout_s: int = 30
     order_type: str = "auto"         # market | limit | auto (limit for thin micros like MTN, market for ZN)

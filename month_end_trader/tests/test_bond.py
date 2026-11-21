@@ -458,3 +458,24 @@ def test_zn_auto_uses_market_orders(benv):
     cfg, clock, b, d, alerts, bx = benv(dt.datetime(2025, 9, 25, 8, 0), zn_fn=drift())
     run(d, clock, dt.datetime(2025, 9, 25, 17, 0))
     assert zn_orders(b) and all(b.limits[o["ref"]] is None for o in zn_orders(b))
+
+
+def test_sifma_early_close_days():
+    from met.bond import sifma_early_close
+    assert sifma_early_close(dt.date(2026, 12, 31)) and sifma_early_close(dt.date(2025, 12, 31))
+    assert sifma_early_close(dt.date(2024, 3, 28))                 # Thursday before Good Friday 2024
+    assert sifma_early_close(dt.date(2027, 5, 28))                 # Friday before Memorial Day (31 May 2027)
+    assert not sifma_early_close(dt.date(2026, 5, 22)) or cal.last_session_of_month(2026, 5) != dt.date(2026, 5, 22)
+    assert not sifma_early_close(dt.date(2026, 11, 27))            # NYSE half day: handled as a half day
+    assert not sifma_early_close(dt.date(2026, 11, 30))
+
+
+def test_december_exit_at_1250(benv):
+    """31 Dec 2025 (full NYSE session, SIFMA early close): bond exit at 12:50 ET; leg A still 15:59:58."""
+    cfg, clock, b, d, alerts, bx = benv(dt.datetime(2025, 12, 23, 8, 0), zn_fn=drift())
+    tm = bx.times(dt.date(2025, 12, 31))
+    assert tm["exit"].time() == dt.time(12, 50) and tm["E"] == dt.date(2025, 12, 26)
+    run(d, clock, dt.datetime(2025, 12, 31, 18, 0))
+    s = bst(cfg, dt.date(2025, 12, 31))
+    sell = [o for o in zn_orders(b) if o["action"] == "SELL"][0]
+    assert s.phase == "FLAT" and sell["t"].date() == dt.date(2025, 12, 31) and dt.time(12, 50) <= sell["t"].time() < dt.time(12, 51)

@@ -38,7 +38,7 @@ def led(ief):
 
 def zn_path(ief, E, hedge, p0=110.0):
     base = float(ief.loc[E])
-    dates = sorted(d for d in ief.index if E <= d <= E + dt.timedelta(days=14))
+    dates = sorted(d for d in ief.index if E - dt.timedelta(days=5) <= d <= E + dt.timedelta(days=14))
 
     def px(now):
         t = now.astimezone(cal.ET)
@@ -49,7 +49,7 @@ def zn_path(ief, E, hedge, p0=110.0):
                 last = d
         if last is None:
             return p0
-        return p0 * (1 + (float(ief.loc[last]) / base - 1) / hedge)
+        return p0 * (1 + (float(ief.loc[last]) / base - 1) / hedge)       # relative to E's close (only ratios matter)
     return px
 
 
@@ -77,7 +77,12 @@ def test_bond_replay_month(X, tmp_path, data, ief, led):
         assert led.loc[X, "ief_bp"] < 0 and crit and all("DISASTER STOP" in c for c in crit), crit
         return
     slip_bp = 1e4 * 2 * (1 / 128) / 110.0 * cfg.bond.hedge_ratio
-    ief_bp = led.loc[X, "ief_bp"]
+    # the price path steps at each close (visible from close-10m): a 12:50 trade (half day / SIFMA early close)
+    # trades at the previous session's close
+    tm = bx.times(X)
+    eff = lambda t, d: d if t >= cal.session_open_close(d)[1] - dt.timedelta(minutes=10) else cal.previous_session(d)
+    e_d, x_d = eff(tm["entry"], E), eff(tm["exit"], X)
+    ief_bp = 1e4 * (float(ief.loc[x_d]) / float(ief.loc[e_d]) - 1)
     bot_bp = s.get("trade_bp") * cfg.bond.hedge_ratio
     assert bot_bp == pytest.approx(ief_bp - slip_bp, abs=0.6 + 0.01 * abs(ief_bp)), (X, bot_bp, ief_bp)
     assert not crit, crit

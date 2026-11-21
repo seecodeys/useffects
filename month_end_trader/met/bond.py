@@ -57,6 +57,29 @@ def window_for(today: dt.date, hold: int) -> tuple[dt.date, dt.date]:
     return entry_session(X, hold), X
 
 
+def sifma_early_close(d: dt.date) -> bool:
+    """Days SIFMA recommends a 14:00 ET bond-market close while the NYSE trades a full day, on which CME settles
+    Treasury futures early (12:00 CT = 13:00 ET) and liquidity fades: 31 Dec, the session before Good Friday and
+    the session before Memorial Day. NYSE half days are handled separately (cal.is_early_close). CME publishes the
+    exact hours ~2 weeks ahead; extra dates can be added with bond.extra_early_days."""
+    if not cal.is_session(d) or cal.is_early_close(d):
+        return False
+    if (d.month, d.day) == (12, 31):
+        return True
+    from dateutil.easter import easter
+    if cal.next_session(d) != d + dt.timedelta(days=1) and \
+            d + dt.timedelta(days=1) == easter(d.year) - dt.timedelta(days=2):
+        return True
+    if d.month == 5 and d.weekday() == 4:
+        mem = max(dt.date(d.year, 5, x) for x in range(25, 32) if dt.date(d.year, 5, x).weekday() == 0)
+        return mem == d + dt.timedelta(days=3)
+    return False
+
+
+def rates_early(d: dt.date, extra=()) -> bool:
+    return cal.is_early_close(d) or sifma_early_close(d) or str(d) in set(extra)
+
+
 def first_notice_day(year: int, month: int) -> dt.date:
     """Treasury futures first notice day: last business day of the month before the contract month. NYSE
     sessions stand in for business days (an NYSE holiday only moves the date EARLIER: conservative)."""
@@ -311,8 +334,15 @@ class BondExecutor(Executor):
         _, cE = cal.session_open_close(E)
         _, cX = cal.session_open_close(X)
         # half days: CBOT rates close at 13:00 ET with the NYSE, so leave room for exit retries before it
-        lead_e = max(b.entry_lead_s, b.half_day_lead_s) if cal.is_early_close(E) else b.entry_lead_s
-        lead_x = max(b.exit_lead_s, b.half_day_lead_s) if cal.is_early_close(X) else b.exit_lead_s
+        # SIFMA early-close days (31 Dec, before Good Friday / Memorial Day): CME settles rates at 13:00 ET -> trade
+        # at 12:50 ET as on half days (the NYSE close is still 16:00, so the lead is measured from 13:00)
+        def lead(d, base):
+            if cal.is_early_close(d):
+                return max(base, b.half_day_lead_s)
+            if sifma_early_close(d) or str(d) in set(b.extra_early_days):
+                return 3 * 3600 + b.half_day_lead_s
+            return base
+        lead_e, lead_x = lead(E, b.entry_lead_s), lead(X, b.exit_lead_s)
         entry = cE - dt.timedelta(seconds=lead_e)
         return dict(E=E, X=X, close_entry=cE, close=cX,
                     preflight=cE - dt.timedelta(minutes=30),

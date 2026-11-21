@@ -39,8 +39,10 @@ Treasury bid, long ZN over the last 3 sessions). Backtest with IBKR costs: backt
 - [x] Historical replay of leg B (tests/test_bond_replay.py): both legs in one daemon through past windows, ZN path
       from IEF closes; every trade within slippage of the IEF ledger, no CRITICAL alerts. 48 sampled windows passed;
       default runs 24, MET_SLOW=1 all 286 (full run 2026-11-21: 286/286 passed, incl. disaster-stop months e.g. 2009-01)
-- [ ] CBOT holiday/early-close calendar: SIFMA-only early closes (14:00 ET, e.g. day before Good Friday / Christmas Eve when
-      NYSE is a full day) and Good Friday rates sessions - check whether any E/X ever falls on one (2003-2030)
+- [x] SIFMA early-close days (31 Dec, session before Good Friday / Memorial Day; CME settles rates 13:00 ET): the bond
+      leg trades at 12:50 ET there, like NYSE half days; bond.extra_early_days for CME notices. 31 Dec is the exit EVERY
+      year. Replay compares with the closes visible at the bot's times. CME publishes each year's hours ~2 weeks ahead:
+      check the 31 Dec 2026 notice. Not done: Good Friday rates sessions (bot treats GF as closed: conservative)
 - [x] README + PAPER_TEST.md for both legs (first window 24 -> 30 Nov 2026, H7 contract, alert timeline, -manual refs,
       resolve --leg bond); `met test-order --leg bond` (prints IB's contract, last trade day, multiplier; limit for MTN)
 - [x] Combined-exposure guardrail: guardrails.max_total_leverage (default 7x, hard 8x) on all futures notional of
