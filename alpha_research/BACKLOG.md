@@ -275,3 +275,4 @@ is an opening-print artifact (015). New tests use prior-close information only.
 - [x] 316 013 back-cast to 1962 — absent pre-2002 (modern effect).
 - [x] 317 Corporate-yield back-cast (Moody's) — bid present 1983+.
 - [x] 318 Bill vs note control — bid follows index eligibility.
+- [x] 319 Early-month reversal back-cast — only post-2002 in 10y; keep long-only.

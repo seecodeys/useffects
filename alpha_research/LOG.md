@@ -1050,3 +1050,10 @@ Yield decline over the last 3 sessions (bp, t), 1983-92 / 1993-01 / 2002-22, and
 +0.8 (0.8) / +1.2 (3.2), p=0.39; 2y (inside) +3.0 (2.7) / +2.3 (2.0) / +2.8 (5.7), p=0.006.
 The bid fades sharply below the 1-year index cut-off — bills show little or nothing (small 2002-22 drift plausibly from
 money-fund month-end flows). Another mechanism check consistent with bond-index extension. Not registered.
+
+## 319 — Does the month-end bond bid reverse early next month? (FRED back-cast, descriptive)  ·  2026-11-21
+Yield decline over the first 3 sessions of the month (bp, t), 1973-82 / 83-92 / 93-01 / 02-14 / 15-22:
+10y −0.4 (−0.2) / +1.9 (1.6) / +0.9 (0.8) / **−2.4 (−2.7)** / −1.3 (−1.4); 2y +0.3 / +2.6 (2.1) / +1.3 / 0.0 / −1.1.
+No reversal before 2002 (early-month yields kept drifting down, i.e. turn-of-month buying spread into the new month);
+a partial reversal in 10y appears only after 2002, when the bid became more concentrated/anticipated. The month-end
+window itself (315) is the stable part — keep the trade long-only into month-end, as specified. Not registered.
