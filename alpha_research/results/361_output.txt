@@ -1,0 +1,44 @@
+
+A_IEF_roll (IEF): difference in means (bp per window)
+       n_ev  n_ctl  ev_bp  ctl_bp  diff_bp  welch_t
+train  50.0   99.0  22.82   -6.02    28.85     1.86
+valid  32.0   64.0  10.22    5.58     4.64     0.27
+  sign s=+1  train_sharpe=+0.43  train_t=+1.53  valid_sharpe=+0.01  valid_t=+0.04  valid_bp_per_trade=+0.04  valid_traded_%=+28.40  gate=False
+  yearly net bp: 02:-213 03:+91 04:-31 05:-20 06:+200 07:+164 08:+386 09:+308 10:+195 11:+156 12:-134 13:+100 14:+38 15:-8 16:-252 17:+141 18:+113 19:-22 20:-131 21:-184 22:+364
+
+B_TLT_roll (TLT): difference in means (bp per window)
+       n_ev  n_ctl  ev_bp  ctl_bp  diff_bp  welch_t
+train  50.0   99.0  64.75    3.30    61.45     1.89
+valid  32.0   64.0  40.25   26.15    14.10     0.35
+  sign s=+1  train_sharpe=+0.50  train_t=+1.75  valid_sharpe=+0.09  valid_t=+0.26  valid_bp_per_trade=+0.60  valid_traded_%=+28.55  gate=False
+  yearly net bp: 02:-256 03:+370 04:+70 05:-216 06:+469 07:+409 08:+782 09:+769 10:+562 11:+96 12:-260 13:+117 14:-67 15:-119 16:-354 17:+363 18:+289 19:+50 20:-580 21:-301 22:+995
+
+C_IEF_delivery (IEF): difference in means (bp per window)
+       n_ev  n_ctl  ev_bp  ctl_bp  diff_bp  welch_t
+train  50.0   99.0  -6.77    0.28    -7.05    -0.40
+valid  32.0   64.0 -11.71  -17.02     5.31     0.24
+  sign s=-1  train_sharpe=+0.05  train_t=+0.16  valid_sharpe=-0.15  valid_t=-0.43  valid_bp_per_trade=-0.52  valid_traded_%=+28.40  gate=False
+  yearly net bp: 02:-99 03:-428 04:-247 05:-171 06:+2 07:+78 08:-212 09:+118 10:+496 11:-208 12:+90 13:+188 14:+546 15:+289 16:+112 17:+11 18:-200 19:+33 20:-120 21:+156 22:-581
+/home/user/useffects/alpha_research/experiments/361_treasury_roll_window.py:145: Pandas4Warning: Sorting by default when concatenating all DatetimeIndex is deprecated.  In the future, pandas will respect the default of `sort=False`. Specify `sort=True` or `sort=False` to silence this message. If you see this warnings when not directly calling concat, report a bug to pandas.
+  zr = pd.concat([zn["cc"], ief["cc"]], axis=1, keys=["z", "i"]).dropna()
+
+ZN=F switch-day detection (first rows):
+  deliv     switch    vol_ratio    jump_bp  med_prior  n_prior  rich
+2003-09 2003-09-19 85209.000000   6.840747        NaN        0 False
+2003-12 2003-12-19   835.144444 -13.457344   6.840747        1 False
+2004-03 2004-03-22  5253.375000  -8.510111  -3.308298        2 False
+2004-06 2004-06-21    27.252415   3.142802  -8.510111        3 False
+2004-09 2004-09-21    97.697497 -17.478647  -2.683655        4 False
+2004-12 2004-12-20    62.952443   1.656785  -8.510111        5  True
+2005-03 2005-03-21    84.332968   3.605796  -3.426663        6  True
+2005-06 2005-06-21    98.644284  17.226621   1.656785        7  True
+median vol ratio on detected switch days: 99.9; rich share 0.49
+
+D_IEF_roll_rich (IEF): difference in means (bp per window)
+       n_ev  n_ctl  ev_bp  ctl_bp  diff_bp  welch_t
+train  19.0   38.0   4.92  -11.91    16.84     0.79
+valid  18.0   36.0  -3.56   12.74   -16.29    -0.81
+  sign s=+1  train_sharpe=+0.17  train_t=+0.58  valid_sharpe=-0.34  valid_t=-0.97  valid_bp_per_trade=-1.15  valid_traded_%=+15.89  gate=False
+  yearly net bp: 02:+0 03:+0 04:+19 05:-71 06:+108 07:-34 08:-17 09:+338 10:-92 11:-41 12:-127 13:+249 14:-83 15:+1 16:-99 17:+82 18:+5 19:-2 20:+103 21:-211 22:-246
+
+N registered (this agent): 4
