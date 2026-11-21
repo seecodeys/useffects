@@ -1290,3 +1290,8 @@ too short to pass the train gate). Not registered.
 SNB data portal (cube snbgwdchfsgw, domestic banks' sight deposits, weekly 2009+), released Monday, entered Tuesday close
 (lag-1), 5-day hold, 2bp/side, 2011-15 floor excluded (short train). ΔGI>+2bn long EURCHF −0.5 / +0.3; ΔGI<−2bn short
 +0.6 / +0.0; z-score signal −0.2 / −0.4; USDCHF +/− ~0. Dead.
+
+## 360 — Pension funded-status LDI flattener (agent-run; results/agent_360.md)  ·  2026-11-21
+Month-end FS proxy = 3m SPY − 3m TLT; position TLT − 1.9×IEF next month, lag-1, 1bp/side (raw + timing value, 8 rows).
+Top-tercile FS −0.3 / −0.6; FRED 20s−10s proxy (1994+) +2.0 / +0.1 (fading 1994-99 → valid); Oct-Mar only +0.1 / −0.7;
+continuous z +0.4 / +0.4. Dead.
