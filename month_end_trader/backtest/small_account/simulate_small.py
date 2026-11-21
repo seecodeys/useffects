@@ -1,108 +1,192 @@
-"""Small-account (~$18k) variant of ../simulate.py: leg B in CME Micro 10-Year Yield futures (10Y) instead of ZN.
+"""Small-account (~$18k) variant of ../simulate.py: leg B in CME Micro Ultra 10-Year T-Note futures (MTN).
 
 Reuses ../simulate.py (imported, not edited) for data loading, the leg-A signal, the SPY core, cash interest,
-the stats and the yearly table. What is new here:
-  * Leg B = SHORT the Micro 10Y Yield future (price = 10y yield in index points, 0.001 = $1, DV01 $10/contract),
-    contracts = floor(LEV_B x net liq x IEF duration x 1e-4 / $10). IEF duration = trailing regression of IEF daily
-    returns on -(change in the 10y yield), so one contract is ~ $100,000 / duration of IEF-equivalent notional.
-    P&L model "tnx" (headline): -contracts x change in ^TNX yield (pts) x 1000 $.
-    P&L model "ief" (check):    contracts x $100,000/duration x (IEF total return - T-bills), marked daily.
+the stats and the yearly table, and ../../met (imported, not edited) for the live bot's MTN contract choice
+(met.bond.contract_month_for / last_safe_day), its sizing function (met.guardrails.size_contracts) and BOND_SPECS.
+What is new here:
+  * Leg B = LONG MTN ($100 x price, cash settled, quarterly) from the close of the 4th-last session to the
+    month-end close, in the contract the bot would pick: the first quarterly contract whose last trade day is more
+    than 5 sessions after the month-end exit date (so Feb/May/Aug/Nov windows hold the contract after next).
+    Contracts = floor(2.8 x 0.885 x net liq / (price x 100)), max 400, notional <= 4.5x net liq (bot defaults).
+    P&L model "tn" (primary, 2016-01-11+): TN=F (Yahoo, Ultra 10-Year continuous front) daily close-to-close
+    returns x MTN notional, Yahoo roll days neutralised (replaced by the IEF model's return for that day).
+    P&L model "ief" (before 2016 and as a check): MTN notional x (IEF total return - T-bills) / 0.885.
   * Leg A rounding variants: "floor" (skip when 0 MES) or "nearest" (round half up, capped at MAX_LEV_A).
-  * Margin per trade (MES % of notional, 10Y $ per contract) vs net liq, flagged above MARGIN_FLAG.
-Run:  python3 simulate_small.py      (writes trades_18k*.csv, yearly_18k.csv, scenarios_small.csv, equity_18k.png,
-                                      summary.md in this directory)
+  * Margin per trade (MES and MTN % of notional) vs net liq, flagged above MARGIN_FLAG.
+Run:  python3 simulate_small.py      (writes trades_18k*.csv, yearly_18k.csv, periods_18k.csv, scenarios_small.csv,
+                                      equity_18k.png, summary.md in this directory)
 """
-import os, sys, math, warnings
+import os, sys, math, datetime as dt, warnings
 warnings.filterwarnings("ignore")
 import numpy as np
 import pandas as pd
 
-sys.dont_write_bytecode = True          # do not leave __pycache__ in ../ (imported module lives there)
+sys.dont_write_bytecode = True          # do not leave __pycache__ in ../ or ../../met (imported modules live there)
 HERE = os.path.dirname(os.path.abspath(__file__))
-sys.path.insert(0, os.path.dirname(HERE))
+sys.path.insert(0, os.path.dirname(HERE))                       # backtest/  -> simulate
+sys.path.insert(0, os.path.dirname(os.path.dirname(HERE)))      # month_end_trader/ -> met
 import simulate as S          # noqa: E402  (the full-size simulation; imported only)
 import lib                    # noqa: E402  (on sys.path via simulate.LIB_DIR)
+from met.bond import contract_month_for, last_safe_day          # noqa: E402  (the live bot's contract choice)
+from met.config import BOND_SPECS, BondConfig, HARD_MAX_BOND_LEVERAGE   # noqa: E402
+from met.guardrails import size_contracts                       # noqa: E402  (the live bot's sizing)
 
 # =============================================================== PARAMETERS
 OUT = HERE
 HEADLINE_EQUITY = 18_000.0
 ACCOUNT_SIZES = [10_000, 18_000, 25_000, 50_000, 100_000]
-LEV_A, LEV_B = S.LEV_A, S.LEV_B          # 2.85x MES at full size (half = 1.425x); 2.81x IEF-equivalent for B
+LEV_A = S.LEV_A                          # 2.85x MES at full size (half = 1.425x)
 MAX_LEV_A = 3.0                          # "nearest" rounding may not exceed this MES notional / net liq
 START = S.START
 
-# Micro 10-Year Yield futures (CME symbol 10Y; launched 2021-08-16)
-Y10_DV01 = 10.0                          # $ per bp per contract (0.001 index pt = $1, 1bp = 0.010 pt)
-Y10_PT_VALUE = 1000.0                    # $ per 1.000 index point (= 1 percentage point of yield)
-Y10_TICK = 0.001                         # index points; = $1
-Y10_LAUNCH = "2021-08-16"
+# Micro Ultra 10-Year T-Note futures, exactly as the bot uses them
+SPEC = BOND_SPECS["MTN"]
+MTN_MULT = SPEC["multiplier"]            # $100 x price
+HEDGE = SPEC["hedge"]                    # 0.885 = beta of IEF daily returns on TN futures returns
+_BC = BondConfig()
+LEV_B = _BC.leverage                     # 2.8 IEF-equivalent notional / net liq (bot default; research 2.81)
+B_MAX_LEV = _BC.max_leverage             # 4.5 futures notional / net liq ceiling
+B_MAX_CONTRACTS = SPEC["max_contracts"]  # 400
+ROLL_BUFFER = _BC.roll_buffer_days       # 5 sessions
+MTN_TICK = 1 / 32                        # points; the bot's FakeBroker uses 1/32 for MTN = $3.125 per contract
+MTN_LAUNCH = "2024-01-01"                # CME launched MTN in 2024; earlier trades are hypothetical
+TN_START = "2016-01-11"                  # Ultra 10-Year (TN) futures launch; Yahoo's earlier TN=F rows are not TN
 MES_LAUNCH = "2019-05-06"
-DUR_WIN, DUR_MIN = 252, 60               # trailing sessions for the IEF duration regression
-DUR_FIXED = None                         # set e.g. 7.2 to size with a fixed duration instead of the trailing estimate
-B_MODEL = "tnx"                          # headline leg-B P&L model: "tnx" (yield changes x DV01) or "ief"
+B_MODEL = "auto"                         # "auto": TN=F where available, else IEF model; "ief": IEF model throughout
+ROLL_SD = 3.0                            # Yahoo roll day = largest |TN - IEF/hedge| residual of the roll window > 3 sd
 
 COSTS = {   # per contract per side
-    #           MES all-in fee, MES slippage ticks ($1.25), 10Y all-in fee, 10Y slippage ticks ($1)
-    "base":   {"mes_fee": 0.62, "mes_slip_ticks": 1.0, "y10_fee": 0.85, "y10_slip_ticks": 1.0},
-    "stress": {"mes_fee": 0.62, "mes_slip_ticks": 2.0, "y10_fee": 0.85, "y10_slip_ticks": 2.0},
-    "zero":   {"mes_fee": 0.0,  "mes_slip_ticks": 0.0, "y10_fee": 0.0,  "y10_slip_ticks": 0.0},
+    #           MES all-in fee, MES slippage ticks ($1.25), MTN all-in fee, MTN slippage ticks of 1/32 ($3.125)
+    "base":    {"mes_fee": 0.62, "mes_slip_ticks": 1.0, "mtn_fee": SPEC["cost"], "mtn_slip_ticks": 1.0},
+    "stress":  {"mes_fee": 0.62, "mes_slip_ticks": 2.0, "mtn_fee": SPEC["cost"], "mtn_slip_ticks": 2.0},
+    "halftick": {"mes_fee": 0.62, "mes_slip_ticks": 1.0, "mtn_fee": SPEC["cost"], "mtn_slip_ticks": 0.5},
+    "zero":    {"mes_fee": 0.0,  "mes_slip_ticks": 0.0, "mtn_fee": 0.0,  "mtn_slip_ticks": 0.0},
 }
-# margin assumptions (initial, per contract). MES as a % of notional (7.5% ~ $2,840 at S&P 7,580); 10Y fixed $.
-MES_MARGIN_PCT = 0.075
-Y10_MARGIN = 400.0
+# margin assumptions (initial, per contract, as % of notional)
+MES_MARGIN_PCT = 0.075                   # ~$2,840 at S&P 7,580
+MTN_MARGIN_PCT = 0.03                    # ~$330 per MTN at 108 (TN ~$3k-4k per $100k face)
 MARGIN_STRESS_MULT = 2.0                 # crisis check: exchanges/IBKR double margins
 MARGIN_FLAG = 0.60                       # flag trades where futures margin > 60% of net liq
 SPY_MAINT = 0.25                         # Reg T maintenance on the SPY core (for the total-requirement check)
 IBKR_MIN_EQUITY = 2_000.0
+
+# Previous run of this script (leg B in the CME Micro 10-Year Yield future "10Y", ^TNX P&L, sized by IEF duration,
+# fee $0.85 + 1 tick $1 per side), kept for comparison. Copied from its scenarios_small.csv / periods_18k.csv.
+nan = float("nan")
+PREV_10Y = {
+    (10000, 'A floor'): {'CAGR %': 22.009, 'Sharpe': 1.01, 'max DD %': -41.548, 'alpha %/yr': 9.783, 'beta': 0.961, 'B win %': 58.392, 'B avg % acct': 0.321, 'B avg net $': 372.361, 'final equity $': 1143663.36},
+    (10000, 'A nearest'): {'CAGR %': 22.043, 'Sharpe': 1.004, 'max DD %': -41.498, 'alpha %/yr': 9.789, 'beta': 0.966, 'B win %': 58.392, 'B avg % acct': 0.328, 'B avg net $': 375.507, 'final equity $': 1151210.365},
+    (18000, 'A floor'): {'CAGR %': 22.08, 'Sharpe': 1.005, 'max DD %': -43.174, 'alpha %/yr': 9.826, 'beta': 0.966, 'A win %': 60.839, 'B win %': 58.392, 'A avg % acct': 0.49, 'B avg % acct': 0.336, 'B avg net $': 690.991, 'B avg contracts': 69.577, 'B skipped': 0, 'A skipped': 0, 'vol %': 20.163, 'final equity $': 2087063.534},
+    (18000, 'A nearest'): {'CAGR %': 22.143, 'Sharpe': 1.004, 'max DD %': -42.513, 'alpha %/yr': 9.87, 'beta': 0.968, 'A win %': 60.839, 'B win %': 58.392, 'A avg % acct': 0.503, 'B avg % acct': 0.335, 'B avg net $': 695.461, 'final equity $': 2113036.749},
+    (25000, 'A floor'): {'CAGR %': 22.116, 'Sharpe': 1.004, 'max DD %': -42.812, 'alpha %/yr': 9.852, 'beta': 0.967, 'B win %': 58.392, 'B avg % acct': 0.339, 'final equity $': 2919010.229},
+    (25000, 'A nearest'): {'CAGR %': 22.199, 'Sharpe': 1.006, 'max DD %': -42.474, 'alpha %/yr': 9.92, 'beta': 0.968, 'B win %': 58.392, 'B avg % acct': 0.34, 'final equity $': 2967096.237},
+    (50000, 'A floor'): {'CAGR %': 22.322, 'Sharpe': 1.017, 'max DD %': -41.244, 'alpha %/yr': 10.102, 'beta': 0.957, 'B win %': 58.392, 'B avg % acct': 0.342, 'final equity $': 6077657.16},
+    (50000, 'A nearest'): {'CAGR %': 22.366, 'Sharpe': 1.018, 'max DD %': -41.072, 'alpha %/yr': 10.142, 'beta': 0.957, 'B win %': 58.392, 'B avg % acct': 0.342, 'final equity $': 6129967.761},
+    (100000, 'A floor'): {'CAGR %': 22.363, 'Sharpe': 1.018, 'max DD %': -41.297, 'alpha %/yr': 10.141, 'beta': 0.957, 'B win %': 58.392, 'B avg % acct': 0.343, 'final equity $': 12252437.081},
+    (100000, 'A nearest'): {'CAGR %': 22.379, 'Sharpe': 1.018, 'max DD %': -41.381, 'alpha %/yr': 10.155, 'beta': 0.957, 'B win %': 58.392, 'B avg % acct': 0.343, 'final equity $': 12290264.792},
+    (18000, 'A floor, stress costs'): {'CAGR %': 20.928, 'Sharpe': 0.963, 'max DD %': -43.162, 'alpha %/yr': 8.922, 'beta': 0.959, 'B win %': 58.042, 'B avg % acct': 0.293, 'final equity $': 1665105.534},
+    (18000, 'A nearest, stress costs'): {'CAGR %': 21.007, 'Sharpe': 0.964, 'max DD %': -42.395, 'alpha %/yr': 8.975, 'beta': 0.961, 'B win %': 58.042, 'B avg % acct': 0.291, 'final equity $': 1691153.821},
+    (18000, 'A floor, B P&L = IEF-minus-bills model'): {'CAGR %': 23.771, 'Sharpe': 1.076, 'max DD %': -39.684, 'alpha %/yr': 11.313, 'beta': 0.954, 'B win %': 60.14, 'B avg % acct': 0.458, 'final equity $': 2896758.577},
+    (18000, 'A nearest, B P&L = IEF-minus-bills model'): {'CAGR %': 24.037, 'Sharpe': 1.083, 'max DD %': -39.325, 'alpha %/yr': 11.521, 'beta': 0.956, 'B win %': 60.14, 'B avg % acct': 0.456, 'final equity $': 3048762.776},
+    (10000, "today's rounding fixed, A floor"): {'CAGR %': 13.551, 'Sharpe': 0.702, 'max DD %': -53.374, 'alpha %/yr': 2.307, 'beta': 0.952, 'B win %': 58.392, 'B avg % acct': 0.169, 'final equity $': 206516.647},
+    (10000, "today's rounding fixed, A nearest"): {'CAGR %': 13.551, 'Sharpe': 0.702, 'max DD %': -53.374, 'alpha %/yr': 2.307, 'beta': 0.952, 'B win %': 58.392, 'B avg % acct': 0.169, 'final equity $': 206516.647},
+    (18000, "today's rounding fixed, A floor"): {'CAGR %': 19.828, 'Sharpe': 0.949, 'max DD %': -44.085, 'alpha %/yr': 7.9, 'beta': 0.954, 'B win %': 58.392, 'B avg % acct': 0.282, 'final equity $': 1339498.724},
+    (18000, "today's rounding fixed, A nearest"): {'CAGR %': 21.248, 'Sharpe': 1.005, 'max DD %': -44.084, 'alpha %/yr': 9.147, 'beta': 0.95, 'B win %': 58.392, 'B avg % acct': 0.282, 'final equity $': 1773429.572},
+    (25000, "today's rounding fixed, A floor"): {'CAGR %': 17.997, 'Sharpe': 0.891, 'max DD %': -45.809, 'alpha %/yr': 6.378, 'beta': 0.941, 'B win %': 58.392, 'B avg % acct': 0.271, 'final equity $': 1289037.373},
+    (25000, "today's rounding fixed, A nearest"): {'CAGR %': 19.214, 'Sharpe': 0.931, 'max DD %': -48.351, 'alpha %/yr': 7.288, 'beta': 0.959, 'B win %': 58.392, 'B avg % acct': 0.271, 'final equity $': 1645829.507},
+    (50000, "today's rounding fixed, A floor"): {'CAGR %': 21.006, 'Sharpe': 0.985, 'max DD %': -44.455, 'alpha %/yr': 8.875, 'beta': 0.961, 'B win %': 58.392, 'B avg % acct': 0.304, 'final equity $': 4696951.904},
+    (50000, "today's rounding fixed, A nearest"): {'CAGR %': 21.522, 'Sharpe': 1.01, 'max DD %': -43.493, 'alpha %/yr': 9.376, 'beta': 0.953, 'B win %': 58.392, 'B avg % acct': 0.304, 'final equity $': 5198294.231},
+    (100000, "today's rounding fixed, A floor"): {'CAGR %': 22.54, 'Sharpe': 1.032, 'max DD %': -41.98, 'alpha %/yr': 10.205, 'beta': 0.962, 'B win %': 58.392, 'B avg % acct': 0.321, 'final equity $': 12683498.109},
+    (100000, "today's rounding fixed, A nearest"): {'CAGR %': 22.696, 'Sharpe': 1.033, 'max DD %': -43.169, 'alpha %/yr': 10.305, 'beta': 0.967, 'B win %': 58.392, 'B avg % acct': 0.321, 'final equity $': 13071897.617},
+}
+PREV_10Y_PERIODS = {
+    ('floor', '2003-2022 in-sample'): {'CAGR %': 19.691, 'Sharpe': 0.913, 'max DD %': -43.174, 'alpha %/yr': 9.405, 'B win %': 58.75, 'B avg % acct': 0.369},
+    ('floor', '2023+ holdout'): {'CAGR %': 35.45, 'Sharpe': 1.608, 'max DD %': -11.091, 'alpha %/yr': 11.782, 'B win %': 56.522, 'B avg % acct': 0.164},
+    ('nearest', '2003-2022 in-sample'): {'CAGR %': 19.754, 'Sharpe': 0.912, 'max DD %': -42.513, 'alpha %/yr': 9.451, 'B win %': 58.75, 'B avg % acct': 0.368},
+    ('nearest', '2023+ holdout'): {'CAGR %': 35.518, 'Sharpe': 1.611, 'max DD %': -11.089, 'alpha %/yr': 11.838, 'B win %': 56.522, 'B avg % acct': 0.164},
+}
+PREV_10Y_TODAY_18K = "3 x 10Y (2.42x IEF-equivalent)"
 # =============================================================================
+
+
+def theo_price(y, n=19, c=0.06):
+    """Price of a 6% semi-annual coupon bond with n half-years left at yield y (decimal): the Ultra 10-Year's
+    conversion-factor basis, used only to size hypothetical pre-2016 trades (calibrated to TN=F below)."""
+    v = 1 / (1 + y / 2)
+    return 100 * (c / 2 * (1 - v ** n) / (y / 2) + v ** n)
 
 
 def load():
     d, info = S.load()
+    idx = d.index
+    rf_d = d.irx.shift(1) * d.days / 360
+    d["ief_ex"] = d.ief_cc - rf_d                                         # IEF total return minus T-bill accrual
+    d["ief_model_ret"] = d.ief_ex / HEDGE                                 # implied MTN return, IEF model
+    tn = lib.get("TN=F")
+    info["tn_raw_first"] = tn.index[0].date()
+    info["tn_rows_rejected"] = int((tn.index < TN_START).sum())
+    tn = tn[tn.index >= TN_START]
+    tc = tn.Close.reindex(idx)
+    info["tn_missing"] = int(tc.loc[TN_START:].isna().sum())
+    tcf = tc.ffill(limit=2)
+    d["tn_close"] = tc
+    r = tcf / tcf.shift(1) - 1
+    r[idx <= pd.Timestamp(TN_START)] = np.nan
+    res = r - d.ief_model_ret
+    roll_win = idx.month.isin([3, 6, 9, 12]) & (idx.day >= 12) & (idx.day <= 25)
+    base = res[~roll_win].dropna()
+    sd = 1.4826 * (base - base.median()).abs().median()                   # robust sd of the daily residual
+    flag = pd.Series(False, index=idx)
+    for _, g in res[roll_win].dropna().groupby([idx[roll_win & res.notna()].year, idx[roll_win & res.notna()].month]):
+        t = g.abs().idxmax()
+        if abs(g[t]) > ROLL_SD * sd:
+            flag[t] = True
+    d["tn_roll"] = flag
+    d["tn_ret_raw"] = r
+    d["tn_ret"] = r.where(~flag, d.ief_model_ret)                         # roll days neutralised
+    d["tn_resid"] = res
+    hold = d.rank_bwd <= S.B_HOLD_RANK - 1
+    info["roll"] = dict(sd=sd, n_flag=int(flag.sum()), dates=[t.date() for t in flag[flag].index],
+                        sizes=[100 * res[t] for t in flag[flag].index], on_hold=int((flag & hold).sum()),
+                        hold_big=[(t.date(), 100 * res[t]) for t in res[hold & (res.abs() > 5 * sd)].index],
+                        hold_max=100 * res[hold].abs().max(), nonhold_max_nonroll=100 * res[~hold & ~flag].abs().max())
+    ok = r.notna() & d.ief_ex.notna() & ~roll_win
+    for a in ["2016", "2017"]:
+        m = ok & (idx >= a)
+        info[f"hedge_{a}"] = (np.polyfit(r[m], d.ief_ex[m], 1)[0], np.corrcoef(r[m], d.ief_ex[m])[0, 1])
+    # sizing price: TN=F close when available, else the 6% / 9.5y theoretical price at ^TNX x calibration ratio
     tnx = lib.get("^TNX").Close
-    scale = 10.0 if tnx.loc["2003":].median() > 20 else 1.0      # Yahoo ^TNX was historically 10x the yield
-    info["tnx_scale"] = scale
-    full = (tnx / scale).reindex(d.index)
-    info["tnx_missing"] = int(full.loc[START:].isna().sum())
-    d["y10"] = full.ffill()                                      # 10y yield in % = Micro 10Y index points
-    dy = d.y10.diff()
-    x = -dy / 100.0                                              # yield change in decimal, sign flipped
-    y = d.ief_cc
-    ok = x.notna() & y.notna()
-    x, y = x.where(ok), y.where(ok)
-    R = lambda s: s.rolling(DUR_WIN, min_periods=DUR_MIN).mean()
-    d["dur"] = ((R(x * y) - R(x) * R(y)) / (R(x * x) - R(x) ** 2)).ffill()
-    if DUR_FIXED:
-        d["dur"] = DUR_FIXED
-    xs, ys = x.loc[START:].dropna(), y.loc[START:].dropna()
-    info["dur_full"] = np.polyfit(xs, ys, 1)[0]
-    info["dur_corr"] = np.corrcoef(xs, ys)[0, 1]
-    w = d[["ief_aC", "y10"]].loc[START:].resample("W-FRI").last()
-    info["dur_weekly"] = np.polyfit(-w.y10.diff().dropna() / 100, w.ief_aC.pct_change().dropna(), 1)[0]
-    info["dur_by_period"] = {f"{a}-{b}": np.polyfit(xs.loc[a:b], ys.loc[a:b], 1)[0]
-                             for a, b in [("2003", "2008"), ("2009", "2014"), ("2015", "2020"), ("2021", "2026")]}
+    scale = 10.0 if tnx.loc["2003":].median() > 20 else 1.0
+    y = (tnx / scale / 100).reindex(idx).ffill()
+    th = theo_price(y)
+    ratio = (tc / th).dropna()
+    info["theo_ratio"] = ratio.median(); info["theo_ratio_rng"] = (ratio.quantile(0.05), ratio.quantile(0.95))
+    d["mtn_px"] = tcf.where(tcf.notna() & (idx >= pd.Timestamp(TN_START)), th * info["theo_ratio"])
+    d["mtn_px_src"] = np.where(tcf.notna() & (idx >= pd.Timestamp(TN_START)), "TN=F", "synthetic")
     return d, info
 
 
 def simulate(d, equity0=HEADLINE_EQUITY, cost="base", a_round="floor", b_model=B_MODEL, mes_margin_pct=MES_MARGIN_PCT,
-             y10_margin=Y10_MARGIN, today=None):
-    """today: None, or dict(levA={1.0: x, 0.5: y}, b_per_dollar=z, spx_now=...) = "today's rounding held fixed":
-    MES leverage and 10Y contracts per $ of equity frozen at what a fresh account of this size gets at today's
+             mtn_margin_pct=MTN_MARGIN_PCT, today=None):
+    """today: None, or dict(levA={1.0: x, 0.5: y}, levB=z, spx_now=...) = "today's rounding held fixed":
+    MES leverage and MTN notional per $ of equity frozen at what a fresh account of this size gets at today's
     prices (fractional contracts scale with equity, MES costs scaled to today's cost in bp of notional)."""
     c = COSTS[cost]
     dd = d.loc[START:]
     idx = dd.index
+    pos = {t: i for i, t in enumerate(idx)}
     core, cash, nl_prev = equity0, 0.0, equity0
     B = None
     rows, trades = [], []
     rf_prev = dd.irx.iloc[0]
+    tick_usd = MTN_TICK * MTN_MULT
     for i, t in enumerate(idx):
         r = dd.loc[t]
         core_ret = core * r.spy_cc if i > 0 else 0.0
         core += core_ret
         interest = 0.0
         if i > 0:
-            margin = B["n"] * y10_margin if B else 0.0        # 10Y overnight margin funded from cash
+            margin = B["n"] * mtn_margin_pct * MTN_MULT * B["P_tn"] if B else 0.0   # MTN overnight margin from cash
             bal = cash - margin
             rate = max(rf_prev + S.CREDIT_SPREAD, 0.0) if bal > 0 else rf_prev + S.DEBIT_SPREAD
             interest = bal * rate * r.days / 360
@@ -111,16 +195,18 @@ def simulate(d, equity0=HEADLINE_EQUITY, cost="base", a_round="floor", b_model=B
         a_pnl = b_pnl = cost_day = 0.0
         # --- leg B mark / exit at the close
         if B is not None:
-            p_tnx = -B["n"] * Y10_PT_VALUE * (r.y10 - B["Y"])
-            p_ief = B["n"] * B["ief_notional"] * (r.ief_cc - rf_d)
-            B["Y"] = r.y10; B["g_tnx"] += p_tnx; B["g_ief"] += p_ief
-            pnl = p_tnx if b_model == "tnx" else p_ief
+            p_tn = B["n"] * MTN_MULT * B["P_tn"] * (r.tn_ret if B["model"] == "tn" else r.ief_model_ret)
+            p_ief = B["n"] * MTN_MULT * B["P_ief"] * r.ief_model_ret
+            B["P_tn"] *= 1 + (r.tn_ret if B["model"] == "tn" else r.ief_model_ret)
+            B["P_ief"] *= 1 + r.ief_model_ret
+            B["g_tn"] += p_tn; B["g_ief"] += p_ief; B["roll_days"] += int(r.tn_roll)
+            pnl = p_tn if b_model == "auto" else p_ief
             b_pnl += pnl; cash += pnl
             if r.rank_bwd == 1:
-                fee = B["n"] * c["y10_fee"]; slip = B["n"] * c["y10_slip_ticks"] * Y10_TICK * Y10_PT_VALUE
+                fee = B["n"] * c["mtn_fee"]; slip = B["n"] * c["mtn_slip_ticks"] * tick_usd
                 cash -= fee + slip; b_pnl -= fee + slip; cost_day += fee + slip
                 B["fee"] += fee; B["slip"] += slip
-                B.update(exit_date=t, exit_time=r.close_time, exit_y=r.y10, closed=True)
+                B.update(exit_date=t, exit_time=r.close_time, closed=True)
         # --- leg A (intraday on the last session)
         if r.rank_bwd == 1 and np.isfinite(r.gap) and r.gap != 0 and np.isfinite(r.vol20):
             dirn = -np.sign(r.gap)
@@ -142,7 +228,7 @@ def simulate(d, equity0=HEADLINE_EQUITY, cost="base", a_round="floor", b_model=B
             net = gross - fee - slip
             cash += net; a_pnl += net; cost_day += fee + slip
             m_a = n * mes_margin_pct * S.MES_MULT * p_in
-            m_b = B["n"] * y10_margin if B else 0.0             # B is still open during the last session
+            m_b = B["n"] * mtn_margin_pct * MTN_MULT * B["P0"] if B else 0.0   # B is still open during the last session
             trades.append(dict(
                 leg="A", hypothetical=t < pd.Timestamp(MES_LAUNCH), entry_date=t.date(), entry_time="09:30",
                 exit_date=t.date(), exit_time=r.close_time,
@@ -154,44 +240,61 @@ def simulate(d, equity0=HEADLINE_EQUITY, cost="base", a_round="floor", b_model=B
                 netliq_at_entry=nl_prev, margin_futures=m_a + m_b, margin_pct_netliq=100 * (m_a + m_b) / nl_prev,
                 total_req_pct_netliq=100 * (m_a + m_b + SPY_MAINT * core) / nl_prev,
                 margin_flag=(m_a + m_b) / nl_prev > MARGIN_FLAG, vol_tilt_size=r.sizeA,
-                signal_gap_pct=100 * r.gap, ief_duration=np.nan, dv01_usd=np.nan))
+                signal_gap_pct=100 * r.gap))
         nl = core + cash
         if B is not None and B.get("closed"):
-            g_main = B["g_tnx"] if b_model == "tnx" else B["g_ief"]
-            g_alt = B["g_ief"] if b_model == "tnx" else B["g_tnx"]
+            g_main = B["g_tn"] if b_model == "auto" else B["g_ief"]
+            g_alt = B["g_ief"] if b_model == "auto" else B["g_tn"]
+            used = B["model"] if b_model == "auto" else "ief"
             net = g_main - B["fee"] - B["slip"]
+            m = B["n"] * mtn_margin_pct * MTN_MULT * B["P0"]
             trades.append(dict(
-                leg="B", hypothetical=B["entry_date"] < pd.Timestamp(Y10_LAUNCH), entry_date=B["entry_date"].date(),
+                leg="B", hypothetical=B["entry_date"] < pd.Timestamp(MTN_LAUNCH), entry_date=B["entry_date"].date(),
                 entry_time=B["entry_time"], exit_date=t.date(), exit_time=B["exit_time"],
-                direction="short yield (long bonds)", contracts=B["n"], contracts_wanted=B["want"],
-                contract_notional=B["ief_notional"], position_notional=B["n"] * B["ief_notional"],
-                lev_x_netliq=B["n"] * B["ief_notional"] / B["nl0"], entry_price=B["Y0"], exit_price=B["exit_y"],
-                gross_pnl=g_main, gross_pnl_alt_model=g_alt, commissions=B["fee"], slippage=B["slip"], net_pnl=net,
-                net_pct_account=100 * net / B["nl0"], netliq_at_entry=B["nl0"], margin_futures=B["n"] * y10_margin,
-                margin_pct_netliq=100 * B["n"] * y10_margin / B["nl0"],
-                total_req_pct_netliq=100 * (B["n"] * y10_margin + SPY_MAINT * B["core0"]) / B["nl0"],
-                margin_flag=B["n"] * y10_margin / B["nl0"] > MARGIN_FLAG, vol_tilt_size=np.nan,
-                signal_gap_pct=np.nan, ief_duration=B["dur"], dv01_usd=B["n"] * Y10_DV01))
+                direction="long MTN", contract=B["sym"], contract_last_trade=B["lsd"], contracts=B["n"],
+                contracts_wanted=B["want"], contract_notional=MTN_MULT * B["P0"],
+                position_notional=B["n"] * MTN_MULT * B["P0"], lev_x_netliq=B["n"] * MTN_MULT * B["P0"] / B["nl0"],
+                ief_equiv_lev=B["n"] * MTN_MULT * B["P0"] / B["nl0"] / HEDGE,
+                entry_price=B["P0"], exit_price=B["P_tn"] if used == "tn" else B["P_ief"], price_source=B["src"],
+                b_model=used, roll_days_neutralised=B["roll_days"],
+                gross_pnl=g_main, gross_pnl_alt_model=g_alt if B["model"] == "tn" else np.nan,
+                gross_pnl_tn=B["g_tn"] if B["model"] == "tn" else np.nan, gross_pnl_ief=B["g_ief"],
+                commissions=B["fee"], slippage=B["slip"], net_pnl=net,
+                net_pct_account=100 * net / B["nl0"], netliq_at_entry=B["nl0"], margin_futures=m,
+                margin_pct_netliq=100 * m / B["nl0"],
+                total_req_pct_netliq=100 * (m + SPY_MAINT * B["core0"]) / B["nl0"],
+                margin_flag=m / B["nl0"] > MARGIN_FLAG))
             B = None
         if r.rank_bwd == S.B_HOLD_RANK and t < idx[-1]:
-            dur = r.dur
-            want = LEV_B * nl * dur * 1e-4 / Y10_DV01
-            n = math.floor(want + 1e-9) if today is None else today["b_per_dollar"] * nl
+            X = idx[min(i + S.B_HOLD_RANK - 1, len(idx) - 1)]                  # month-end exit session
+            y_, m_, lsd = contract_month_for(X.date(), ROLL_BUFFER, "MTN")
+            sym = "MTN" + "FGHJKMNQUVXZ"[m_ - 1] + str(y_)[-1]
+            P0 = r.mtn_px
+            want = LEV_B * HEDGE * nl / (P0 * MTN_MULT)
+            if today is None:
+                n, _ = size_contracts(nl, P0, MTN_MULT, LEV_B * HEDGE, 1.0, B_MAX_LEV, B_MAX_CONTRACTS, "floor",
+                                      hard_max_leverage=HARD_MAX_BOND_LEVERAGE, hard_max_contracts=B_MAX_CONTRACTS)
+            else:
+                n = today["levB"] * nl / (P0 * MTN_MULT)
+            hold = dd.iloc[i + 1:i + S.B_HOLD_RANK]
+            model = "tn" if (r.mtn_px_src == "TN=F" and hold.tn_ret.notna().all()
+                             and len(hold) == S.B_HOLD_RANK - 1) else "ief"
             if n > 0:
-                fee = n * c["y10_fee"]; slip = n * c["y10_slip_ticks"] * Y10_TICK * Y10_PT_VALUE
+                fee = n * c["mtn_fee"]; slip = n * c["mtn_slip_ticks"] * tick_usd
                 cash -= fee + slip; b_pnl -= fee + slip; cost_day += fee + slip
-                B = dict(n=n, want=want, Y=r.y10, Y0=r.y10, dur=dur, ief_notional=Y10_DV01 * 1e4 / dur,
-                         g_tnx=0.0, g_ief=0.0, fee=fee, slip=slip, entry_date=t, entry_time=r.close_time, nl0=nl,
-                         core0=core)
+                B = dict(n=n, want=want, P0=P0, P_tn=P0, P_ief=P0, model=model, src=r.mtn_px_src, sym=sym, lsd=lsd,
+                         g_tn=0.0, g_ief=0.0, fee=fee, slip=slip, entry_date=t, entry_time=r.close_time, nl0=nl,
+                         core0=core, roll_days=0)
             else:
                 trades.append(dict(
-                    leg="B", hypothetical=t < pd.Timestamp(Y10_LAUNCH), entry_date=t.date(), entry_time=r.close_time,
-                    exit_date=None, exit_time=None, direction="skipped (0 contracts)", contracts=0,
-                    contracts_wanted=want, contract_notional=Y10_DV01 * 1e4 / dur, position_notional=0,
-                    lev_x_netliq=0, entry_price=r.y10, exit_price=np.nan, gross_pnl=0, gross_pnl_alt_model=0,
+                    leg="B", hypothetical=t < pd.Timestamp(MTN_LAUNCH), entry_date=t.date(), entry_time=r.close_time,
+                    exit_date=None, exit_time=None, direction="skipped (0 contracts)", contract=sym,
+                    contract_last_trade=lsd, contracts=0, contracts_wanted=want, contract_notional=MTN_MULT * P0,
+                    position_notional=0, lev_x_netliq=0, ief_equiv_lev=0, entry_price=P0, exit_price=np.nan,
+                    price_source=r.mtn_px_src, b_model=model, gross_pnl=0, gross_pnl_alt_model=np.nan,
                     commissions=0, slippage=0, net_pnl=0, net_pct_account=0, netliq_at_entry=nl, margin_futures=0,
                     margin_pct_netliq=0, total_req_pct_netliq=100 * SPY_MAINT * core / nl, margin_flag=False,
-                    vol_tilt_size=np.nan, signal_gap_pct=np.nan, ief_duration=dur, dv01_usd=0, equity_after=nl))
+                    equity_after=nl))
         # --- core rebalance (10% band)
         nl = core + cash
         reb = 0.0
@@ -224,8 +327,9 @@ def today_sizing(d, e0, a_round):
         while a_round != "floor" and n > 0 and n * mn / e0 > MAX_LEV_A + 1e-9:
             n -= 1
         lev[tilt] = n * mn / e0
-    nb = math.floor(LEV_B * e0 * last.dur * 1e-4 / Y10_DV01)
-    return dict(levA=lev, b_per_dollar=nb / e0, spx_now=last.gspc_close, nb=nb)
+    nb, levb = size_contracts(e0, last.mtn_px, MTN_MULT, LEV_B * HEDGE, 1.0, B_MAX_LEV, B_MAX_CONTRACTS, "floor",
+                              hard_max_leverage=HARD_MAX_BOND_LEVERAGE, hard_max_contracts=B_MAX_CONTRACTS)
+    return dict(levA=lev, levB=levb, spx_now=last.gspc_close, nb=nb)
 
 
 def perf(eq, tr, bench):
@@ -281,7 +385,8 @@ def chart(eqs, bench, e0):
     ax.set_ylim(lo * 0.85, hi * 1.3)
     ax.set_ylabel("Account equity (log scale)")
     ax.grid(True, color=S.GRID, lw=0.8); ax.set_axisbelow(True)
-    for x_, txt in [(Y10_LAUNCH, "10Y micro launched"), ("2023-01-01", "holdout 2023+"), (MES_LAUNCH, "MES launched")]:
+    for x_, txt in [(TN_START, "TN=F prices from here"), (MTN_LAUNCH, "MTN launched"), ("2023-01-01", "holdout 2023+"),
+                    (MES_LAUNCH, "MES launched")]:
         ax.axvline(pd.Timestamp(x_), color=S.INK2, lw=0.8, ls=":")
         ax.text(pd.Timestamp(x_) + pd.Timedelta(days=20), lo * 0.95, txt, color=S.INK2, fontsize=8, rotation=90,
                 va="bottom")
@@ -292,7 +397,7 @@ def chart(eqs, bench, e0):
     main = first
     ddS = 100 * (main.netliq / main.netliq.cummax() - 1); ddB = 100 * (beq / beq.cummax() - 1)
     ax2.fill_between(ddB.index, ddB, 0, color=S.C2, alpha=0.25, lw=0, label="S&P 500 TR")
-    ax2.plot(ddS.index, ddS, color=S.C1, lw=1.2, label=list(eqs)[0].split(":")[0])
+    ax2.plot(ddS.index, ddS, color=S.C1, lw=1.2, label=list(eqs)[0].split(",")[0])
     ax2.set_ylabel("Drawdown from peak (%)"); ax2.set_xlabel("Date")
     ax2.grid(True, color=S.GRID, lw=0.8); ax2.set_axisbelow(True)
     ax2.legend(loc="lower left", frameon=False, ncol=2)
@@ -300,11 +405,11 @@ def chart(eqs, bench, e0):
 
 
 # =============================================================== spot checks (independent recomputation)
-def spot_check(tr, d):
-    """Recompute one A and one B trade straight from the raw Yahoo files, not from the simulation's frame."""
+def spot_check(tr):
+    """Recompute one A and two B trades straight from the raw Yahoo files, not from the simulation's frame."""
     out = []
-    gspc, spy, tnx = lib.get("^GSPC"), lib.get("SPY"), lib.get("^TNX")
-    a = tr[(tr.leg == "A") & (tr.contracts > 0) & (pd.to_datetime(tr.entry_date.astype(str)) >= "2003-01-01")].iloc[0]
+    gspc, spy, tn, ief, irx = lib.get("^GSPC"), lib.get("SPY"), lib.get("TN=F"), lib.get("IEF"), lib.get("^IRX")
+    a = tr[(tr.leg == "A") & (tr.contracts > 0)].iloc[0]
     t = pd.Timestamp(str(a.entry_date))
     close = gspc.Close.loc[t]; oc = spy.Close.loc[t] / spy.Open.loc[t] - 1
     p_in = close / (1 + oc)
@@ -318,29 +423,53 @@ def spot_check(tr, d):
                          f"net ${gross - cst:,.2f}",
                     sim=f"gross ${a.gross_pnl:,.2f}, costs ${a.commissions + a.slippage:.2f}, net ${a.net_pnl:,.2f}",
                     match=abs(gross - cst - a.net_pnl) < 0.01))
-    b = tr[(tr.leg == "B") & (tr.contracts > 0) & (pd.to_datetime(tr.entry_date.astype(str)) >= Y10_LAUNCH)].iloc[0]
+    per = COSTS["base"]["mtn_fee"] + COSTS["base"]["mtn_slip_ticks"] * MTN_TICK * MTN_MULT
+    bt = tr[(tr.leg == "B") & (tr.contracts > 0)]
+    # (1) a real-MTN-era trade priced on TN=F: price change x $100 x contracts
+    b = bt[(bt.b_model == "tn") & (bt.roll_days_neutralised == 0) & (bt.entry_date.astype(str) >= MTN_LAUNCH)].iloc[0]
     t0, t1 = pd.Timestamp(str(b.entry_date)), pd.Timestamp(str(b.exit_date))
-    sc = 10.0 if tnx.Close.loc["2003":].median() > 20 else 1.0
-    y0, y1 = tnx.Close.loc[t0] / sc, tnx.Close.loc[t1] / sc
-    gross = -b.contracts * 1000 * (y1 - y0)
-    cst = b.contracts * 2 * (COSTS["base"]["y10_fee"] + COSTS["base"]["y10_slip_ticks"] * 1.0)
-    need = LEV_B * b.netliq_at_entry * b.ief_duration * 1e-4 / 10
-    out.append(dict(trade=f"B {t0.date()} -> {t1.date()} short {b.contracts} x 10Y",
-                    hand=f"size = floor(2.81 x ${b.netliq_at_entry:,.0f} x {b.ief_duration:.2f} x 0.0001 / $10) = "
-                         f"floor({need:.2f}) = {math.floor(need)}; ^TNX {y0:.3f} -> {y1:.3f} "
-                         f"({100*(y1-y0):+.1f}bp); gross = -{b.contracts} x 1000 x ({y1:.3f} - {y0:.3f}) = "
-                         f"${gross:,.2f}; costs = {b.contracts} x 2 x ($0.85 + $1) = ${cst:.2f}; net ${gross - cst:,.2f}",
+    p0, p1 = tn.Close.loc[t0], tn.Close.loc[t1]
+    need = LEV_B * HEDGE * b.netliq_at_entry / (p0 * 100)
+    gross = b.contracts * 100 * (p1 - p0); cst = b.contracts * 2 * per
+    out.append(dict(trade=f"B {t0.date()} -> {t1.date()} long {b.contracts} {b.contract} (TN=F model)",
+                    hand=f"contract: first quarterly MTN whose last trade day is > 5 sessions after {t1.date()} = "
+                         f"{b.contract} (last trade {b.contract_last_trade}); size = floor(2.8 x 0.885 x "
+                         f"${b.netliq_at_entry:,.0f} / ({p0:.6f} x 100)) = floor({need:.2f}) = {math.floor(need)}; "
+                         f"TN=F {p0:.6f} -> {p1:.6f}; gross = {b.contracts} x 100 x ({p1:.6f} - {p0:.6f}) = "
+                         f"${gross:,.2f}; costs = {b.contracts} x 2 x ($0.60 + $3.125) = ${cst:.2f}; "
+                         f"net ${gross - cst:,.2f}",
                     sim=f"gross ${b.gross_pnl:,.2f}, costs ${b.commissions + b.slippage:.2f}, net ${b.net_pnl:,.2f}",
                     match=abs(gross - cst - b.net_pnl) < 0.01 and math.floor(need) == b.contracts))
+    # (2) a hypothetical pre-2016 trade priced on IEF minus bills / 0.885
+    b = bt[(bt.b_model == "ief") & (bt.entry_date.astype(str) >= "2008-01-01")].iloc[0]
+    t0, t1 = pd.Timestamp(str(b.entry_date)), pd.Timestamp(str(b.exit_date))
+    days = ief.loc[t0:t1].index
+    P = b.entry_price; steps = []
+    for k in range(1, len(days)):
+        u, v = days[k - 1], days[k]
+        ret = ief["Adj Close"].loc[v] / ief["Adj Close"].loc[u] - 1
+        rf = irx.Close.reindex(ief.index).ffill().loc[u] / 100 * (v - u).days / 360
+        steps.append(f"{v:%m-%d} IEF {100*ret:+.3f}% - bill {100*rf:.4f}%")
+        P *= 1 + (ret - rf) / HEDGE
+    gross = b.contracts * 100 * (P - b.entry_price); cst = b.contracts * 2 * per
+    out.append(dict(trade=f"B {t0.date()} -> {t1.date()} long {b.contracts} {b.contract} (hypothetical, IEF model)",
+                    hand=f"sizing price {b.entry_price:.3f} (synthetic: 6%/9.5y bond at ^TNX x calibration); "
+                         f"size floor(2.8 x 0.885 x ${b.netliq_at_entry:,.0f} / ({b.entry_price:.3f} x 100)) = "
+                         f"{math.floor(LEV_B * HEDGE * b.netliq_at_entry / (b.entry_price * 100))}; "
+                         f"{'; '.join(steps)}; price x prod(1 + excess/0.885) = {P:.4f}; gross = {b.contracts} x 100 x "
+                         f"({P:.4f} - {b.entry_price:.4f}) = ${gross:,.2f}; costs ${cst:.2f}; net ${gross - cst:,.2f}",
+                    sim=f"gross ${b.gross_pnl:,.2f}, costs ${b.commissions + b.slippage:.2f}, net ${b.net_pnl:,.2f}",
+                    match=abs(gross - cst - b.net_pnl) < 0.05))
     return pd.DataFrame(out)
 
 
 # =============================================================== main
-TCOLS = ["leg", "hypothetical", "entry_date", "entry_time", "exit_date", "exit_time", "direction", "contracts",
-         "contracts_wanted", "contract_notional", "position_notional", "lev_x_netliq", "entry_price", "exit_price",
-         "gross_pnl", "gross_pnl_alt_model", "commissions", "slippage", "net_pnl", "net_pct_account",
-         "netliq_at_entry", "equity_after", "margin_futures", "margin_pct_netliq", "total_req_pct_netliq",
-         "margin_flag", "vol_tilt_size", "signal_gap_pct", "ief_duration", "dv01_usd"]
+TCOLS = ["leg", "hypothetical", "entry_date", "entry_time", "exit_date", "exit_time", "direction", "contract",
+         "contract_last_trade", "contracts", "contracts_wanted", "contract_notional", "position_notional",
+         "lev_x_netliq", "ief_equiv_lev", "entry_price", "exit_price", "price_source", "b_model",
+         "roll_days_neutralised", "gross_pnl", "gross_pnl_alt_model", "gross_pnl_tn", "gross_pnl_ief", "commissions",
+         "slippage", "net_pnl", "net_pct_account", "netliq_at_entry", "equity_after", "margin_futures",
+         "margin_pct_netliq", "total_req_pct_netliq", "margin_flag", "vol_tilt_size", "signal_gap_pct"]
 
 
 def main():
@@ -354,28 +483,29 @@ def main():
 
     for e0 in ACCOUNT_SIZES:
         for ar in ["floor", "nearest"]:
-            add((e0, ar, "tnx", "base"), f"10Y, A {ar}", e0, *simulate(d, e0, "base", ar, "tnx"))
+            add((e0, ar, "auto", "base"), f"MTN, A {ar}", e0, *simulate(d, e0, "base", ar, "auto"))
     E = HEADLINE_EQUITY
     for ar in ["floor", "nearest"]:
-        add((E, ar, "tnx", "stress"), f"10Y, A {ar}, stress costs", E, *simulate(d, E, "stress", ar, "tnx"))
-        add((E, ar, "ief", "base"), f"10Y, A {ar}, B P&L = IEF-minus-bills model", E,
+        add((E, ar, "auto", "stress"), f"MTN, A {ar}, stress costs", E, *simulate(d, E, "stress", ar, "auto"))
+        add((E, ar, "auto", "halftick"), f"MTN, A {ar}, 1/64 slippage", E, *simulate(d, E, "halftick", ar, "auto"))
+        add((E, ar, "ief", "base"), f"MTN, A {ar}, B P&L = IEF-minus-bills model throughout", E,
             *simulate(d, E, "base", ar, "ief"))
     add((E, "floor", "zn", "base"), "ZN (../simulate.py), A floor", E, *run_zn(d, E))
     for e0 in ACCOUNT_SIZES:
         for ar in ["floor", "nearest"]:
             add((e0, ar, "today", "base"), f"today's rounding fixed, A {ar}", e0,
-                *simulate(d, e0, "base", ar, "tnx", today=today_sizing(d, e0, ar)))
-    hi_eq, hi_tr = simulate(d, E, "base", "floor", "tnx", MES_MARGIN_PCT * MARGIN_STRESS_MULT,
-                            Y10_MARGIN * MARGIN_STRESS_MULT)
-    bs = S.bench_stats(store[(E, "floor", "tnx", "base")][0], bench)
+                *simulate(d, e0, "base", ar, "auto", today=today_sizing(d, e0, ar)))
+    hi_eq, hi_tr = simulate(d, E, "base", "floor", "auto", MES_MARGIN_PCT * MARGIN_STRESS_MULT,
+                            MTN_MARGIN_PCT * MARGIN_STRESS_MULT)
+    bs = S.bench_stats(store[(E, "floor", "auto", "base")][0], bench)
     bs["final equity $"] *= E / S.START_EQUITY
     scen.append({"account": E, "case": "S&P 500 TR benchmark", **bs})
     SC = pd.DataFrame(scen)
     SC.round(3).to_csv(os.path.join(OUT, "scenarios_small.csv"), index=False)
 
-    eq, tr = store[(E, "floor", "tnx", "base")]
-    eqn, trn = store[(E, "nearest", "tnx", "base")]
-    sortk = lambda T: T[TCOLS].sort_values(["entry_date", "leg"], key=lambda s: s.astype(str))
+    eq, tr = store[(E, "floor", "auto", "base")]
+    eqn, trn = store[(E, "nearest", "auto", "base")]
+    sortk = lambda T: T.reindex(columns=TCOLS).sort_values(["entry_date", "leg"], key=lambda s: s.astype(str))
     sortk(tr).round(4).to_csv(os.path.join(OUT, "trades_18k.csv"), index=False)
     sortk(trn).round(4).to_csv(os.path.join(OUT, "trades_18k_nearest.csv"), index=False)
     Y = S.yearly(eq, tr, bench)
@@ -384,16 +514,18 @@ def main():
     Y.round(2).to_csv(os.path.join(OUT, "yearly_18k.csv"))
     eqz = store[(E, "floor", "zn", "base")][0]
     eqt = store[(E, "floor", "today", "base")][0]
-    chart({"Strategy, B in 10Y micros, A floor (headline; A nearest is visually identical)": eq,
-           "Same, with today's $18k contract counts held fixed (MES 2.11x / 0x, 3 x 10Y)": eqt,
+    td18 = today_sizing(d, E, "floor")
+    chart({"Strategy, B in MTN, A floor (headline; A nearest is visually identical)": eq,
+           f"Same, with today's $18k contract counts held fixed (MES {td18['levA'][1.0]:.2f}x / "
+           f"{td18['levA'][0.5]:.0f}x, {td18['nb']} MTN)": eqt,
            "Strategy, B in ZN priced on IEF-minus-bills (no B until ~$40k), A floor": eqz}, bench, E)
 
     # periods
     split = []
-    for key, lab in [((E, "floor", "tnx", "base"), "floor"), ((E, "nearest", "tnx", "base"), "nearest")]:
+    for key, lab in [((E, "floor", "auto", "base"), "floor"), ((E, "nearest", "auto", "base"), "nearest")]:
         e_, t_ = store[key]
         for lbl, (a, b) in {"2003-2022 in-sample": ("2003", "2022"), "2023+ holdout": ("2023", None),
-                            "2021-09+ (10Y micro live)": ("2021-09", None)}.items():
+                            "2016+ (B on TN=F prices)": ("2016", None), "2024+ (MTN live)": ("2024", None)}.items():
             e = e_.loc[a:b].copy()
             e.attrs["e0"] = e_.netliq.shift(1).loc[a:b].iloc[0] if a != "2003" else E
             ed = pd.to_datetime(t_.entry_date.astype(str))
@@ -408,31 +540,32 @@ def main():
     SP = pd.DataFrame(split)
     SP.round(3).to_csv(os.path.join(OUT, "periods_18k.csv"), index=False)
 
-    # leg B: TNX model vs IEF-minus-bills model, per trade (headline run)
-    b = tr[(tr.leg == "B") & (tr.contracts > 0)].copy()
-    rfm = d.irx
-    b["carry_est"] = [n * N * (y0 / 100 - rfm.loc[str(e)]) * (pd.Timestamp(str(x)) - pd.Timestamp(str(e))).days / 365
-                      for n, N, y0, e, x in zip(b.contracts, b.contract_notional, b.entry_price, b.entry_date,
-                                                b.exit_date)]
-    b["diff"] = b.gross_pnl_alt_model - b.gross_pnl                     # IEF model minus TNX model, $
-    b["diff_bp"] = 1e4 * b["diff"] / b.position_notional
-    b["carry_bp"] = 1e4 * b.carry_est / b.position_notional
+    # leg B: TN=F model vs IEF-minus-bills model, per trade (headline run, trades priced on TN=F)
+    b = tr[(tr.leg == "B") & (tr.contracts > 0) & (tr.b_model == "tn")].copy()
+    b["diff_bp"] = 1e4 * (b.gross_pnl_ief - b.gross_pnl_tn) / b.position_notional
+    b["tn_bp"] = 1e4 * b.gross_pnl_tn / b.position_notional; b["ief_bp"] = 1e4 * b.gross_pnl_ief / b.position_notional
     b["yr"] = pd.to_datetime(b.entry_date.astype(str)).dt.year
-    bc = {"corr": np.corrcoef(b.gross_pnl, b.gross_pnl_alt_model)[0, 1],
-          "sign_agree": 100 * (np.sign(b.gross_pnl) == np.sign(b.gross_pnl_alt_model)).mean(),
-          "diff_bp_mean": b.diff_bp.mean(), "carry_bp_mean": b.carry_bp.mean(),
-          "diff_bp_te": b.diff_bp.std(), "corr_diff_carry": np.corrcoef(b.diff_bp, b.carry_bp)[0, 1],
-          "pre23_diff": b[b.yr < 2023].diff_bp.mean(), "post23_diff": b[b.yr >= 2023].diff_bp.mean(),
-          "pre23_carry": b[b.yr < 2023].carry_bp.mean(), "post23_carry": b[b.yr >= 2023].carry_bp.mean(),
-          "tnx_gross": b.gross_pnl.sum(), "ief_gross": b.gross_pnl_alt_model.sum()}
-    info["b_check"] = bc
-    # where does the (a)-(b) gap come from? daily gap between the two models vs carry, by session type
-    dd_ = d.loc[START:]
-    rf1 = dd_.irx.shift(1) * dd_.days / 360
-    gap = 1e4 * ((dd_.ief_cc - rf1) + (dd_.y10.diff() / 100) * dd_.dur.shift(1))
-    car = 1e4 * (dd_.y10.shift(1) / 100 - dd_.irx.shift(1)) * dd_.days / 365
-    info["gap_diag"] = {lab: (gap[m].mean(), car[m].mean()) for lab, m in
-                        [("other days", dd_.rank_bwd > 3), ("B hold days (last 3 sessions)", dd_.rank_bwd <= 3)]}
+    b["qroll"] = pd.to_datetime(b.exit_date.astype(str)).dt.month.isin([2, 5, 8, 11])
+    ballB = tr[(tr.leg == "B") & (tr.contracts > 0)]
+    allb = 1e4 * ballB.gross_pnl_ief / ballB.position_notional
+    info["b_check"] = {
+        "n": len(b), "corr": np.corrcoef(b.gross_pnl_tn, b.gross_pnl_ief)[0, 1],
+        "corr_bp": np.corrcoef(b.tn_bp, b.ief_bp)[0, 1],
+        "sign_agree": 100 * (np.sign(b.gross_pnl_tn) == np.sign(b.gross_pnl_ief)).mean(),
+        "diff_bp_mean": b.diff_bp.mean(), "diff_bp_se": b.diff_bp.std() / np.sqrt(len(b)), "diff_bp_te": b.diff_bp.std(),
+        "diff_usd_mean": (b.gross_pnl_ief - b.gross_pnl_tn).mean(),
+        "tn_bp_mean": b.tn_bp.mean(), "ief_bp_mean": b.ief_bp.mean(),
+        "pre23_diff": b[b.yr < 2023].diff_bp.mean(), "post23_diff": b[b.yr >= 2023].diff_bp.mean(),
+        "qroll_diff": b[b.qroll].diff_bp.mean(), "other_diff": b[~b.qroll].diff_bp.mean(),
+        "qroll_corr": np.corrcoef(b[b.qroll].tn_bp, b[b.qroll].ief_bp)[0, 1],
+        "other_corr": np.corrcoef(b[~b.qroll].tn_bp, b[~b.qroll].ief_bp)[0, 1],
+        "tn_gross": b.gross_pnl_tn.sum(), "ief_gross": b.gross_pnl_ief.sum(),
+        "ief_bp_pre16": allb[pd.to_datetime(ballB.entry_date.astype(str)) < TN_START].mean(),
+        "n_ief_trades": int((tr[(tr.leg == "B") & (tr.contracts > 0)].b_model == "ief").sum()),
+        "n_ief_post16": int(((ballB.b_model == "ief") & (ballB.entry_date.astype(str) >= TN_START)).sum()),
+        "n_roll_neutralised": int(ballB.roll_days_neutralised.sum())}
+    bth = b[["entry_date", "contract", "tn_bp", "ief_bp", "diff_bp"]]
+    info["b_worst_gap"] = bth.reindex(bth.diff_bp.abs().sort_values(ascending=False).index).head(5)
 
     # contract counts for a fresh account at today's levels
     last = d.iloc[-1]
@@ -448,26 +581,34 @@ def main():
             r_[f"A {lbl} wanted"] = w
             r_[f"A {lbl} floor (lev x)"] = f"{fl} ({fl*mn/e0:.2f}x)"
             r_[f"A {lbl} nearest (lev x)"] = f"{ne} ({ne*mn/e0:.2f}x)"
-        nb = math.floor(LEV_B * e0 * last.dur * 1e-4 / Y10_DV01)
-        r_["B 10Y contracts (IEF-equiv lev x)"] = f"{nb} ({nb*Y10_DV01*1e4/last.dur/e0:.2f}x)"
+        nb, lv = size_contracts(e0, last.mtn_px, MTN_MULT, LEV_B * HEDGE, 1.0, B_MAX_LEV, B_MAX_CONTRACTS, "floor",
+                                hard_max_leverage=HARD_MAX_BOND_LEVERAGE, hard_max_contracts=B_MAX_CONTRACTS)
+        r_["B MTN wanted"] = LEV_B * HEDGE * e0 / (last.mtn_px * MTN_MULT)
+        r_["B MTN contracts (notional x / IEF-equiv x)"] = f"{nb} ({lv:.2f}x / {lv/HEDGE:.2f}x)"
         r_["B ZN contracts"] = math.floor(LEV_B * e0 * last.beta / (S.ZN_MULT * last.zn_close))
         rows.append(r_)
     CN = pd.DataFrame(rows)
-    info["now"] = dict(spx=last.gspc_close, y10=last.y10, dur=last.dur, mes_notional=S.MES_MULT * last.gspc_close,
-                       min_1_10y=Y10_DV01 / (LEV_B * last.dur * 1e-4), min_1_mes_full=S.MES_MULT * last.gspc_close / LEV_A,
+    X_now = last.name.date()
+    info["now"] = dict(date=X_now, spx=last.gspc_close, px=last.mtn_px, px_src=last.mtn_px_src,
+                       mtn_notional=MTN_MULT * last.mtn_px, mes_notional=S.MES_MULT * last.gspc_close,
+                       min_1_mtn=MTN_MULT * last.mtn_px / (LEV_B * HEDGE),
+                       min_1_mes_full=S.MES_MULT * last.gspc_close / LEV_A,
                        min_1_mes_half_floor=S.MES_MULT * last.gspc_close / (LEV_A / 2),
-                       min_1_mes_half_nearest=S.MES_MULT * last.gspc_close / MAX_LEV_A)
-    info["dur_trades"] = b.ief_duration.describe().to_dict()
+                       min_1_mes_half_nearest=S.MES_MULT * last.gspc_close / MAX_LEV_A,
+                       next_X=(dt.date(2026, 11, 30)), next_contract=contract_month_for(dt.date(2026, 11, 30), 5, "MTN"))
     info["margin_hi"] = dict(max=hi_tr.margin_pct_netliq.max(), flags=int(hi_tr.margin_flag.sum()),
                              cagr=perf(hi_eq, hi_tr, bench)["CAGR %"])
     info["margin_base"] = {k: (store[k][1].margin_pct_netliq.max(), int(store[k][1].margin_flag.sum()),
                                store[k][1].total_req_pct_netliq.max())
-                           for k in store if k[2] == "tnx"}
-    SPOT = spot_check(tr, d)
+                           for k in store if k[2] == "auto"}
+    bb = tr[(tr.leg == "B") & (tr.contracts > 0)]
+    info["contracts_by_month"] = bb.contract.str[3].map({"H": "Mar", "M": "Jun", "U": "Sep", "Z": "Dec"}).value_counts().to_dict()
+    info["b_lev"] = (bb.lev_x_netliq.mean(), bb.lev_x_netliq.min(), bb.ief_equiv_lev.mean())
+    SPOT = spot_check(tr)
 
     pd.set_option("display.width", 250); pd.set_option("display.max_columns", 60)
-    print({k: v for k, v in info.items() if k not in ("now",)})
-    print(info["now"])
+    print({k: v for k, v in info.items() if k not in ("now", "b_worst_gap")})
+    print(info["now"]); print(info["b_worst_gap"])
     print(SC.set_index(["account", "case"]).round(2).T.to_string())
     print(Y.round(1).to_string()); print(SP.round(2).to_string()); print(CN.to_string())
     print(SPOT.to_string())
@@ -476,8 +617,9 @@ def main():
 
 def write_summary(info, SC, Y, SP, CN, SPOT, eq, tr, trn, d):
     E = HEADLINE_EQUITY
-    f = lambda v, n=1: f"{v:,.{n}f}"
+    f = lambda v, n=1: "n/a" if v is None or (isinstance(v, float) and not np.isfinite(v)) else f"{v:,.{n}f}"
     g = lambda acct, case, k: SC[(SC.account == acct) & (SC.case == case)][k].iloc[0]
+    pv = lambda acct, case, k: PREV_10Y.get((acct, case), {}).get(k, nan)
     keys = ["CAGR %", "vol %", "Sharpe", "max DD %", "beta", "alpha %/yr", "alpha t", "A trades", "A skipped",
             "A win %", "A avg % acct", "A avg net $", "A avg contracts", "A avg lev x", "B trades", "B skipped",
             "B win %", "B avg % acct", "B avg net $", "B avg contracts", "B avg lev x", "max futures margin % netliq",
@@ -486,44 +628,58 @@ def write_summary(info, SC, Y, SP, CN, SPOT, eq, tr, trn, d):
     H["scenario"] = [f"${a/1e3:,.0f}k {c}" for a, c in zip(H.account, H.case)]
     H = H.set_index("scenario").reindex(columns=keys).T
     H.insert(0, "metric", H.index)
-    c_sizes = ["metric"] + [c for c in H.columns if c.endswith(("10Y, A floor", "10Y, A nearest"))]
+    c_sizes = ["metric"] + [c for c in H.columns if c.endswith(("MTN, A floor", "MTN, A nearest"))]
     c18 = ["metric"] + [c for c in H.columns if c.startswith("$18k") and "today" not in c]
     ctd = ["metric"] + [c for c in H.columns if "today" in c]
     td = lambda acct, ar, k: g(acct, f"today's rounding fixed, A {ar}", k)
-    gd = info["gap_diag"]
+    tdp = lambda acct, ar, k: pv(acct, f"today's rounding fixed, A {ar}", k)
     bm = SC[SC.case.str.contains("benchmark")].iloc[0]
-    hf = lambda k: g(E, "10Y, A floor", k)
-    hn = lambda k: g(E, "10Y, A nearest", k)
-    bc, now, dt_ = info["b_check"], info["now"], info["dur_trades"]
+    hf = lambda k: g(E, "MTN, A floor", k)
+    hn = lambda k: g(E, "MTN, A nearest", k)
+    of = lambda k: pv(E, "A floor", k)
+    zn = lambda k: g(E, "ZN (../simulate.py), A floor", k)
+    bc, now, rl = info["b_check"], info["now"], info["roll"]
     yt = Y.reset_index(); yt["year"] = yt["year"].astype(str)
     a18 = tr[tr.leg == "A"]; b18 = tr[tr.leg == "B"]
     a_sk = a18[a18.contracts == 0]; a_skn = trn[(trn.leg == "A") & (trn.contracts == 0)]
     a_sk_y = a_sk.entry_date.astype(str).str[:4].value_counts().sort_index()
-    ah = a18[(a18.contracts > 0)]
-    early = ah[ah.entry_date.astype(str) < "2013"].contracts
+    bt = b18[b18.contracts > 0]
+    early = bt[bt.entry_date.astype(str) < "2006"].contracts
     flags = info["margin_base"]
-    mb = flags[(E, "floor", "tnx", "base")]; mbn = flags[(E, "nearest", "tnx", "base")]
+    mb = flags[(E, "floor", "auto", "base")]; mbn = flags[(E, "nearest", "auto", "base")]
     worst_flag = max(v[0] for v in flags.values())
-    zn = lambda k: g(E, "ZN (../simulate.py), A floor", k)
+    nb18 = int(CN[CN["account $"] == E]["B MTN contracts (notional x / IEF-equiv x)"].iloc[0].split()[0])
     spot = "\n".join(f"- **{r.trade}** (by hand from raw Yahoo files): {r.hand}. Simulation: {r.sim}. "
                      f"{'Matches.' if r.match else '**MISMATCH**'}" for r in SPOT.itertuples())
-    md = f"""# Month-end trader, small account: $18k with leg B in CME Micro 10-Year Yield futures
+    cmp_rows = [("CAGR %", "CAGR", 1, "%"), ("Sharpe", "Sharpe", 2, ""), ("max DD %", "Max drawdown", 1, "%"),
+                ("alpha %/yr", "Alpha vs S&P (%/yr)", 1, ""), ("beta", "Beta", 2, ""), ("B win %", "Leg B win rate", 1, "%"),
+                ("B avg % acct", "Leg B avg net per trade (% of acct)", 3, "%"), ("final equity $", "Final equity", 0, "")]
+    cmp_tab = "\n".join(
+        f"| {lab} | **{f(hf(k), n)}{u}** | {f(hn(k), n)}{u} | {f(of(k), n)}{u} | {f(pv(E, 'A nearest', k), n)}{u} |"
+        for k, lab, n, u in cmp_rows)
+    rolls = ", ".join(f"{t} ({s:+.2f}%)" for t, s in zip(rl["dates"], rl["sizes"]))
+    wg = "; ".join(f"{r.entry_date} {r.contract}: TN {r.tn_bp:+.0f}bp vs IEF {r.ief_bp:+.0f}bp"
+                   for r in info["b_worst_gap"].itertuples())
+    md = f"""# Month-end trader, small account: $18k with leg B in CME Micro Ultra 10-Year T-Note futures (MTN)
 
 Generated by `simulate_small.py` (imports `../simulate.py` for data, the leg-A signal, the SPY core, cash interest and
-stats; nothing there is modified). Period **{eq.index[0].date()} to {eq.index[-1].date()}**, start equity
-**${E:,.0f}** unless stated. Daily Yahoo data, whole contracts, IBKR-style costs. A simulation, not live fills.
+stats, and `../../met` for the live bot's MTN contract choice, sizing function and `BOND_SPECS`; nothing there is
+modified). Period **{eq.index[0].date()} to {eq.index[-1].date()}**, start equity **${E:,.0f}** unless stated. Daily
+Yahoo data, whole contracts, IBKR-style costs. A simulation, not live fills. Replaces the previous run, which put leg B
+in the Micro 10-Year *Yield* future (10Y); its results are kept below as a comparison column.
 
-Files: `trades_18k.csv` (every trade, headline run: A floor rounding, B in 10Y with the ^TNX P&L model),
-`trades_18k_nearest.csv` (same, A nearest rounding), `yearly_18k.csv`, `periods_18k.csv`, `scenarios_small.csv`
-(all sizes and variants), `equity_18k.png`.
+Files: `trades_18k.csv` (every trade, headline run: A floor rounding, B in MTN), `trades_18k_nearest.csv` (same, A
+nearest), `yearly_18k.csv`, `periods_18k.csv`, `scenarios_small.csv` (all sizes and variants), `equity_18k.png`.
 
-**Hypothetical periods.** MES exists since {MES_LAUNCH} and the Micro 10Y Yield future since {Y10_LAUNCH}. Every leg-A trade
-before May 2019 and every leg-B trade before Aug 2021 is a *hypothetical* contract with today's specs (flagged in the
-`hypothetical` column). Only Sep 2021 onward could actually have been traded this way.
+**Hypothetical periods.** MES exists since {MES_LAUNCH}, the Ultra 10-Year future (TN, MTN's underlying) since
+{TN_START} and MTN since 2024 (entries before {MTN_LAUNCH} flagged `hypothetical`; I did not verify the exact 2024
+launch day). Every leg-B trade before 2024 is a hypothetical MTN with today's specs, and every one before 2016 is also
+priced without any Ultra 10-Year data (IEF model, synthetic price for sizing). Only 2024 onward could actually have
+been traded this way.
 
 ## Headline: $18,000, base costs
 
-| | A floor (headline) | A nearest | B in ZN instead (A floor) | S&P 500 TR |
+| | MTN, A floor (headline) | MTN, A nearest | B in ZN instead (A floor) | S&P 500 TR |
 |---|---|---|---|---|
 | CAGR | **{f(hf("CAGR %"))}%** | {f(hn("CAGR %"))}% | {f(zn("CAGR %"))}% | {f(bm["CAGR %"])}% |
 | Final equity | ${hf("final equity $"):,.0f} | ${hn("final equity $"):,.0f} | ${zn("final equity $"):,.0f} | ${bm["final equity $"]:,.0f} |
@@ -535,68 +691,90 @@ before May 2019 and every leg-B trade before Aug 2021 is a *hypothetical* contra
 | Leg A win rate, avg net per trade | {f(hf("A win %"))}%, {f(hf("A avg % acct"), 2)}% (${hf("A avg net $"):,.0f}) | {f(hn("A win %"))}%, {f(hn("A avg % acct"), 2)}% (${hn("A avg net $"):,.0f}) | {f(zn("A win %"))}%, {f(zn("A avg % acct"), 2)}% | |
 | Leg B trades / skipped | {hf("B trades"):.0f} / {hf("B skipped"):.0f} | {hn("B trades"):.0f} / {hn("B skipped"):.0f} | {zn("B trades"):.0f} / {zn("B skipped"):.0f} | |
 | Leg B win rate, avg net per trade | {f(hf("B win %"))}%, {f(hf("B avg % acct"), 2)}% (${hf("B avg net $"):,.0f}) | {f(hn("B win %"))}%, {f(hn("B avg % acct"), 2)}% | {f(zn("B win %"))}%, {f(zn("B avg % acct"), 2)}% | |
+| Leg B avg contracts, avg notional / net liq | {hf("B avg contracts"):.0f}, {hf("B avg lev x"):.2f}x | {hn("B avg contracts"):.0f}, {hn("B avg lev x"):.2f}x | | |
 | Total costs (fees + slippage + SPY rebalancing) | ${hf("costs $"):,.0f} | ${hn("costs $"):,.0f} | ${zn("costs $"):,.0f} | |
+| Contracts a fresh $18k account trades today | A: {CN[CN["account $"] == E]["A full floor (lev x)"].iloc[0]} full / {CN[CN["account $"] == E]["A half floor (lev x)"].iloc[0]} half size; B: **{nb18} MTN** | A: 1 / 1; B: {nb18} MTN | B: 0 ZN | |
 
-Stress costs (2 ticks per side on MES and 10Y): A floor CAGR **{f(g(E, "10Y, A floor, stress costs", "CAGR %"))}%**
-(Sharpe {f(g(E, "10Y, A floor, stress costs", "Sharpe"), 2)}), A nearest {f(g(E, "10Y, A nearest, stress costs", "CAGR %"))}%.
-Leg B priced with the IEF-minus-bills model instead of ^TNX: A floor CAGR {f(g(E, "10Y, A floor, B P&L = IEF-minus-bills model", "CAGR %"))}%,
-A nearest {f(g(E, "10Y, A nearest, B P&L = IEF-minus-bills model", "CAGR %"))}%.
+Stress costs (2 ticks per side on MES and 2/32 on MTN): A floor CAGR **{f(g(E, "MTN, A floor, stress costs", "CAGR %"))}%**
+(Sharpe {f(g(E, "MTN, A floor, stress costs", "Sharpe"), 2)}), A nearest {f(g(E, "MTN, A nearest, stress costs", "CAGR %"))}%.
+With 1/64 slippage instead of 1/32: {f(g(E, "MTN, A floor, 1/64 slippage", "CAGR %"))}% / {f(g(E, "MTN, A nearest, 1/64 slippage", "CAGR %"))}%.
+Leg B priced on the IEF-minus-bills model for every trade (no TN=F): A floor {f(g(E, "MTN, A floor, B P&L = IEF-minus-bills model throughout", "CAGR %"))}%,
+A nearest {f(g(E, "MTN, A nearest, B P&L = IEF-minus-bills model throughout", "CAGR %"))}%.
 
-The ZN contrast uses `../simulate.py` unchanged, whose leg B is priced on the IEF-minus-bills model; compare it with
-the 10Y IEF-model row ({f(g(E, "10Y, A floor, B P&L = IEF-minus-bills model", "CAGR %"))}%), not with the ^TNX headline.
-It is not "B never trades": a fresh $18k account cannot buy one ZN (needs ~$37-45k), but the account
-grows, so the ZN run trades B once it gets there ({zn("B skipped"):.0f} months skipped, mostly early).
+### Versus the previous run (leg B in the Micro 10-Year Yield future)
 
-**Read this with "Starting today" below.** Started in 2003, the $18k account held ~10 MES from the first trade (the S&P was
-near 900) and compounded past the point where rounding matters, so 0 months were skipped at any size. With today's
-contract counts held fixed, $18k earns **19.8% (floor) / 21.2% (nearest)** CAGR, Sharpe 0.95 / 1.01.
+| $18k, base costs | MTN, A floor | MTN, A nearest | 10Y yield future, A floor (previous) | 10Y yield future, A nearest (previous) |
+|---|---|---|---|---|
+{cmp_tab}
+| Leg B priced on | TN=F 2016+, IEF model before | same | ^TNX yield changes x DV01 | same |
+| Leg B contracts for a fresh $18k account today | {nb18} MTN | {nb18} MTN | {PREV_10Y_TODAY_18K} | same |
+
+Stress costs: {f(g(E, "MTN, A floor, stress costs", "CAGR %"))}% now vs {f(pv(E, "A floor, stress costs", "CAGR %"))}% before;
+B on the IEF model throughout: {f(g(E, "MTN, A floor, B P&L = IEF-minus-bills model throughout", "CAGR %"))}% now vs
+{f(pv(E, "A floor, B P&L = IEF-minus-bills model", "CAGR %"))}% before (the 10Y used duration-based sizing at 2.81x, MTN uses
+2.8 x 0.885 and whole $10.8k contracts, so the two IEF-model runs are not identical). The difference to the previous
+headline is mostly the pricing model, not the instrument: the yield-future run priced leg B on ^TNX, which misses the
+carry and IEF's month-end basket effect; a *price* future (MTN) is an excess-return bond position, so it earns the
+carry that a yield future does not (see "Leg-B models" below).
 
 ![equity](equity_18k.png)
 
 ## What changes versus `../simulate.py`
 
-- **Leg B = short the Micro 10-Year Yield future** (short yield = long bonds) from the close of the 4th-last session to the
-  month-end close. Price = 10y yield in index points (4.250 = 4.25%), 0.001 pt = $1, DV01 = $10 per contract.
-  Contracts = floor({LEV_B} x net liq x IEF duration x 0.0001 / $10). One contract therefore stands for $100,000 / duration
-  of IEF (~$14k at duration 7.1), so a fresh $18k account gets 3 contracts, ~2.4x IEF-equivalent instead of 2.81x.
-- **IEF duration** (the sensitivity of IEF to the 10y yield): regression of IEF daily total returns on -(daily change in
-  the 10y yield in decimal). Full sample 2003-2026: **{info["dur_full"]:.2f}** (corr {info["dur_corr"]:.3f}); weekly returns
-  give {info["dur_weekly"]:.2f} (the daily figure is slightly attenuated, most likely because ^TNX's daily close is not
-  taken at IEF's 16:00 close);
-  by period: {", ".join(f"{k} {v:.2f}" for k, v in info["dur_by_period"].items())}. Sizing uses the trailing
-  {DUR_WIN}-session daily estimate (min {DUR_MIN}); at the trades it ranged {dt_["min"]:.2f}-{dt_["max"]:.2f} (mean {dt_["mean"]:.2f}).
-  Note: the ^TNX file in this data cache is already in percent (4.912, not 49.12), so no /10 was needed
-  (the script detects the scale; detected factor {info["tnx_scale"]:.0f}). {info["tnx_missing"]} sessions with no ^TNX print were forward-filled.
-- **Two leg-B P&L models, both computed for every trade** (`gross_pnl` = headline model, `gross_pnl_alt_model` = the other):
-  (b) **headline:** -contracts x (^TNX exit - ^TNX entry) x $1,000, marked daily; (a) contracts x $100,000/duration x
-  (IEF total return - T-bill accrual), marked daily. On the {hf("B trades"):.0f} B trades of the headline run they agree
-  closely: P&L correlation **{bc["corr"]:.3f}**, same sign on {bc["sign_agree"]:.0f}% of trades, tracking difference
-  {bc["diff_bp_te"]:.0f}bp of notional per trade. Model (a) earns on average **{bc["diff_bp_mean"]:+.1f}bp** of notional per trade
-  more than (b) ({bc["pre23_diff"]:+.1f}bp before 2023, {bc["post23_diff"]:+.1f}bp in 2023+). Gross over the whole run: (b)
-  ${bc["tnx_gross"]:,.0f} vs (a) ${bc["ief_gross"]:,.0f}.
-- **Why the sign: carry.** A yield future pays only the change in the yield; it has no coupon income and no financing.
-  IEF minus bills earns that same yield change x duration *plus* carry = (bond yield - bill rate) x time (+ roll-down).
-  With an upward-sloping curve (most of 2003-2022) carry is positive, so the IEF model beats the yield future; with the
-  curve inverted (2023-2024, bills above 10s) the sign flips. Estimated carry over the 3-night hold,
-  (y10 - ^IRX) x days/365: {bc["carry_bp_mean"]:+.1f}bp of notional on average ({bc["pre23_carry"]:+.1f}bp pre-2023,
-  {bc["post23_carry"]:+.1f}bp in 2023+); correlation of the per-trade model gap with that carry estimate
-  {bc["corr_diff_carry"]:.2f}. **So carry explains only about a third of the gap, and the 2023+ gap stayed positive
-  although carry turned negative.** Day by day, IEF-minus-bills beats the duration-scaled ^TNX move by
-  {gd["other days"][0]:.2f}bp/day on ordinary days (carry {gd["other days"][1]:.2f}bp/day: there the gap *is* carry) but by
-  {gd["B hold days (last 3 sessions)"][0]:.2f}bp/day during the B hold (carry {gd["B hold days (last 3 sessions)"][1]:.2f}bp/day).
-  The extra ~1bp/day is month-end specific: index-extension buying lifts IEF's 7-10y basket (and the 15:00-16:00 hour,
-  which ^TNX's earlier close misses) more than the on-the-run 10y yield. A yield future is tied to the on-the-run 10y, so
-  it likely does **not** capture that part; that is the main reason the 10Y leg earns less than the ZN/IEF model. (Strictly, a futures price is a *forward* yield which converges to spot, so a real 10Y future
-  recovers a little of the carry through convergence; real fills should land between (a) and (b), close to (b).)
-  ^TNX is the Cboe cash 10y index and the futures settle to BrokerTec on-the-run yields, so the two track closely but
-  not exactly; I could not get usable Micro 10Y price history (Yahoo `10Y=F` returns a single bar), so (b) uses ^TNX.
-  Model (b) is clean enough to be the headline.
-- **Leg A rounding:** contracts = S&P notional {LEV_A}x (full) or {LEV_A/2}x (half) of net liq(T-1) / ($5 x S&P close T-1),
-  whole MES. *floor* skips the month when that rounds to 0; *nearest* rounds half up but never above {MAX_LEV_A:.0f}x net liq
-  (so today half-size 0.68 MES -> 1 MES at ~2.1x is allowed). Uses the actual S&P level at each trade: in 2003-2012 one
-  MES was ~$4-10k of notional, so the $18k account held {early.min():.0f}-{early.max():.0f} MES (mean {early.mean():.1f}) on traded months before 2013.
-- Everything else (signal, entry/exit times, 10% SPY drift band, cash interest, SPY rebalancing costs) is identical to
-  `../simulate.py`. SPY is held in fractional dollars (IBKR offers fractional shares; at $18k that is ~25 SPY shares).
+- **Leg B = long the Micro Ultra 10-Year T-Note future (MTN)**, $100 x price (~${now["mtn_notional"]:,.0f} per
+  contract at {now["px"]:.3f} on {now["date"]}), cash settled, quarterly. Held from the close of the 4th-last session
+  (bot: 15:58 ET) to the month-end close (bot: 15:55 ET, 12:50 on half days); at daily resolution both are closes.
+- **Contract choice exactly as the bot** (`met.bond.contract_month_for(X, 5, "MTN")`, imported): the first quarterly
+  contract whose last trade day (2 NYSE sessions before the first business day of the contract month) is more than 5
+  sessions after the month-end exit date X. So Feb/May/Aug/Nov windows hold the contract *after* next (e.g. Nov 2026:
+  {"MTN" + "FGHJKMNQUVXZ"[now["next_contract"][1] - 1] + str(now["next_contract"][0])[-1]}, last trade {now["next_contract"][2]}), all other months the next quarterly. Contracts held over
+  the run: {", ".join(f"{k} {v}" for k, v in sorted(info["contracts_by_month"].items()))}. Contract and last trade day are in `trades_18k.csv`.
+- **Sizing exactly as the bot** (`met.guardrails.size_contracts`, imported): contracts = floor({LEV_B} x {HEDGE} x
+  net liq / (price x 100)), max {B_MAX_CONTRACTS}, notional <= {B_MAX_LEV}x net liq. Net liq at the entry close.
+  Average {info["b_lev"][0]:.2f}x notional (min {info["b_lev"][1]:.2f}x) = {info["b_lev"][2]:.2f}x IEF-equivalent
+  (target 2.80x). In 2003-2005 the $18k account held {early.min():.0f}-{early.max():.0f} MTN.
+  The bot's config default `bond.max_contracts` is 20 (the MTN hard cap is 400); this backtest uses 400 as asked,
+  so a live account above ~$90k must raise `bond.max_contracts`.
+- **Price used for sizing:** TN=F close from {TN_START}; before that a synthetic price = price of a 6% coupon 9.5-year
+  bond at the ^TNX yield x {info["theo_ratio"]:.3f} (median TN=F / theoretical ratio 2016-2026, 5-95% range
+  {info["theo_ratio_rng"][0]:.3f}-{info["theo_ratio_rng"][1]:.3f}). It only sets the contract count (a few % error at most).
+- **Leg A** and everything else (signal, rounding variants, 10% SPY drift band, cash interest, SPY rebalancing costs)
+  is unchanged from the previous run.
+
+## Leg-B models, rolls and data
+
+- **Primary: TN=F.** Daily close-to-close returns of Yahoo's continuous Ultra 10-Year front month x MTN notional
+  (position marked daily, P&L = contracts x $100 x price x return). Used for {bc["n"]} of {hf("B trades"):.0f} B trades
+  (all whole-hold windows with TN=F data from {TN_START}; {bc["n_ief_post16"]} later windows fell back to IEF because of a missing TN=F close).
+- **TN=F history:** Yahoo's file starts {info["tn_raw_first"]}, but the Ultra 10-Year contract only launched in
+  January 2016; the {info["tn_rows_rejected"]} rows before that (2010-10 to 2012, with gaps of up to 3.7 years before 2016)
+  price ~13% below what an Ultra 10 would have been (TN=F / theoretical ratio ~0.87 vs ~1.00-1.06 from 2016), so they are
+  some other series and are **rejected**. Before {TN_START} leg B uses the IEF model only.
+  {info["tn_missing"]} NYSE sessions from 2016 have no TN=F close (forward-filled up to 2 sessions).
+- **Rolls.** Yahoo's TN=F rolls from the expiring to the next contract around the 15th-25th of Mar/Jun/Sep/Dec. A roll
+  day is detected as the single largest |TN=F return - (IEF - bills)/0.885| residual in the 12th-25th of each contract
+  month, if above {ROLL_SD:.0f} robust sd ({rl["sd"]*100:.3f}% here): {rl["n_flag"]} days flagged ({rolls}).
+  On a flagged day the TN=F return is replaced by the IEF model's return (neutralised). **None of these falls inside a
+  B hold** ({rl["on_hold"]} hold days flagged; trades with a neutralised day: {bc["n_roll_neutralised"]}): the hold is the last 3
+  sessions of the month, while Yahoo rolls 1-2 weeks before contract-month end. Largest |residual| on any hold day
+  {rl["hold_max"]:.2f}% (hold days with residual above 5 sd: {len(rl["hold_big"])}{": " + ", ".join(f"{t} {v:+.2f}%" for t, v in rl["hold_big"]) if rl["hold_big"] else ""}).
+- **Contract mismatch.** In Feb/May/Aug/Nov the bot holds the contract after next while Yahoo's front is the
+  nearby (about to go into delivery). Returns of adjacent TN contracts differ only by the change in the calendar spread
+  over 3 days; on those windows the TN vs IEF per-trade correlation is {bc["qroll_corr"]:.3f} vs {bc["other_corr"]:.3f} in other
+  months, mean gap {bc["qroll_diff"]:+.1f}bp vs {bc["other_diff"]:+.1f}bp. No contract-level history was available to do better.
+- **Cross-check: IEF total return minus T-bills, / 0.885** (`gross_pnl_ief` for every trade). On the {bc["n"]} trades
+  priced on TN=F: per-trade P&L correlation **{bc["corr"]:.3f}** (in bp of notional {bc["corr_bp"]:.3f}), same sign on
+  {bc["sign_agree"]:.0f}%, tracking difference {bc["diff_bp_te"]:.1f}bp of notional per trade. Mean per trade: TN=F
+  {bc["tn_bp_mean"]:+.1f}bp, IEF model {bc["ief_bp_mean"]:+.1f}bp, so the IEF model earns **{bc["diff_bp_mean"]:+.1f}bp**
+  (s.e. {bc["diff_bp_se"]:.1f}bp, ${bc["diff_usd_mean"]:+,.0f} per trade at the run's sizes) more per hold
+  ({bc["pre23_diff"]:+.1f}bp 2016-2022, {bc["post23_diff"]:+.1f}bp 2023+). Gross over these trades: TN=F
+  ${bc["tn_gross"]:,.0f} vs IEF ${bc["ief_gross"]:,.0f}. Largest gaps: {wg}.
+  Pre-2016 trades (IEF model only) averaged {bc["ief_bp_pre16"]:+.1f}bp of notional gross.
+- **Why they differ:** TN=F's close is the CBOT settlement (~15:00 ET) while IEF closes at 16:00 and the bot trades at
+  15:55-15:58, so each model misses a different last hour; IEF holds a 7-10y basket, TN's cheapest-to-deliver is a
+  ~9.5-10y note; and 0.885 is a 2017-2026 average beta (re-estimated here on non-roll days: 2016+
+  {info["hedge_2016"][0]:.3f} (corr {info["hedge_2016"][1]:.3f}), 2017+ {info["hedge_2017"][0]:.3f}). Unlike the yield
+  future, a price future is an excess-return bond position, so carry is not a systematic difference here.
 
 ## Costs and margin assumptions
 
@@ -604,73 +782,59 @@ contract counts held fixed, $18k earns **19.8% (floor) / 21.2% (nearest)** CAGR,
 |---|---|---|
 | MES fees (IBKR ~$0.25 + CME ~$0.35 + NFA ~$0.02) | $0.62 / contract / side | same |
 | MES slippage | 1 tick = $1.25 / side | 2 ticks = $2.50 |
-| Micro 10Y fees: my estimate, IBKR commission ~$0.25 + CME exchange ~$0.35-0.60 (I use the upper end) + NFA $0.02 | **$0.85 / contract / side** | same |
-| Micro 10Y slippage | 1 tick = 0.001 = $1 / side | 2 ticks = $2 |
-| MES initial margin | {MES_MARGIN_PCT:.1%} of notional (~${now["mes_notional"]*MES_MARGIN_PCT:,.0f} today at S&P {now["spx"]:,.0f}; scales with the index back in time) | x{MARGIN_STRESS_MULT:.0f} |
-| Micro 10Y initial margin | ${Y10_MARGIN:,.0f} / contract (CME has been ~$300-500) | x{MARGIN_STRESS_MULT:.0f} |
-| Cash | positive earns max(^IRX - 0.5%, 0); negative (after funding the 10Y overnight margin) pays ^IRX + 1.5% | same |
+| MTN fees (bot's `BOND_SPECS` / IBKR all-in estimate) | **$0.60 / contract / side** | same |
+| MTN slippage | 1 x 1/32 pt = **$3.125 / side** | 2/32 = $6.25 |
+| MES initial margin | {MES_MARGIN_PCT:.1%} of notional (~${now["mes_notional"]*MES_MARGIN_PCT:,.0f} today) | x{MARGIN_STRESS_MULT:.0f} |
+| MTN initial margin | {MTN_MARGIN_PCT:.0%} of notional (~${now["mtn_notional"]*MTN_MARGIN_PCT:,.0f} per contract today; my assumption) | x{MARGIN_STRESS_MULT:.0f} |
+| Cash | positive earns max(^IRX - 0.5%, 0); negative (after funding the MTN overnight margin) pays ^IRX + 1.5% | same |
 
-A 10Y round trip is $3.70 per contract (~$11 for the 3 contracts a fresh $18k account trades), about 0.09bp of
-IEF-equivalent notional per side, vs ~0.9bp for one ZN at 1/2 tick + $1.70; the micro is cheap per unit of risk.
-MES round trip $3.74 per contract.
+**Tick size.** The bot's FakeBroker uses 1/32 for MTN, so 1/32 is the base here. CME's Ultra 10-Year (TN) trades in
+half-32nds (1/64 point); if MTN has the same minimum tick (I believe so but did not verify it), 1 x 1/32 is two real
+ticks, and the "1/64 slippage" row is the one-real-tick case. An MTN round trip at base costs is
+${2 * (SPEC["cost"] + MTN_TICK * MTN_MULT):.2f} per contract, ~{1e4 * 2 * (SPEC["cost"] + MTN_TICK * MTN_MULT) / now["mtn_notional"]:.1f}bp of notional
+(vs ~0.9bp per side for ZN at 1/2 tick + $1.70 and ~0.09bp for the 10Y yield future): the micro is expensive per unit of
+risk, and slippage, not the fee, is most of it. Total B costs therefore matter: compare the stress and 1/64 rows.
 
-**Liquidity.** The Micro 10Y Yield future trades far less than ZN (Yahoo's last bar shows ~900 contracts); the book is
-thinner and can be several ticks wide outside the busiest hours, including around the 16:00 close. 1-3 contracts should be fillable, but use limit orders near the
-mid rather than market orders, and expect occasional misses. The contracts are **monthly**; check CME's termination rule
-for the front month (I believe it terminates on the last business day of the contract month) and hold the *next* month's
-contract over month-end so the position is not forced out at the final settlement.
+**Liquidity.** MTN is new and thin; at the close a few contracts should be fillable with limit orders near the mid,
+but the 1-2 x 1/32 assumptions are untested against real MTN fills.
 
 ## Small-account realities
 
-- **IBKR minimum** for a margin account ($2,000) is met at every size; the lowest equity reached in the $18k headline run was
-  ${hf("min netliq $"):,.0f}. Futures are not subject to the pattern-day-trader rule.
-- **Margin.** Futures margin is funded by IBKR moving excess liquidity from the securities side (the 100% SPY core has
-  ~75% loan value under Reg T maintenance), so it is a borrowing on top of the stock position, not separate cash.
-  Highest futures initial margin at any trade (A + open B on the last day), $18k base: **{mb[0]:.1f}% of net liq** (A floor),
-  {mbn[0]:.1f}% (A nearest); trades above {MARGIN_FLAG:.0%}: **{mb[1]} / {mbn[1]}**. Across all sizes and variants the
-  maximum was {worst_flag:.1f}%. With SPY's 25% maintenance added the worst total requirement was {mb[2]:.1f}% / {mbn[2]:.1f}%
-  of net liq. With margins doubled (crisis) the headline run peaks at {info["margin_hi"]["max"]:.1f}%
-  ({info["margin_hi"]["flags"]} trades above {MARGIN_FLAG:.0%}). The binding constraint is leverage, not margin.
-- **Interest on negative cash** is charged when overlay losses or the 10Y margin take cash below zero (between drift-band
-  rebalances); it is small: net interest over the run is ${g(E, "10Y, A floor", "interest $"):+,.0f} (credit interest on
-  positive cash outweighs the debit interest).
-- **Rounding at today's levels** (S&P {now["spx"]:,.0f}, one MES = ${now["mes_notional"]:,.0f}, 10y yield {now["y10"]:.3f}%,
-  duration {now["dur"]:.2f}): one MES at full size needs ${now["min_1_mes_full"]:,.0f} of equity; at half size
-  ${now["min_1_mes_half_floor"]:,.0f} with floor rounding, or ${now["min_1_mes_half_nearest"]:,.0f} with nearest (3x cap).
-  One 10Y contract needs only ${now["min_1_10y"]:,.0f}.
+- **IBKR minimum** ($2,000) is met at every size; lowest equity in the $18k headline run ${hf("min netliq $"):,.0f}.
+- **Margin.** Highest futures initial margin at any trade (A + open B on the last day), $18k base: **{mb[0]:.1f}% of net
+  liq** (A floor), {mbn[0]:.1f}% (A nearest); trades above {MARGIN_FLAG:.0%}: **{mb[1]} / {mbn[1]}**. Across all sizes and
+  variants the maximum was {worst_flag:.1f}%. With SPY's 25% maintenance added the worst total requirement was
+  {mb[2]:.1f}% / {mbn[2]:.1f}%. With margins doubled the headline run peaks at {info["margin_hi"]["max"]:.1f}%
+  ({info["margin_hi"]["flags"]} trades above {MARGIN_FLAG:.0%}). Net interest over the run ${g(E, "MTN, A floor", "interest $"):+,.0f}.
+- **Rounding at today's levels** ({now["date"]}: S&P {now["spx"]:,.0f}, one MES = ${now["mes_notional"]:,.0f}, one MTN =
+  ${now["mtn_notional"]:,.0f}): one MES at full size needs ${now["min_1_mes_full"]:,.0f} of equity, at half size
+  ${now["min_1_mes_half_floor"]:,.0f} (floor) or ${now["min_1_mes_half_nearest"]:,.0f} (nearest, 3x cap); one MTN needs
+  ${now["min_1_mtn"]:,.0f}.
 
 {S.md_table(CN)}
 
-So today a fresh $18k account trades leg A only in high-vol (full-size) months with floor rounding, and every month with
-nearest rounding (then at ~2.1x instead of 1.4x in calm months: nearest *over*-sizes the calm months); leg B trades 3
-contracts every month.
-
-**Months skipped by rounding at $18k.** Leg A floor: **{len(a_sk)}** of {len(a18)} months
-({", ".join(f"{k}: {v}" for k, v in a_sk_y.items()) if len(a_sk) else "none"}); leg A nearest: **{len(a_skn)}**; leg B:
-**{int((b18.contracts == 0).sum())}**. Historically the S&P was much lower, so MES rounding did not bind until the index
-rose and only bites when the account is small relative to one MES; by the time the index was high the account had grown.
+**Months skipped by rounding at $18k.** Leg A floor: **{len(a_sk)}** of {len(a18)}
+({", ".join(f"{k}: {v}" for k, v in a_sk_y.items()) if len(a_sk) else "none"}); leg A nearest: **{len(a_skn)}**;
+leg B: **{int((b18.contracts == 0).sum())}**.
 
 ## Starting today: today's rounding held fixed
 
-The compounding backtest above flatters small accounts: starting at $18k in 2003 with the S&P near 900, one MES was ~$4.5k,
-so the account held ~10 MES from the first trade and rounding never bit (0 months skipped at any size). A trader
-starting **today** gets today's contract counts. This scenario freezes them: MES leverage and 10Y contracts per $ of
-equity are what a fresh account of that size gets at today's prices (table above), scaled with equity as it grows,
-MES costs at today's cost in bp of notional. It answers "what return stream does today's rounding buy?".
+Started in 2003 the account compounds past the point where rounding matters. This scenario freezes today's contract
+counts instead: MES leverage and MTN notional per $ of equity are what a fresh account of that size gets at today's
+prices (table above), scaled with equity as it grows. Previous (10Y yield future) values in brackets.
 
 | account | A floor: CAGR / Sharpe / max DD / alpha | A nearest: CAGR / Sharpe / max DD / alpha | A skipped (floor / nearest) |
 |---|---|---|---|
-""" + "\n".join(f"| ${a/1e3:,.0f}k | {td(a, 'floor', 'CAGR %'):.1f}% / {td(a, 'floor', 'Sharpe'):.2f} / {td(a, 'floor', 'max DD %'):.1f}% / {td(a, 'floor', 'alpha %/yr'):.1f}% "
-              f"| {td(a, 'nearest', 'CAGR %'):.1f}% / {td(a, 'nearest', 'Sharpe'):.2f} / {td(a, 'nearest', 'max DD %'):.1f}% / {td(a, 'nearest', 'alpha %/yr'):.1f}% "
+""" + "\n".join(f"| ${a/1e3:,.0f}k | {td(a, 'floor', 'CAGR %'):.1f}% [{tdp(a, 'floor', 'CAGR %'):.1f}%] / {td(a, 'floor', 'Sharpe'):.2f} [{tdp(a, 'floor', 'Sharpe'):.2f}] / {td(a, 'floor', 'max DD %'):.1f}% / {td(a, 'floor', 'alpha %/yr'):.1f}% "
+              f"| {td(a, 'nearest', 'CAGR %'):.1f}% [{tdp(a, 'nearest', 'CAGR %'):.1f}%] / {td(a, 'nearest', 'Sharpe'):.2f} [{tdp(a, 'nearest', 'Sharpe'):.2f}] / {td(a, 'nearest', 'max DD %'):.1f}% / {td(a, 'nearest', 'alpha %/yr'):.1f}% "
               f"| {td(a, 'floor', 'A skipped'):.0f} / {td(a, 'nearest', 'A skipped'):.0f} |" for a in ACCOUNT_SIZES) + f"""
-
-At $18k today: floor = A only in high-vol months (1 MES, 2.11x) and nothing in calm months; nearest = 1 MES (2.11x) in
-every month, i.e. calm months are traded at ~1.5x the intended half size. Full detail in the table below
-(rows "today's rounding fixed").
 
 {S.md_table(H[ctd].reset_index(drop=True))}
 
-## All account sizes (base costs, B in 10Y micros, ^TNX P&L)
+## All account sizes (base costs, B in MTN), started in 2003
+
+Previous 10Y-yield-future CAGR, floor / nearest: """ + ", ".join(
+        f"${a/1e3:,.0f}k {pv(a, 'A floor', 'CAGR %'):.1f}% / {pv(a, 'A nearest', 'CAGR %'):.1f}%" for a in ACCOUNT_SIZES) + f"""
 
 {S.md_table(H[c_sizes].reset_index(drop=True))}
 
@@ -680,37 +844,33 @@ every month, i.e. calm months are traded at ~1.5x the intended half size. Full d
 
 ## Yearly, $18k headline (A floor, base costs)
 
-Strategy % and the A-nearest variant's % side by side; A/B P&L are for the headline run. Max DD within the calendar year.
-
 {S.md_table(yt)}
 
 ## In-sample vs holdout ($18k)
 
+Previous run (10Y yield future), A floor: in-sample {PREV_10Y_PERIODS[("floor", "2003-2022 in-sample")]["CAGR %"]:.1f}% CAGR /
+Sharpe {PREV_10Y_PERIODS[("floor", "2003-2022 in-sample")]["Sharpe"]:.2f}; 2023+ holdout
+{PREV_10Y_PERIODS[("floor", "2023+ holdout")]["CAGR %"]:.1f}% / {PREV_10Y_PERIODS[("floor", "2023+ holdout")]["Sharpe"]:.2f}
+(B avg {PREV_10Y_PERIODS[("floor", "2023+ holdout")]["B avg % acct"]:.3f}% of account per trade).
+
 {S.md_table(SP)}
 
-## Spot checks (two trades recomputed by hand)
+## Spot checks (trades recomputed by hand)
 
 {spot}
 
 ## Caveats
 
-- **In-sample.** Signals, the vol tilt and leverages (2.85x / 2.81x) were chosen on 2003-2022; only 2023+ is out of
-  sample (~4 years, ~46 trades per leg). Expect live results below the backtest.
-- **Hypothetical instruments.** MES before May 2019 and the Micro 10Y before Aug 2021 did not exist; those years use
-  today's contract specs on index/yield data. An $18k trader in 2003-2019 would have had ES (10x coarser) and ZN (which
-  this account could not afford at first).
-- **Starting from $18k the account compounds** to six/seven figures in the backtest, so "small account" rounding effects
-  matter only in the first years (0 months skipped at any size from $10k up). A trader starting today faces today's
-  rounding; see "Starting today" (at $18k: 19.8% floor / 21.2% nearest CAGR vs 22.1% compounding; $10k cannot trade
-  leg A at all, because 1 MES = 3.8x net liq exceeds even the 3x cap).
-- **Leg-B model risk.** ^TNX is the cash 10y yield at Cboe's close (before IEF's 16:00), not the futures settlement; the
-  real 10Y future has a small forward/convergence term. The IEF-minus-bills model earns ~4.4bp more per hold (about 1.5bp carry, the rest a
-  month-end effect in IEF's basket and closing time that a yield future probably does not capture; see above).
-- **Leverage and gap risk.** On the last day of the month gross exposure is SPY 1x + MES up to 2.85x (3x with nearest) + the
-  bond leg ~2.3-2.8x IEF-equivalent. No stops modelled.
-- **Liquidity of the Micro 10Y** (thin, few ticks wide near the close) is the main execution risk; the stress case only
-  doubles slippage to 2 ticks.
-- **Taxes ignored** (futures 60/40 Section 1256; SPY rebalancing realises gains).
+- **In-sample.** Signals, the vol tilt and leverages were chosen on 2003-2022; only 2023+ is out of sample.
+- **Hypothetical instruments.** MES before May 2019 and MTN before 2024 did not exist (TN itself not before 2016); those
+  years use today's contract specs on index/ETF data.
+- **Leg-B model risk.** TN=F settles ~15:00 ET, IEF closes 16:00, the bot trades 15:55-15:58; Yahoo's front contract is
+  not the bot's contract in Feb/May/Aug/Nov; the IEF model / 0.885 is a fixed-beta proxy. The two models differ by
+  {bc["diff_bp_te"]:.0f}bp of notional per trade (1 sd).
+- **Costs.** 1/32 slippage on a ~$10.8k contract is ~2.9bp per side, large relative to a few-bp-per-day edge.
+- **Leverage and gap risk.** Gross exposure on the last day: SPY 1x + MES up to 2.85x (3x nearest) + MTN ~2.5x notional.
+  The bot's bond disaster stop (4% of equity) and decay monitor (de-risk/stop) are not modelled.
+- **Taxes ignored.**
 """
     open(os.path.join(OUT, "summary.md"), "w").write(md)
 
