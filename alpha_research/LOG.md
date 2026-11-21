@@ -1057,3 +1057,8 @@ Yield decline over the first 3 sessions of the month (bp, t), 1973-82 / 83-92 / 
 No reversal before 2002 (early-month yields kept drifting down, i.e. turn-of-month buying spread into the new month);
 a partial reversal in 10y appears only after 2002, when the bid became more concentrated/anticipated. The month-end
 window itself (315) is the stable part — keep the trade long-only into month-end, as specified. Not registered.
+
+## 320 — Japanese fiscal-year-end repatriation in FX (USDJPY, 2000-22)  ·  2026-11-21
+Short USDJPY over the last 10 sessions of March: −1.3 / −0.4 (−84 / −26bp per window); March+September: −1.0 / −1.2;
+long USDJPY first 10 sessions of April: +1.1 / −0.6. Wrong-signed: the yen if anything WEAKENS into fiscal period-ends
+(repatriation is presumably hedged/spread out, or swamped by other flows). Dead. Registry: 430 rows.
