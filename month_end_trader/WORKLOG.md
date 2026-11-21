@@ -86,6 +86,10 @@ Treasury bid, long ZN over the last 3 sessions). Backtest with IBKR costs: backt
       hours, contract name may read "ZN   MAR 27", Client Portal trade history, weekly status at start, mismatch alert,
       flatten-while-closed, systemd env command, alert-test env, heartbeat, sizing_rounding, config keys
       (order_type, limit_ticks, max_total_leverage), 2.8x stop/size examples, rehearse uses a built-in config
+- [x] Review round B8 (mutation testing): 53 mutants of safety logic; the suite killed 29; 22 real survivors (+1
+      equivalent, +1 behaviour-equivalent bound) -> 21 new tests in tests/test_b8_new.py (bond adoption conditions,
+      exit sizing with user positions on either side, leg-A priority window + peer wiring, retry schedule, sync contract
+      filter, entry deadline, hard caps, vol/threshold boundary, source-spread rule, daemon error rate limit)
 - [ ] Paper-verify MTN: IB symbol/exchange (MTN @ CBOT), localSymbol, lastTradeDateOrContractMonth = termination day,
       liquidity at 15:55 ET (thin: consider a marketable limit instead of a market order)
 - [ ] Optional: bond.instrument 10Y (yield-quoted, SELL = long bonds, monthly, 2nd month over month-end) if the user prefers it
