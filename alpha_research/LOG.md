@@ -1305,3 +1305,8 @@ SPDR public historical-archive XLSX (daily tonnes 2004+, kept only in the uncomm
 All cards in results/ideas_behaviour.md, ideas_papers.md, ideas_crossasset.md and ideas_options_etf.md that were
 testable with free data have now been run (321-360). Nothing passed the gate; registry 616. Remaining untested cards
 need data we can't get freely (NDX reconstitution list, HKMA episodes, bond-index tranche dates — descriptive only).
+
+## 362 — Agency MBS payment-day reinvestment (agent-run; results/agent_362.md)  ·  2026-11-21
+Calendar-known (lag 0), 1bp/side/leg, MBB 2007-22. The 25th-day window can't be separated from the month-end bond bid
+(P+2 always lands in the last 3 sessions) → V1/V2 no events. Pre-25th long MBB −1.5 / +0.9 (sign flip); Ginnie 20th
+MBB−β·IEF −0.5 / −1.2. Dead.
