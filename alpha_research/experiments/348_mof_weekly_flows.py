@@ -72,7 +72,7 @@ mof = load_mof()
 rel = pd.DatetimeIndex([release_date(s) for s in mof.index])
 print("weeks", len(mof), mof.index[0].date(), "->", mof.index[mof.index <= END][-1].date(),
       "; release not Thursday:", int((rel.dayofweek != 3).sum()))
-zb, ze = zsig(mof.bond), zsig(mof.eq)
+zb, ze = zsig(mof.bond), zsig(mof["eq"])
 TH = 1.5
 sig_b = np.sign(zb) * (zb.abs() > TH)
 sig_bl = (zb > TH).astype(float)
@@ -139,6 +139,6 @@ for name, sig, a, cb in runs:
 # descriptive: flow persistence (weekly autocorrelation), <= 2022
 m = mof.loc[:END]
 print("\nflow AR(1) train/valid: bond", round(m.bond.loc[:"2014"].autocorr(), 3), round(m.bond.loc["2015":].autocorr(), 3),
-      " eq", round(m.eq.loc[:"2014"].autocorr(), 3), round(m.eq.loc["2015":].autocorr(), 3))
+      " eq", round(m["eq"].loc[:"2014"].autocorr(), 3), round(m["eq"].loc["2015":].autocorr(), 3))
 pd.DataFrame(out).to_csv(os.path.join(lib.HERE, "results", "348_summary.csv"), index=False)
 print("registry size:", lib.n_tests(), " luck t for best of N ~", round(np.sqrt(2 * np.log(max(lib.n_tests(), 2))), 2))
