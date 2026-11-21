@@ -18,8 +18,9 @@ class StateCorrupt(RuntimeError):
 
 
 class TradeState:
-    def __init__(self, state_dir: str, trade_date: str):
-        self.path = Path(state_dir) / f"trade_{trade_date}.json"
+    def __init__(self, state_dir: str, trade_date: str, prefix: str = "trade"):
+        self.path = Path(state_dir) / f"{prefix}_{trade_date}.json"
+        self.prefix = prefix
         self.bak = self.path.with_suffix(".json.bak")
         self.data = self._load() or {"trade_date": trade_date, "phase": None, "events": []}
 
@@ -125,9 +126,9 @@ class TradeState:
         return 0
 
 
-def all_trades(state_dir: str) -> list[dict]:
+def all_trades(state_dir: str, prefix: str = "trade") -> list[dict]:
     out = []
-    for p in sorted(Path(state_dir).glob("trade_*.json")):
+    for p in sorted(Path(state_dir).glob(f"{prefix}_*.json")):
         try:
             out.append(json.loads(p.read_text()))
         except Exception:
@@ -135,14 +136,14 @@ def all_trades(state_dir: str) -> list[dict]:
     return out
 
 
-def unfinished(state_dir: str) -> list[str]:
+def unfinished(state_dir: str, prefix: str = "trade") -> list[str]:
     """Trade dates whose state may still involve a position: ACTIVE phases, or FLAT not yet reconciled.
     Corrupt files are reported too (as dates) so the caller can raise the alarm."""
     out = []
-    for p in sorted(Path(state_dir).glob("trade_*.json")):
-        date = p.stem.replace("trade_", "")
+    for p in sorted(Path(state_dir).glob(f"{prefix}_*.json")):
+        date = p.stem[len(prefix) + 1:]
         try:
-            t = TradeState(state_dir, date)
+            t = TradeState(state_dir, date, prefix=prefix)
         except StateCorrupt:
             out.append(date); continue
         if (t.phase in ACTIVE or t.phase == "FLAT") and not t.get("reconciled"):
