@@ -1332,3 +1332,8 @@ the month's last session — credit month-end bid, not tax selling); HYG ex−1�
 (+9.8bp/trade valid) — fails gate on train t. Credit ETFs drop ~0.80-0.95× the dividend, Treasury ETFs ~1×. Weak.
 **Audit: the month-end bond-bid estimates are NOT affected by ex-dates** — 8 December ex-dates fall in the IEF/TLT window
 (2002-09) and adjusted closes match raw-plus-dividend returns to ≤0.01bp.
+
+## 367 — FINRA margin-debt deleveraging (agent-run; results/agent_367.md)  ·  2026-11-21
+Monthly FINRA margin statistics (1997+), month-m data used from the close of the last trading day of m+1, lag-1.
+Short SPY in deleveraging regime +0.9 / +0.1 (2001/2008-driven); short after 3-month plunge −0.7 / −0.8; short at high
+debt/price −0.1 / never fires; long at high free-credit/debt −0.4 / never fires. Dead. (8 rows: a NaN-bug run superseded.)

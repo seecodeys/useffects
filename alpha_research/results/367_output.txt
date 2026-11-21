@@ -1,0 +1,30 @@
+
+367A short SPY in deleveraging regime (12m chg<0 after >+20%) lag1
+  train_sharpe=+0.23  train_t=+0.89  valid_sharpe=+0.05  valid_t=+0.14  valid_bp_per_trade=+1.19  valid_traded_%=+13.41  gate=False
+  train97: signal months 31  net bp/month +134.2  monthly t +1.38  timing-value daily t +1.36  hit 52%
+  train: signal months 31  net bp/month +134.2  monthly t +1.38  timing-value daily t +1.19  hit 52%
+  valid: signal months 15  net bp/month +21.4  monthly t +0.13  timing-value daily t +0.65  hit 47%
+  per-year net bp: 2001:+1535 2002:-108 2008:+3357 2009:+828 2012:-1451 2015:+248 2018:+1020 2019:-1410 2022:+464
+
+367B short SPY when 3m margin chg bottom decile lag1
+  train_sharpe=-0.17  train_t=-0.67  valid_sharpe=-0.29  valid_t=-0.82  valid_bp_per_trade=-9.36  valid_traded_%=+7.30  gate=False
+  train97: signal months 22  net bp/month -102.8  monthly t -0.73  timing-value daily t -0.27  hit 55%
+  train: signal months 22  net bp/month -102.8  monthly t -0.73  timing-value daily t -0.41  hit 55%
+  valid: signal months 12  net bp/month -114.9  monthly t -0.82  timing-value daily t -0.42  hit 25%
+  per-year net bp: 2000:-351 2001:+364 2007:+198 2008:-1074 2009:-44 2011:-1352 2019:-380 2020:-791 2022:-206
+
+367C short SPY when debt/price (60m-demeaned) top quintile lag1
+  train_sharpe=-0.01  train_t=-0.06  valid_sharpe=+nan  valid_t=+nan  valid_bp_per_trade=+nan  valid_traded_%=+0.00  gate=False
+  train97: signal months 46  net bp/month -5.6  monthly t -0.10  timing-value daily t +0.67  hit 41%
+  train: signal months 46  net bp/month -5.6  monthly t -0.10  timing-value daily t +0.41  hit 41%
+  valid: signal months 0  net bp/month +nan  monthly t +nan  timing-value daily t +nan  hit nan%
+  per-year net bp: 2005:-487 2006:-837 2007:-646 2008:+2859 2009:-1146
+
+367D long SPY when freecredit/debt top decile lag1
+  train_sharpe=-0.11  train_t=-0.41  valid_sharpe=+nan  valid_t=+nan  valid_bp_per_trade=+nan  valid_traded_%=+0.00  gate=False
+  train97: signal months 46  net bp/month -48.1  monthly t -0.53  timing-value daily t -1.00  hit 46%
+  train: signal months 46  net bp/month -48.1  monthly t -0.53  timing-value daily t -0.79  hit 46%
+  valid: signal months 0  net bp/month +nan  monthly t +nan  timing-value daily t +nan  hit nan%
+  per-year net bp: 2000:-15 2001:-1011 2002:-172 2003:+527 2008:-2176 2009:+639
+
+registry size (this agent): 8

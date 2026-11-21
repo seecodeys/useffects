@@ -324,3 +324,4 @@ is an opening-print artifact (015). New tests use prior-close information only.
 - [x] 365 Corporate issuance windows (agent) — dead (post-Labor-Day short TLT weak, post-2012 only).
 - [x] 361 Treasury futures roll window (agent) — dead.
 - [x] 363 Bond-ETF ex-dates (agent) — weak; bond-bid data audit clean.
+- [x] 367 FINRA margin debt (agent) — dead.
