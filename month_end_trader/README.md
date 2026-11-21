@@ -108,12 +108,13 @@ The daemon is a single loop of idempotent `tick()`s over the state saved in `sta
 
 1. **IBKR:**
    - Enable US futures trading permission.
-   - Subscribe to CME real-time L1 data (needed for MES prices and the disaster stop).
+   - Subscribe to CME real-time L1 data (MES) **and CBOT real-time L1 data (ZN/MTN, bond leg)**: needed for prices and the disaster stops.
    - Open a paper account (DU…).
    - In TWS/Gateway: Configure → API → enable ActiveX/Socket clients, untick Read-Only API, trusted IP 127.0.0.1.
    - **Operational settings that matter:**
      - Turn on "Bypass Order Precautions for API orders" under Global Configuration → API → Precautions. Otherwise a multi-contract market order can be rejected at 09:30:01 (error 201/383).
-     - Set the IB Gateway/TWS auto-restart **outside 09:00–16:30 ET**. It is set in the machine's local time, and US daylight saving moves it relative to Asia. In Singapore, pick a time between **06:00 and 20:30 SGT**, which is safe all year. The Docker setup instead sets the Gateway's timezone to ET (`AUTO_RESTART_TIME=11:45 PM`).
+     - Set the IB Gateway/TWS daily auto-restart to **17:15 ET** (anywhere in 17:05–17:50 ET). That is inside the CME/CBOT daily halt, so the bond leg's overnight guards never go dark while ZN is held, and it avoids the 16:25–16:35 announcements and the 18:00 reports. The restart time is in the Gateway's timezone: with the timezone set to America/New_York (below; required anyway) it is simply 17:15. In Singapore *local* time it would move with US daylight saving (06:15 SGT in winter, 05:15 in summer), so set the Gateway timezone to ET. Docker: `AUTO_RESTART_TIME=05:15 PM`.
+     - **Weekly re-authentication (Sunday 2FA):** most bond windows span a weekend. Confirm the Gateway's Sunday login/2FA **before 18:00 ET Sunday** (the CBOT reopen) whenever ZN is held, otherwise there is no disaster stop overnight and the Monday exit cannot be sent.
      - Use a **dedicated second IBKR username** for the API (free in Client Portal). Logging into TWS or the Mobile app with the same username either blocks market data (error 10197) or logs the Gateway out.
      - US equity market data, so SPY/TLT `ADJUSTED_LAST` daily bars are available for the signal.
      - The machine's clock must be NTP-synced. The bot alerts if it is more than 5 s off IB server time.
@@ -128,12 +129,21 @@ The daemon is a single loop of idempotent `tick()`s over the state saved in `sta
    python -m met.cli signal  --config config.yaml   # current signal from IBKR + Yahoo
    python -m met.cli check   --config config.yaml   # connect + full preflight, no orders
    python -m met.cli validate-data --config config.yaml  # IBKR vs Yahoo adjusted prices agree?
+   python -m met.cli bond-check --config config.yaml # leg B: contract, size, margin for the next window
    python -m met.cli test-order --config config.yaml # PAPER ONLY: buy 1 MES and sell it
+   python -m met.cli test-order --leg bond --config config.yaml   # PAPER ONLY: 1 ZN/MTN round trip
+   python -m met.cli rehearse                       # alert timeline of the next month-end, both legs
    python -m met.cli dry-run --months 4             # whole daemon against the simulator
    ```
 4. **Run it continuously** on a machine that is always on (a VPS or home server):
    - systemd: `deploy/met.service`
-   - Docker: `deploy/docker-compose.yml`, which uses IB Gateway with IBC auto-login. Copy `deploy/gateway.env.example` and `deploy/trader.env.example` to `.env` files (chmod 600); the Gateway settings persist in `ibgw-settings/`. Set "Bypass Order Precautions" once over VNC, then run `met check` and `met test-order` inside the container before the first trade day.
+   - Docker: `deploy/docker-compose.yml`, which uses IB Gateway with IBC auto-login. Copy `deploy/gateway.env.example` and `deploy/trader.env.example` to `.env` files (chmod 600); the Gateway settings persist in `ibgw-settings/`. Set "Bypass Order Precautions" once over VNC, then run `met check` / `met bond-check` with `docker compose exec trader …` before the first trade day.
+   - **Docker: `test-order`, `flatten` and `resolve` need the daemon stopped** (they take its lock), so `exec` into the running container fails. Use a one-off container instead:
+     ```bash
+     docker compose -f deploy/docker-compose.yml stop trader
+     docker compose -f deploy/docker-compose.yml run --rm trader python -m met.cli resolve 2026-11-30 --leg bond --price 110.5 --config /app/config.yaml
+     docker compose -f deploy/docker-compose.yml start trader
+     ```
 
    IBKR forces a daily Gateway restart and periodic re-authentication. IBC handles most of it, but the bot alerts when it can't connect on a trade day, so keep alerts on.
 5. **Paper-trade at least one month-end**, following `PAPER_TEST.md`. The next trade dates are 30 Nov 2026 and 31 Dec 2026.

@@ -8,7 +8,8 @@ IBKR-side requirements:
     API username (e.g. the non-pro US Securities Snapshot and Futures Value Bundle); US equity data for SPY/TLT bars
   * ZN (bond leg) is physically delivered: IBKR closes out / blocks longs a few days before first notice; the bot
     only uses contracts whose first notice day is > bond.roll_buffer_days sessions after the exit
-  * Gateway auto-restart time OUTSIDE 09:00-16:30 ET (it is set in the machine's local timezone)
+  * Gateway daily auto-restart at ~17:15 ET, inside the CME/CBOT 17:00-18:00 halt (the bond leg holds ZN overnight);
+    set the Gateway timezone to America/New_York so the time does not move with daylight saving
   * Preferably a dedicated second IBKR username for the API: logging into TWS/Mobile with the same username
     causes error 10197 (no market data) or logs the Gateway out
 """

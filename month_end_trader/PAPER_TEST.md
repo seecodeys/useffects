@@ -7,7 +7,7 @@ Run everything on the always-on machine against your **paper** account (DU…). 
 | When | Leg | What |
 |---|---|---|
 | Mon 23 Nov 16:30 | B | Alert `BOND Bond window 2026-11-24 -> 2026-11-30 starts tomorrow` |
-| Tue 24 Nov 15:28 | B | Preflight, then `BOND … PLANNED BUY n ZNH7` (or `MTNH7`) |
+| Tue 24 Nov 15:30 | B | Preflight, then `BOND … PLANNED BUY n ZNH7` (or `MTNH7`) |
 | Tue 24 Nov 15:58 | B | Entry, long ZN/MTN, held over Wed, Thanksgiving (closed) and the Fri half day |
 | Fri 27 Nov 13:25 | A | `Tomorrow (2026-11-30) month-end trade: LONG/SHORT` |
 | Mon 30 Nov 09:10 / 09:30:01 | A | MES preflight, then entry |
@@ -23,7 +23,8 @@ The bond contract is **March 2027** (ZNH7 / MTNH7). December's last safe day (fi
 - [ ] API enabled and Read-Only **off** (Configure → API → Settings).
 - [ ] **Bypass Order Precautions for API orders** on (Configure → API → Precautions).
 - [ ] Timezone **America/New_York**.
-- [ ] Auto-restart time outside 09:00–16:30 ET.
+- [ ] Daily auto-restart at **17:15 ET** (inside the CME/CBOT 17:00–18:00 halt; Docker: `AUTO_RESTART_TIME=05:15 PM`).
+- [ ] You can confirm the **Sunday 29 Nov** weekly login/2FA before **18:00 ET** (ZN is held over that weekend).
 - [ ] Market data on the API username:
   - CME real-time L1 (MES) **and CBOT real-time L1 (ZN/MTN)**, e.g. the non-pro "US Securities Snapshot and Futures Value Bundle".
   - US equity data for the SPY/TLT daily bars.
@@ -90,7 +91,7 @@ sudo cp deploy/met.service /etc/systemd/system/ && sudo systemctl daemon-reload 
 docker compose -f deploy/docker-compose.yml up -d
 python -m met.cli status --config config.yaml
 ```
-- **Docker users:** run CLI commands inside the container (`docker compose -f deploy/docker-compose.yml exec trader python -m met.cli …`).
+- **Docker users:** run read-only CLI commands inside the container (`docker compose -f deploy/docker-compose.yml exec trader python -m met.cli status …`). `test-order`, `flatten` and `resolve` need the daemon stopped: `docker compose … stop trader`, then `docker compose … run --rm trader python -m met.cli <cmd> … --config /app/config.yaml`, then `start trader`.
 - **systemd users:** load `/etc/met.env` first.
 - **Run every `met` command as the daemon's user and from its folder**, so it sees the same `state/` (especially `kill`).
 - [ ] The daemon is running, and its start alert lists both legs.
@@ -101,7 +102,7 @@ python -m met.cli status --config config.yaml
 | Time (ET) | Alert | If not |
 |---|---|---|
 | Mon 23 16:30 | `BOND Bond window … starts tomorrow` with a size estimate | Check the log; run `met bond-check` |
-| Tue 24 15:28 | `BOND 2026-11-30: PLANNED BUY n ZNH7 at 15:58 ET` | A `BOND … SKIPPED` alert lists the reasons |
+| Tue 24 15:30 | `BOND 2026-11-30: PLANNED BUY n ZNH7 at 15:58 ET` | A `BOND … SKIPPED` alert lists the reasons |
 | Tue 24 15:58 | `BOND 2026-11-30: ENTERED BUY n/n …` | `BOND … ENTRY FAILED`: the bot watches its executions until midnight |
 | Wed–Fri | nothing (guards run whenever CBOT trades; Thanksgiving closed; Fri closes 13:00) | `BOND … DISASTER STOP` means the bond overlay lost 4% of equity |
 | Fri 27 13:25 | `Tomorrow (2026-11-30) month-end trade: LONG/SHORT` | Check the log; `met signal` |
@@ -129,7 +130,7 @@ Verify in TWS after the close on 30 Nov:
 ## Then
 
 - [ ] Paper-trade December too:
-  - Bond window 28 → 31 Dec, still in H7.
+  - Bond window 28 → 31 Dec, still in H7. **The 31 Dec bond exit is at 12:50 ET** (SIFMA early close; CME settles rates at 13:00). Check CME's 31 Dec 2026 holiday notice.
   - Leg A on 31 Dec, rolling to MESH7.
 - [ ] Only then consider live:
   - `mode: live`, the live account `U…` and port 4001.

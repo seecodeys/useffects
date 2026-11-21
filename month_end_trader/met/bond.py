@@ -385,7 +385,7 @@ class BondExecutor(Executor):
         lead_e, lead_x = lead(E, b.entry_lead_s), lead(X, b.exit_lead_s)
         entry = cE - dt.timedelta(seconds=lead_e)
         return dict(E=E, X=X, close_entry=cE, close=cX,
-                    preflight=cE - dt.timedelta(minutes=30),
+                    preflight=min(cE - dt.timedelta(minutes=30), entry - dt.timedelta(minutes=28)),
                     entry=entry,
                     entry_deadline=min(entry + dt.timedelta(seconds=b.entry_grace_s), cE - dt.timedelta(seconds=20)),
                     entry_reconcile=cE + dt.timedelta(minutes=10),
@@ -399,14 +399,22 @@ class BondExecutor(Executor):
         if st.get("announced") or st.get("announce_attempts", 0) >= 3:
             return
         tm = self.times(X)
-        self._refresh_bond_monitor_if_stale()
-        if not self.broker.is_connected():
-            n = st.get("announce_attempts", 0) + 1
-            st.update(self.ts(), note="announce: broker not connected", announce_attempts=n)
-            if n == 1:
+        now = self.broker.now()
+        nxt = st.get("announce_retry_at")
+        if nxt and now < dt.datetime.fromisoformat(nxt):
+            return
+        if not self.ensure_connected():
+            # e.g. a Gateway restart around 16:30: retry every 5 min all evening; alert once after 15 min down
+            first = st.get("announce_down_since") or self.ts()
+            down_min = (now - dt.datetime.fromisoformat(first)).total_seconds() / 60
+            st.update(self.ts(), note="announce: broker not connected", announce_down_since=first,
+                      announce_retry_at=(now + dt.timedelta(minutes=5)).isoformat())
+            if down_min >= 15 and not st.get("announce_down_alerted"):
+                st.update(self.ts(), note="announce: down alert", announce_down_alerted=True)
                 self.alert.critical(f"{X}: broker not connected the evening before the bond entry",
                                     f"fix IB Gateway before {tm['preflight']:%a %H:%M} ET")
             return
+        self._refresh_bond_monitor_if_stale()
         try:
             plan, blockers, warnings = bond_preflight(self.cfg, self.broker, X, check_only=True)
         except Exception as e:

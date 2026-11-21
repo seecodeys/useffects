@@ -261,3 +261,31 @@ def bond_ledger_fixture():
 
 
 from met.bond_monitor import run_bond_report  # noqa: E402
+
+
+# ---------------------------------------------------------------- review round B4
+def test_b4_preflight_before_entry_on_sifma_entry_day(benv):
+    cfg, clock, b, d, alerts, bx = benv(dt.datetime(2025, 9, 24, 8, 0), zn_fn=drift())
+    tm = bx.times(dt.date(2027, 3, 31))
+    assert tm["E"] == dt.date(2027, 3, 25) and tm["entry"].time() == dt.time(12, 50)     # Holy Thursday
+    assert tm["preflight"] < tm["entry"] and tm["preflight"].time() == dt.time(12, 22)
+    tm = bx.times(dt.date(2025, 9, 30))
+    assert tm["preflight"].time() == dt.time(15, 30)                                       # normal days unchanged
+
+
+def test_b4_announce_survives_gateway_restart_at_1630(benv):
+    cfg, clock, b, d, alerts, bx = benv(dt.datetime(2025, 9, 24, 8, 0), zn_fn=drift())
+    run(d, clock, dt.datetime(2025, 9, 24, 16, 29))
+    down_until = dt.datetime(2025, 9, 24, 16, 36, tzinfo=cal.ET)
+    orig = b.connect
+
+    def connect():
+        if clock.now() < down_until:
+            raise __import__("met.broker", fromlist=["BrokerError"]).BrokerError("gateway restarting")
+        orig()
+    b.connect = connect
+    b.disconnect_at = dt.datetime(2025, 9, 24, 16, 29, 30, tzinfo=cal.ET)
+    run(d, clock, dt.datetime(2025, 9, 24, 18, 0))
+    s = bst(cfg, dt.date(2025, 9, 30))
+    assert s.get("announced")
+    assert not any("not connected the evening before the bond entry" in t for t in lv(alerts, "CRITICAL"))

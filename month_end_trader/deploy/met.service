@@ -16,8 +16,8 @@ EnvironmentFile=-/etc/met.env
 ExecStart=/opt/month_end_trader/.venv/bin/python -m met.cli run --config /opt/month_end_trader/config.yaml
 Restart=always
 RestartSec=20
-# The daemon is restart-safe: state is on disk and every step is idempotent. `run` exits if IB is not
-# reachable at start (e.g. Gateway still logging in); Restart=always retries.
+# The daemon is restart-safe: state is on disk and every step is idempotent. It starts even while IB is
+# unreachable and keeps reconnecting (alerting); Restart=always covers crashes.
 # User 'met' must own /opt/month_end_trader/{state,logs,reports}.
 
 [Install]

@@ -20,7 +20,7 @@ services:
     build:
       context: ..
       dockerfile: deploy/Dockerfile
-    restart: always            # also covers the first minutes while the Gateway logs in
+    restart: always            # crash recovery (the daemon itself waits for and reconnects to the Gateway)
     depends_on: [ib-gateway]
     env_file: trader.env
     environment:

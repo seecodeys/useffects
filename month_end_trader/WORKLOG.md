@@ -60,6 +60,11 @@ Treasury bid, long ZN over the last 3 sessions). Backtest with IBKR costs: backt
       cap instead of counting 0 (ibkr: NaN), bond.instrument switch mid-hold keeps managing the open trade in its own
       instrument (plan.instrument; hourly alert; no new window), provisional vol in CLI checks (labelled), bond exec gap
       nets financing carry and only uses scheduled, non-adopted trades, daemon tick errors alerted at most every 15 min
+- [x] Review round B4 (leg-A regressions, deploy, process, alerts) fixed: bond preflight before the entry on SIFMA entry
+      days (Holy Thursday 2027-03-25 would have skipped the window), announce survives a Gateway restart (reconnects,
+      retries every 5 min, alerts after 15 min down); docs: Gateway restart 17:15 ET (inside the CBOT halt, Docker
+      05:15 PM), Sunday 2FA before 18:00 when ZN is held, Docker one-off containers for test-order/flatten/resolve,
+      CBOT data in setup, 15:30 preflight time, 31 Dec 12:50 exit, stale service comments. No leg-A regressions found
 - [ ] Paper-verify MTN: IB symbol/exchange (MTN @ CBOT), localSymbol, lastTradeDateOrContractMonth = termination day,
       liquidity at 15:55 ET (thin: consider a marketable limit instead of a market order)
 - [ ] Optional: bond.instrument 10Y (yield-quoted, SELL = long bonds, monthly, 2nd month over month-end) if the user prefers it
