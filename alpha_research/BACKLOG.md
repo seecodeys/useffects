@@ -328,3 +328,4 @@ is an opening-print artifact (015). New tests use prior-close information only.
 - [x] 366 SPDR shares-outstanding flows (agent) — dead.
 - [x] 368 Auction allotments by investor class (agent) — dead.
 - [x] 369 VX futures open interest (agent) — dead.
+- [x] 364 QRA window (agent) — dead.

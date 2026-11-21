@@ -1353,3 +1353,13 @@ End-investor allotments (total − SOMA − dealers; independent of 331's dealer
 Per-contract VX OI (2005+), lagged one day. Long VIXY 5d after OI z>+2 in contango −1.7 / −0.5; short SPY same signal
 −1.6 / +0.0; 'slow roll' front-month OI share → long VIXY +1.1 / never fires in valid (share fell after 2014);
 OI surge in backwardation → long SPY 1 event / 0. Dead (C/D effectively untestable as pre-specified).
+
+## 364 — Treasury Quarterly Refunding Announcement window (agent-run; results/agent_364.md)  ·  2026-11-21
+Real QRA dates from Treasury's public archive (84 statements 2002-22; 49 train / 32 valid TLT events). Long TLT Friday
+close → QRA Wednesday close +0.4 / −1.1; QRA Wednesday only −1.2 / −0.4; against the 10y size change 5 sessions
+−0.1 / +0.7; IEF version +0.5 / −1.2. ±4-week shifted controls explain the valid loss. Dead.
+
+## Agent round 4 summary (361-369)  ·  2026-11-21
+Settlement/funding mechanics (361-365) and four new free data sources (366-369: SPDR shares outstanding, FINRA margin
+debt, auction allotments by investor class, VX open interest). Nothing passed the gate. Data audit (363) confirmed the
+bond-bid estimates are unaffected by ETF ex-dates. Registry: 656.
