@@ -1114,3 +1114,8 @@ train t **+3.68** / valid +0.62 (+0.4bp/trade net); post-fix fade 09:55→11:00 
 non-gotobi control −1.6 / −2.2. Gotobi beat non-gotobi days by +2.4bp gross (t 4.0) in 2001-14 and +1.1bp (t 1.6) in
 2015-22, positive in 19/22 years — a real, well-known flow, but it halved after 2014 and the net edge is ~0 after costs.
 Weak — documented, not tradeable at retail costs. Registry: 470.
+
+## 331 — Treasury auction dealer takedown (agent-run; results/agent_331.md)  ·  2026-11-21
+Dealer share (primary-dealer / competitive accepted) vs the tenor's last 6 auctions; 10y→IEF, 30y→TLT; entry at the
+auction-day close, 1bp/side; ~70 events per period. A ±5pp, hold d+1..3 +0.2 / −1.1; B hold 5d −0.0 / −1.8;
+C bid-to-cover ±0.2 +0.9 / +0.7; D one-day-later entry +0.4 / −1.2. Dealer share wrong-signed in valid. Dead.
