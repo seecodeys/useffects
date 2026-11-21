@@ -97,9 +97,10 @@ class Broker(abc.ABC):
 
     @abc.abstractmethod
     def market_order(self, contract: FutureContract, action: str, qty: int, ref: str,
-                     timeout_s: float) -> OrderResult:
-        """Submit a DAY market order and wait up to timeout_s for a terminal state. Never raises for a
-        broker-side rejection: returns status Rejected instead."""
+                     timeout_s: float, limit_price: float | None = None) -> OrderResult:
+        """Submit a DAY market order (or, with limit_price, a marketable DAY limit order) and wait up to timeout_s
+        for a terminal state; unfilled remainder is cancelled. Never raises for a broker-side rejection: returns
+        status Rejected instead."""
 
     @abc.abstractmethod
     def daily_adjusted_closes(self, symbol: str, days: int = 120):

@@ -337,13 +337,16 @@ class IBKRBroker(Broker):
         return MarginCheck(vals[0] / fx, vals[1] / fx, vals[2] / fx)
 
     # ---------------------------------------------------------------- orders
-    def market_order(self, contract, action, qty, ref, timeout_s):
+    def market_order(self, contract, action, qty, ref, timeout_s, limit_price=None):
         """Never raises. Status: Filled | PartiallyFilled | Rejected | Timeout | Unknown.
         'Unknown' means the order may still be working at IB: the caller must reconcile with positions."""
-        from ib_async import MarketOrder
+        from ib_async import LimitOrder, MarketOrder
         if not self.is_connected():
             return OrderResult("", "Rejected", qty, 0, 0.0, "not connected")
-        o = MarketOrder(action, qty, account=self.cfg.ib.account, tif="DAY", orderRef=ref)
+        if limit_price is not None:
+            o = LimitOrder(action, qty, float(limit_price), account=self.cfg.ib.account, tif="DAY", orderRef=ref)
+        else:
+            o = MarketOrder(action, qty, account=self.cfg.ib.account, tif="DAY", orderRef=ref)
         try:
             trade = self.ib.placeOrder(contract.raw, o)
             end = time.monotonic() + timeout_s

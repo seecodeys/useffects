@@ -94,6 +94,7 @@ class FakeBroker(Broker):
         self.zn_commission = 1.70
         self.zn_local = ""
         self.zn_expiries = [_zn_last_trade(y, m) for y in range(1993, 2041) for m in (3, 6, 9, 12)]
+        self.limits = {}                  # orderRef -> limit price (None = market)
         self.zn_symbol = "ZN"             # the rates book holds one instrument: ZN or MTN (set by the first order)
 
     # ---------------------------------------------------------------- connection & time
@@ -284,8 +285,10 @@ class FakeBroker(Broker):
         return MarginCheck(init, nl, init * 0.9)
 
     # ---------------------------------------------------------------- orders
-    def market_order(self, contract, action, qty, ref, timeout_s):
+    def market_order(self, contract, action, qty, ref, timeout_s, limit_price=None):
         oid = str(next(self._ids))
+        self.last_limit_price = limit_price
+        self.limits[ref] = limit_price
         if contract.symbol in RATES:
             self._last_zn_local = contract.local_symbol
             if self.zn_pos == 0:
@@ -312,6 +315,14 @@ class FakeBroker(Broker):
             self.clock.advance(0.3)
             self.orders.append(dict(id=oid, ref=ref, action=action, qty=qty, filled=0, status="Pending", t=self.clock.now()))
             return OrderResult(oid, "Unknown" if visible else "Timeout", qty, 0, 0.0, "simulated: fills later")
+        if limit_price is not None and contract.symbol in RATES:
+            sgn = 1 if action == "BUY" else -1
+            would = self.zn_price_now() + sgn * self.zn_tick * self.slippage_ticks / 2
+            if (would - limit_price) * sgn > 1e-12:              # book moved through the limit: nothing fills
+                self.clock.advance(min(timeout_s, 30))
+                self.orders.append(dict(id=oid, ref=ref, action=action, qty=qty, filled=0, status="LimitUnfilled",
+                                        limit=limit_price, t=self.clock.now()))
+                return OrderResult(oid, "Timeout", qty, 0, 0.0, "simulated: limit not reached, cancelled")
         fill = qty if self.partial_next is None else min(self.partial_next, qty)
         self.partial_next = None
         px = self._apply_fill(action, fill, ref, contract.symbol)

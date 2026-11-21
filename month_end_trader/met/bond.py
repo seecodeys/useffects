@@ -281,6 +281,24 @@ class BondExecutor(Executor):
     def market_open(self, now: dt.datetime) -> bool:
         return rates_futures_open(now)
 
+    def use_limit(self) -> bool:
+        b = self.cfg.bond
+        return b.order_type == "limit" or (b.order_type == "auto" and b.instrument != "ZN")
+
+    def limit_price(self, c, action) -> float | None:
+        """Marketable limit for thin contracts: last price +/- limit_ticks x 1/32 (a valid increment for ZN and MTN),
+        rounded away from the market. No price -> market order (an exit must still go out)."""
+        if not self.use_limit():
+            return None
+        px = self._try_price(c)
+        if px is None:
+            return None
+        step = 1 / 32
+        import math
+        if action == "BUY":
+            return math.ceil((px + self.cfg.bond.limit_ticks * step) / step - 1e-9) * step
+        return math.floor((px - self.cfg.bond.limit_ticks * step) / step + 1e-9) * step
+
     def entry_date(self, st) -> dt.date:
         p = st.get("plan") or {}
         if p.get("entry_date"):

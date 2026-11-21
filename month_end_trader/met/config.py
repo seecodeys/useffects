@@ -82,6 +82,8 @@ class BondConfig:
     half_day_lead_s: int = 600       # on 1 pm closes enter/exit at 12:50 ET (CBOT rates halt at 13:00 ET)
     entry_grace_s: int = 90          # no entry later than entry time + this (and never in the last 20 s)
     fill_timeout_s: int = 30
+    order_type: str = "auto"         # market | limit | auto (limit for thin micros like MTN, market for ZN)
+    limit_ticks: int = 3             # marketable limit = last price +/- this many 1/32 steps; re-priced on every retry
     roll_buffer_days: int = 5        # contract's first notice day must be > exit date + this many business days
     sizing_rounding: str = "floor"
     max_leverage: float = 4.5        # ZN notional / net liq ceiling (2.8 x 1.14 = 3.19 at full size)
@@ -232,6 +234,10 @@ class Config:
             errs.append("bond.entry_grace_s must be in [0, entry_lead_s - 20]")
         if not (5 <= bd.fill_timeout_s <= 120):
             errs.append("bond.fill_timeout_s must be in [5, 120]")
+        if bd.order_type not in ("market", "limit", "auto"):
+            errs.append("bond.order_type must be market, limit or auto")
+        if not (1 <= bd.limit_ticks <= 20):
+            errs.append("bond.limit_ticks must be in [1, 20]")
         if not (2 <= bd.roll_buffer_days <= 15):       # >15 can skip to the thin second-deferred contract
             errs.append("bond.roll_buffer_days must be in [2, 15]")
         if not (bd.exit_lead_s <= bd.half_day_lead_s <= 1800):

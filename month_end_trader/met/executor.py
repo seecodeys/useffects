@@ -122,6 +122,17 @@ class Executor:
     def market_open(self, now: dt.datetime) -> bool:
         return futures_open(now)
 
+    def limit_price(self, c, action) -> float | None:
+        """None = market order (leg A always: MES is deep)."""
+        return None
+
+    def _send(self, c, action, qty, ref):
+        lp = self.limit_price(c, action)
+        if lp is not None:
+            log.info("%s %s %d limit %s", ref, action, qty, lp)
+            return self.broker.market_order(c, action, qty, ref=ref, timeout_s=self.fill_timeout_s, limit_price=lp)
+        return self.broker.market_order(c, action, qty, ref=ref, timeout_s=self.fill_timeout_s)
+
     def State(self, d) -> TradeState:
         return TradeState(self.cfg.monitoring.state_dir, str(d), prefix=self.STATE_PREFIX)
 
@@ -312,8 +323,7 @@ class Executor:
             return
         st.update(self.ts(), "ENTRY_SUBMITTED", note=f"{plan['action']} {plan['qty']}", fills={},
                   entry_submitted_at=self.ts())
-        r = self.broker.market_order(c, plan["action"], plan["qty"], ref=f"{self.REF}{trade_date}-entry",
-                                     timeout_s=self.fill_timeout_s)
+        r = self._send(c, plan["action"], plan["qty"], f"{self.REF}{trade_date}-entry")
         if r.fills:
             st.merge_fills(r.fills)
         st.update(self.ts(), note=f"entry order result {r.status} {r.filled}", entry_status=r.status)
@@ -546,8 +556,7 @@ class Executor:
         n = int(st.get("exit_orders", 0)) + 1
         st.update(self.ts(), "EXIT_SUBMITTED", note=f"{reason}: {action} {qty}", exit_reason=st.get("exit_reason") or reason,
                   exit_orders=n)
-        r = self.broker.market_order(c, action, qty, ref=f"{self.REF}{trade_date}-exit{n}",
-                                     timeout_s=self.fill_timeout_s)
+        r = self._send(c, action, qty, f"{self.REF}{trade_date}-exit{n}")
         if r.fills:
             st.merge_fills(r.fills)
             st.update(self.ts(), note=f"exit fills from order result: owns {st.owned:+d}")

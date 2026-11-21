@@ -417,3 +417,40 @@ def test_mtn_validation():
     c = Config(); c.ib.account = "DU1"; c.bond.instrument = "XYZ"
     with pytest.raises(ConfigError, match="bond.instrument"):
         c.validate()
+
+
+def test_mtn_uses_marketable_limits_and_reprices(benv):
+    """MTN (thin): every order is a limit 3/32 through the last price; a limit the market ran through is cancelled
+    and the next exit round is re-priced and fills."""
+    cfg, clock, b, d, alerts, bx = benv(dt.datetime(2025, 9, 24, 8, 0), zn_fn=drift(108.0), cash=3_000.0, core_shares=23)
+    cfg.bond.instrument = "MTN"; cfg.bond.hedge_ratio = 0.0; cfg.validate()
+    run(d, clock, dt.datetime(2025, 9, 30, 15, 54, 0))
+    buy = zn_orders(b)[0]
+    assert b.limits[buy["ref"]] is not None and buy["status"] == "Filled"
+    assert b.limits[buy["ref"]] > 108.0                           # BUY limit above the market
+    base = b.zn_price_fn
+    shift = {"v": 0.0, "first": True}
+    b.zn_price_fn = lambda now: base(now) + shift["v"]
+    orig = b.market_order
+
+    def mo(c, action, qty, ref, timeout_s, limit_price=None):
+        if c.symbol == "MTN" and action == "SELL":
+            assert limit_price is not None
+            if shift["first"]:                       # market gaps down after the limit was priced
+                shift["first"] = False
+                shift["v"] = -0.5
+        return orig(c, action, qty, ref, timeout_s, limit_price)
+    b.market_order = mo
+    run(d, clock, dt.datetime(2025, 9, 30, 15, 55, 1))
+    run(d, clock, dt.datetime(2025, 9, 30, 20, 0))
+    s = bst(cfg, dt.date(2025, 9, 30))
+    assert s.phase == "FLAT" and b.zn_pos == 0
+    sells = [o for o in zn_orders(b) if o["action"] == "SELL"]
+    assert sells[0]["status"] == "LimitUnfilled" and sells[-1]["status"] == "Filled"
+    assert b.limits[sells[-1]["ref"]] < b.limits[sells[0]["ref"]]          # re-priced lower
+
+
+def test_zn_auto_uses_market_orders(benv):
+    cfg, clock, b, d, alerts, bx = benv(dt.datetime(2025, 9, 25, 8, 0), zn_fn=drift())
+    run(d, clock, dt.datetime(2025, 9, 25, 17, 0))
+    assert zn_orders(b) and all(b.limits[o["ref"]] is None for o in zn_orders(b))
