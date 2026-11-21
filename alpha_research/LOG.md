@@ -1443,3 +1443,12 @@ week's move Monday 09:30→11:00 +1.5 / +0.8 (2011); SPY Friday fade / weekend f
 One event/year (deadline incl. 2020-07-15, 2021-05-17), calendar-known. Long SPY 10 sessions into the deadline vs
 exposure-matched −0.5 / +0.6; 15-session window vs same window in other months +1.0 / +0.6; VTI −0.2 / +0.6. A positive in
 10/23 years. Dead.
+
+## 383 — SPY dividend reinvestment (agent-run; results/agent_383.md)  ·  2026-11-21
+SPY pays on the last business day of Jan/Apr/Jul/Oct (prospectus); calendar-known. Long 3 sessions after payment
+(timing value) +0.4 / +0.2; vs other month starts −0.4 / −0.6 (wrong sign); payment day vs other month-ends −0.7 / −0.8;
+placebo month starts +0.6 / +0.5. Dead. (LOG 114 stays parked — needs index-wide payment dates.)
+
+## New-idea round (378-383)  ·  2026-11-21
+MSCI review windows (weak), target-date January reset, Friday de-risking, Social Security Wednesdays, IRA deadline,
+SPY dividend reinvestment — all dead/weak. Registry: 722.
