@@ -340,3 +340,4 @@ is an opening-print artifact (015). New tests use prior-close information only.
 - [x] 381 Social Security payment Wednesdays (agent) — dead.
 - [x] 379 Target-date January reset (agent) — dead.
 - [x] 378 MSCI review windows (agent) — weak (EFA post-review continuation, few events).
+- [x] 380 Friday de-risking (agent) — dead.

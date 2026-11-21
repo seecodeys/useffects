@@ -1433,3 +1433,8 @@ Last business day of Feb/May/Aug/Nov; spreads hedged vs SPY (rolling β), calend
 +0.1 / −1.7; EEM close D→D+2 May/Nov +1.4 / +1.8; EFA same +2.8 / +1.9 (16 valid events, 2020 = 58%); placebo on
 ordinary month-ends +1.3 / +0.2. MSCI-vs-ordinary month-end difference Welch t +0.7 / +1.6. Continuation, not reversal;
 weak. Fails gate.
+
+## 380 — Friday-afternoon de-risking / Monday re-risking (agent-run; results/agent_380.md)  ·  2026-11-21
+Clock-corrected SPX/NSX CFD + SPY daily 2000-22. Short every Friday 14:00→16:00 +1.0 / −2.7; fade a big week Friday
+afternoon −2.6 / −1.5 (the week's move continues into Friday's close, not reverses; Mon-Thu control ~0); follow last
+week's move Monday 09:30→11:00 +1.5 / +0.8 (2011); SPY Friday fade / weekend follow −1.2 / −0.2. Dead.
