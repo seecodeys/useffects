@@ -1216,3 +1216,18 @@ Monday after the Friday release, ~1 week. IEF 1w change +0.5 / +0.1; MBB on MBS 
 10 commodity ETFs ranked on prior-year return; long bottom 3 / short top 3, close of January BD4 → BD10, lag-1, 2bp/side.
 Main −1.6 / −0.1 (−150 / +19bp per event); Feb-Dec roll-window placebo −1.0 / +0.2; BD10→20 reversal +1.8 / +0.5
 (2009/2014-driven). January looks like the placebo months. Dead. (6 rows incl. 3 superseded by a short-January fix.)
+
+## 346 — London gold PM fix (agent-run; results/agent_346.md)  ·  2026-11-21
+XAUUSD 1-min (clock: NY local ≤2018, London−5h 2019+ — checked on DST-mismatch days), 1bp/side, ~1,500/2,060 events.
+Short 14:30→15:00 London +1.5 / −1.9; long 15:05→16:00 +0.4 / −2.0; combined +1.2 / −2.8; NY-clock placebo ~0.
+Real before the 2015 LBMA auction reform (pre-fix +3.0bp gross, t 4.6) but ~0.9bp gross since — below costs. Dead.
+
+## 347 — Norges Bank pre-announced NOK purchases (agent-run; results/agent_347.md)  ·  2026-11-21
+Monthly announced daily amounts 2000-2026 (mid-month revisions and Decembers excluded), lag-1, 2bp/side.
+EURNOK on ≥200m/day change +0.6 / +1.3 (20 valid trades, 2020-driven); USDNOK +0.2 / +1.3; sign of amount ~0;
+NORW−EFA −1.0 / +0.1. Dead.
+
+## 348 — Japan MOF weekly cross-border securities flows (agent-run; results/agent_348.md)  ·  2026-11-21
+MOF week.csv (revised history, 2005+), entered at the first US close after release, ~5-day hold, |z|>1.5.
+USDJPY +0.5 / +0.3; TLT −/+ ~0 / −0.6; EWJ −0.7 / −0.7; DXJ −0.7 / −1.2. Flows persist week to week but prices don't
+follow. Dead.

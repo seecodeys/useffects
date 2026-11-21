@@ -306,3 +306,6 @@ is an opening-print artifact (015). New tests use prior-close information only.
 - [x] 340 Dealer inventory → IEF (agent) — weak, mostly duration premium; fails gate.
 - [x] 345 Bank securities H.8 (agent) — dead.
 - [x] 349 Commodity index January reweight (agent) — dead.
+- [x] 346 London gold PM fix (agent) — real pre-2015, sub-cost since; dead.
+- [x] 347 Norges Bank NOK flows (agent) — dead.
+- [x] 348 Japan MOF weekly flows (agent) — dead.
