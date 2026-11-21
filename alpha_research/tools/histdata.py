@@ -1,8 +1,8 @@
 """Free 1-minute European index CFD bars from HistData.com (no signup).
 
 Symbols: GRXEUR (DAX), FRXEUR (CAC 40), ETXEUR (Euro Stoxx 50), UKXGBP (FTSE 100).
-Coverage ~2010 -> now. Timestamps are fixed EST (UTC-5, NO daylight saving), so
-9:30 New York time is 09:30 EST in winter but 08:30 in this file during US DST.
+Coverage ~2010 -> now. Timestamps are New York LOCAL time (DST-aware) — corrected 2026-11-21 after an agent found the clock issue
+(the site says 'EST without DST', but the data say otherwise; from ~2019 FX may be London-5h, i.e. ~3 weeks/yr differ).
 
 The site rate-limits: after ~5 downloads the token comes back empty, so we sleep
 between requests and cache every zip under data/histdata/. The current year is

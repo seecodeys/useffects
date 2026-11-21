@@ -23,7 +23,9 @@ EXP = "003_overnight_fx"
 def ny_minute_close(sym, years):
     cached = [y for y in years if os.path.exists(os.path.join(histdata.CACHE, f"{sym.upper()}_{y}.zip"))]
     df = pd.concat([histdata.load(sym, y) for y in (cached or years)])
-    df.index = df.index.tz_localize("Etc/GMT+5").tz_convert("America/New_York").tz_localize(None)
+    # FIX 2026-11-21: HistData timestamps are already New York LOCAL time (DST-aware) — verified from the Sunday FX open
+    # (17:00 in Jan and Jul) and US 08:30/10:00 data-release spikes at the same clock time in winter and summer. The old
+    # EST->NY conversion shifted every summer bar +1h (a 09:30 query read 08:30 data). No conversion is needed.
     return df["Close"].sort_index()
 
 

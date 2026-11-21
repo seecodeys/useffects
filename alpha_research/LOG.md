@@ -1119,3 +1119,27 @@ Weak — documented, not tradeable at retail costs. Registry: 470.
 Dealer share (primary-dealer / competitive accepted) vs the tenor's last 6 auctions; 10y→IEF, 30y→TLT; entry at the
 auction-day close, 1bp/side; ~70 events per period. A ±5pp, hold d+1..3 +0.2 / −1.1; B hold 5d −0.0 / −1.8;
 C bid-to-cover ±0.2 +0.9 / +0.7; D one-day-later entry +0.4 / −1.2. Dealer share wrong-signed in valid. Dead.
+
+## 330 — London 4pm WM/R fix pre-hedge reversal (agent-run; results/agent_330.md)  ·  2026-11-21
+USDJPY+AUDUSD pooled, 0.5bp/side: fade the 15:30→16:00 London run over 16:00→16:30, non-month-end −3.5 / −2.4;
+|run|>1σ −1.0 / +0.5; month-end only +2.0 / +0.9; 15-min version −3.4 / −1.2. Gross reversal +0.4-0.8bp/day, below
+the 1bp round trip. Dead. **The agent discovered a clock bug in the HistData pipeline (next entry).**
+
+## CORRECTION — HistData 1-minute timestamps are New York LOCAL time, not fixed EST  ·  2026-11-21
+Verified independently: the Sunday FX open is at 17:00 in both January and July, and the US 08:30/10:00 data-release
+volatility spikes sit at the same clock time in winter and summer (SPXUSD and USDJPY, 2012/2019/2022). The old
+`ny_minute_close` converted EST→New York, shifting every DST-season bar +1h, so from March to November a "09:30" query
+returned 08:30 data (and "16:00" returned 15:00). Fixed in experiments/003_overnight_fx.py and tools/histdata.py.
+(Agent 330 also reports FX ~2019+ may be London−5h, which differs from NY local only ~3 weeks a year.)
+Affected: 003, 005, 197, 287-297, 309, 311, 322 (329/330 handled time themselves). Daily-data results — including
+013 and the bond bid — are unaffected. Corrected reruns (registry rows tagged CLOCK-FIX; old rows SUPERSEDED):
+- 309 month-end delayed entry (SPX CFD): 09:30 +10.4bp (t 1.6) | 09:35 +8.9 | 09:45 +10.1 | 10:00 +10.1 (NSX +12.4 …
+  +11.8). Still not an opening-print artifact, but the CFD-measured month-end effect is smaller than reported (+10 vs +17bp).
+- 287/295 intraday profile: S&P 09:30-12:00 +4.1 (t 1.1), 12:00-15:00 +6.4 (1.8), 15:00-15:50 −1.4, 15:50-16:00 +1.4;
+  NSX similar. **The "front-loaded into the morning" conclusion is withdrawn** — the move is spread over the session.
+- 293 morning-only 2.7bp vs full session 9.4bp → hold the full session (conclusion unchanged).
+- 297 OPEX mid-session short: +1.2 / +0.7 (was +2.4 / +1.5); full-session CFD baseline +1.9 / +1.6. Weaker.
+- 311 weekly-expiry Fridays: still dead. 322 strike pinning: −/+ ~0 (no longer wrong-signed) — dead.
+- 288 sign(prev close→10:00) on 15:30→16:00: +0.3 / −6.0; 289 +0.5 / −1.9; **290 fade 09:30→15:30 on the last half hour:
+  −3.9 / −2.3, i.e. intraday MOMENTUM (continuation into the close) is strong in both periods on the correct clock.**
+  Followed up in 334. 291 FOMC fade ~0; 292 OPEX segments now front-loaded in the first hour (+8.5bp, t 2.4).
