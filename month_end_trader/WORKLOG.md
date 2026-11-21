@@ -72,6 +72,12 @@ Treasury bid, long ZN over the last 3 sessions). Backtest with IBKR costs: backt
 - [x] Backtests made bot-faithful (BOT_FAITHFUL switch: default caps held at today's notional, 6%/4% stops, bot
       leverages, 15:55/12:50 times; False reproduces the research run exactly): $100k 18.5% CAGR (Sharpe 0.90),
       $18k 21.2% (0.98); 9 leg-B stops, 0 leg-A stops (4 with raw SPY lows -> 17.9%)
+- [x] Review round B6 (external data robustness) fixed: a sources-disagree blocker can no longer be cleared by one source
+      dropping out (Yahoo 429) - all sources then required for the day; a missing/stale decay monitor (asof before the
+      last tracked month-end) trades at x0.5, never full size, on both legs; failed post-trade reports retried hourly
+      (6x); staleness keyed on the last completed month-end, not 40 days; Yahoo calls capped at 30 s total and cached
+      5 min per symbol; a source difference that cannot flip the sign (same direction, spread < min|gap|, <= 1%) trades
+      with a warning instead of skipping (e.g. one source missing a TLT dividend); price sanity check uses any source
 - [ ] Paper-verify MTN: IB symbol/exchange (MTN @ CBOT), localSymbol, lastTradeDateOrContractMonth = termination day,
       liquidity at 15:55 ET (thin: consider a marketable limit instead of a market order)
 - [ ] Optional: bond.instrument 10Y (yield-quoted, SELL = long bonds, monthly, 2nd month over month-end) if the user prefers it

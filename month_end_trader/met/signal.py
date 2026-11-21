@@ -78,6 +78,7 @@ def _as_date_index(s: pd.Series) -> pd.Series:
 
 
 # ----------------------------------------------------------------------------------------------- providers
+YAHOO_DEADLINE_S = 30       # total wall-clock budget per yahoo_daily call (the daemon is single-threaded)
 _YH = {"User-Agent": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0 Safari/537.36"}
 
 
@@ -86,9 +87,12 @@ def yahoo_daily(symbol: str, days: int = 120, session=None) -> pd.DataFrame:
     sess = session or requests
     end = int(time.time()); start = end - days * 86400
     last_err = None
+    t0 = time.monotonic()
     for attempt in range(4):
+        if time.monotonic() - t0 > YAHOO_DEADLINE_S:                   # never block the daemon loop for long
+            break
         try:
-            r = sess.get(f"https://query1.finance.yahoo.com/v8/finance/chart/{symbol}", headers=_YH, timeout=20,
+            r = sess.get(f"https://query1.finance.yahoo.com/v8/finance/chart/{symbol}", headers=_YH, timeout=12,
                          params={"period1": start, "period2": end, "interval": "1d", "events": "div,split"})
             if r.status_code == 200:
                 res = r.json()["chart"]["result"][0]
@@ -137,9 +141,14 @@ def signals_from_sources(trade_date: dt.date, fetchers: dict, equity: str, bond:
     if len(sigs) > 1:
         spread = max(s.gap for s in sigs) - min(s.gap for s in sigs)
         if spread > max_gap_diff:
-            return None, problems + ["signal sources differ by %.3f%% in gap (> %.3f%%): data error? " % (
-                100 * spread, 100 * max_gap_diff) + ", ".join(
-                f"{s.source}: {s.equity_mtd:+.4%}/{s.bond_mtd:+.4%}" for s in sigs)], sigs
+            detail = ("signal sources differ by %.3f%% in gap (> %.3f%%): data error? " % (100 * spread, 100 * max_gap_diff)
+                      + ", ".join(f"{s.source}: {s.equity_mtd:+.4%}/{s.bond_mtd:+.4%}" for s in sigs))
+            same_dir = len({s.direction for s in sigs}) == 1
+            # e.g. one source missing a ~0.3% TLT dividend: harmless unless the spread could flip the sign
+            if same_dir and min(abs(s.gap) for s in sigs) > spread and spread <= 0.01:
+                problems.append(detail + " -> same direction and the difference cannot flip it: trading")
+            else:
+                return None, problems + [detail], sigs
     dirs = {s.direction for s in sigs}
     if len(dirs) > 1:
         msg = "signal sources disagree: " + ", ".join(f"{s.source}={s.side} gap={s.gap:+.4%}" for s in sigs)

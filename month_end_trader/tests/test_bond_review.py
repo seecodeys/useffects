@@ -289,3 +289,96 @@ def test_b4_announce_survives_gateway_restart_at_1630(benv):
     s = bst(cfg, dt.date(2025, 9, 30))
     assert s.get("announced")
     assert not any("not connected the evening before the bond entry" in t for t in lv(alerts, "CRITICAL"))
+
+
+# ---------------------------------------------------------------- review round B6 (data robustness)
+from conftest import run_until  # noqa: E402
+from met.signal import DataError  # noqa: E402
+
+
+def _yahoo_with(b, tlt_factor, fail_after=None):
+    n = {"calls": 0}
+
+    def yahoo(sym):
+        n["calls"] += 1
+        if fail_after is not None and n["calls"] > fail_after:
+            raise DataError(f"yahoo {sym}: HTTP 429")
+        s = b.daily_adjusted_closes(sym).copy()
+        if sym == "TLT":
+            s[s.index <= dt.date(2025, 9, 1)] *= tlt_factor
+        return s
+    return yahoo
+
+
+def test_b6_disagreement_not_cleared_by_a_429(env):
+    """Sources disagree badly (5% TLT error), then Yahoo rate-limits: the bot must not trade on IBKR alone."""
+    cfg, clock, b, ex, alerts = env(dt.datetime(2025, 9, 30, 9, 0))
+    ex.fetchers["yahoo"] = _yahoo_with(b, 0.95, fail_after=6)
+    run_until(ex, clock, dt.datetime(2025, 9, 30, 9, 35))
+    s = TradeState(cfg.monitoring.state_dir, "2025-09-30")
+    assert s.phase == "SKIPPED" and s.get("required_sources") == ["ibkr", "yahoo"]
+    assert not [o for o in b.orders if o["ref"].startswith("MET-")]
+
+
+def test_b6_missing_dividend_same_direction_trades_with_warning(env):
+    """One source missing a ~0.35% TLT dividend while the gap is far larger: trade, with a warning."""
+    cfg, clock, b, ex, alerts = env(dt.datetime(2025, 9, 30, 9, 0))
+    b.connect()
+    gap = abs(__import__("met.signal", fromlist=["compute_signal"]).compute_signal(
+        dt.date(2025, 9, 30), b.daily_adjusted_closes("SPY"), b.daily_adjusted_closes("TLT")).gap)
+    ex.fetchers["yahoo"] = _yahoo_with(b, 1 - 0.0035)
+    run_until(ex, clock, dt.datetime(2025, 9, 30, 9, 35))
+    s = TradeState(cfg.monitoring.state_dir, "2025-09-30")
+    if gap > 0.004:
+        assert s.phase == "ENTERED" and any("cannot flip" in w for w in s.get("warnings"))
+    else:
+        assert s.phase == "SKIPPED"
+
+
+def test_b6_missing_or_stale_monitor_means_reduced_size(tmp_path):
+    from met.config import Config
+    from met.guardrails import read_derisk
+    from met.bond import read_bond_derisk
+    cfg = Config(); cfg.ib.account = "DU1"; cfg.monitoring.state_dir = str(tmp_path); cfg.monitoring.start = "2026-11"
+    T = dt.date(2026, 12, 31)                       # 30 Nov 2026 (tracked) has completed
+    assert read_derisk(cfg, T)[0] == 0.5 and read_bond_derisk(cfg, T)[0] == 0.5
+    assert read_derisk(cfg, dt.date(2026, 11, 30))[0] == 1.0       # first tracked trade: nothing to be stale yet
+    (tmp_path / "monitor.json").write_text(json.dumps({"asof": "2026-11-27", "size_multiplier": 1.0}))
+    assert read_derisk(cfg, T)[0] == 0.5                               # before the 30 Nov trade
+    (tmp_path / "monitor.json").write_text(json.dumps({"asof": "2026-11-30", "size_multiplier": 1.0}))
+    assert read_derisk(cfg, T)[0] == 1.0
+    (tmp_path / "monitor.json").write_text(json.dumps({"asof": "2026-11-27", "size_multiplier": 0.0}))
+    assert read_derisk(cfg, T)[0] == 0.0                               # a stop signal is never relaxed
+
+
+def test_b6_failed_report_is_retried(env):
+    cfg, clock, b, ex, alerts = env(dt.datetime(2025, 9, 30, 8, 0))
+    calls = []
+
+    def rep(d):
+        calls.append(clock.now())
+        if len(calls) < 3:
+            raise DataError("yahoo: HTTP 429")
+        return {"status": "ok", "summary": ""}
+    ex.reporter = rep
+    run_until(ex, clock, dt.datetime(2025, 9, 30, 23, 0))
+    s = TradeState(cfg.monitoring.state_dir, "2025-09-30")
+    assert s.get("reported") and len([c for c in calls if c.date() == dt.date(2025, 9, 30) and c.hour >= 18]) == 3
+
+
+def test_b6_yahoo_cache_and_deadline(monkeypatch):
+    import time
+    from met import signal as sg
+    from met.cli import make_fetchers
+    from met.config import Config
+    n = {"get": 0}
+
+    class R:
+        status_code = 429
+    monkeypatch.setattr(sg.requests, "get", lambda *a, **k: (n.__setitem__("get", n["get"] + 1), R())[1])
+    monkeypatch.setattr(sg.time, "sleep", lambda s: None)
+    t = [0.0]
+    monkeypatch.setattr(sg.time, "monotonic", lambda: (t.__setitem__(0, t[0] + 20), t[0])[1])
+    with pytest.raises(DataError):
+        sg.yahoo_daily("SPY")
+    assert n["get"] <= 2                                               # 30 s budget, not 4 attempts x 20 s

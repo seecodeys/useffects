@@ -160,12 +160,23 @@ def state_instrument(st) -> str:
     return m.group(1) if m else ""
 
 
-def read_bond_derisk(cfg: Config) -> tuple[float | None, str]:
+def read_bond_derisk(cfg: Config, X: dt.date | None = None) -> tuple[float | None, str]:
+    from .guardrails import monitor_freshness
     p = Path(cfg.monitoring.state_dir) / "bond_monitor.json"
     if not cfg.bond.auto_derisk:
         return 1.0, "auto_derisk off"
+    fresh = monitor_freshness(p, cfg.monitoring.start, X, "bond decay monitor",
+                              last_done=cal.prior_month_last_session(X) if X else None)
     if not p.exists():
-        return 1.0, "no bond monitor data yet"
+        return fresh or (1.0, "no bond monitor data yet")
+    if fresh:
+        try:
+            v = float(json.loads(p.read_text()).get("size_multiplier", 1.0))
+            if v == v and v < fresh[0]:
+                return max(v, 0.0), json.loads(p.read_text()).get("status", "")
+        except Exception as e:
+            return None, f"bond_monitor.json unreadable: {e}"
+        return fresh
     try:
         m = json.loads(p.read_text())
         v = float(m.get("size_multiplier", 1.0))
@@ -207,7 +218,7 @@ def bond_preflight(cfg: Config, broker: Broker, X: dt.date, today: dt.date | Non
         blockers.append(f"existing {b.instrument} positions before entry: " +
                         ", ".join(f"{p.local_symbol} {p.quantity:+g}" for p in open_zn))
 
-    derisk, note = read_bond_derisk(cfg)
+    derisk, note = read_bond_derisk(cfg, None if check_only else X)
     if derisk is None:
         blockers.append(f"bond decay monitor state unreadable ({note}); run `met bond-report`")
         derisk = 0.0
@@ -471,7 +482,9 @@ class BondExecutor(Executor):
         stale = True
         try:
             asof = dt.date.fromisoformat(json.loads(p.read_text())["asof"])
-            stale = (self.broker.now().date() - asof).days > 40
+            today = self.broker.now().date()
+            _, X = window_for(today, self.cfg.bond.hold_sessions)
+            stale = (today - asof).days > 40 or asof < cal.prior_month_last_session(X)
         except Exception:
             pass
         if stale:
@@ -683,14 +696,14 @@ class BondExecutor(Executor):
         if today == E and now >= tm["entry_reconcile"] and self.broker.is_connected() and st.phase in ("FLAT", "ERROR"):
             self.evening_watch(X, st, now)                           # late entry fill until midnight
         if today == X:
-            if now >= tm["report"] and not st.get("reported") and self.reporter and st.phase in ("FLAT", "SKIPPED", "ERROR"):
+            if now >= tm["report"] and not st.get("reported") and self.reporter and st.phase in ("FLAT", "SKIPPED", "ERROR") \
+                    and self._report_due(st, now):
                 try:
                     res = self.reporter(X)
                     st.update(self.ts(), note="bond report done", reported=True)
                     if res:
                         self.alert.info(f"bond decay monitor after {X}: {res.get('status')}", res.get("summary", ""))
                 except Exception as e:
-                    self.alert.warn(f"bond decay report failed: {e!r}")
-                    st.update(self.ts(), note=f"report failed {e!r}", reported=True)
+                    self._report_failed(st, now, e, "bond decay report")
             elif now < tm["report"]:
                 nxt.append(tm["report"])

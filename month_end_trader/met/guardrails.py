@@ -131,25 +131,56 @@ def total_leverage_blocker(cfg: Config, broker, exclude_symbol: str, new_notiona
     return None
 
 
-def read_derisk(cfg: Config) -> tuple[float | None, str]:
+STALE_MONITOR_SCALE = 0.5   # size multiplier while the decay monitor is missing/stale after live tracking began
+
+
+def last_completed_month_end(trade_date: dt.date) -> dt.date:
+    return cal.prior_month_last_session(trade_date)
+
+
+def monitor_freshness(path: Path, start_month: str, trade_date: dt.date | None, label: str,
+                      last_done: dt.date | None = None) -> tuple[float | None, str] | None:
+    """None = fine to use the file's multiplier. Otherwise (multiplier, note) for a missing/stale monitor once a
+    tracked trade should already be in it: STALE_MONITOR_SCALE, never full size (e.g. Yahoo blocked for months)."""
+    if trade_date is None:
+        return None
+    last_done = last_done or last_completed_month_end(trade_date)
+    if last_done < dt.date.fromisoformat(start_month + "-01"):
+        return None                                       # nothing tracked has completed yet
+    asof = None
+    try:
+        asof = dt.date.fromisoformat(json.loads(path.read_text())["asof"])
+    except Exception:
+        pass
+    if asof is None or asof < last_done:
+        why = "missing" if asof is None else f"as of {asof}, before the {last_done} trade"
+        return STALE_MONITOR_SCALE, f"{label} {why} (Yahoo down?): size x{STALE_MONITOR_SCALE:g} until it is refreshed"
+    return None
+
+
+def read_derisk(cfg: Config, trade_date: dt.date | None = None) -> tuple[float | None, str]:
     """(multiplier in [0, 1], note). None = unreadable -> preflight blocks (fail closed)."""
     p = Path(cfg.monitoring.state_dir) / "monitor.json"
     if not cfg.guardrails.auto_derisk:
         return 1.0, "auto_derisk off"
+    fresh = monitor_freshness(p, cfg.monitoring.start, trade_date, "decay monitor")
     if not p.exists():
-        return 1.0, "no monitor data yet"
+        return fresh or (1.0, "no monitor data yet")
     try:
         m = json.loads(p.read_text())
         v = float(m.get("size_multiplier", 1.0))
         if not (v == v):
             return None, "monitor.json size_multiplier is NaN"
-        return min(max(v, 0.0), 1.0), m.get("status", "")
+        v = min(max(v, 0.0), 1.0)
+        if fresh and v > fresh[0]:
+            return fresh
+        return v, m.get("status", "")
     except Exception as e:
         return None, f"monitor.json unreadable: {e}"
 
 
 def preflight(cfg: Config, broker: Broker, trade_date: dt.date, fetchers: dict,
-              provisional: bool = False) -> tuple[Plan | None, list, list]:
+              provisional: bool = False, strict_sources: bool = False) -> tuple[Plan | None, list, list]:
     """Returns (plan, blockers, warnings). plan is None iff blockers is non-empty."""
     blockers, warnings = [], []
     g, s = cfg.guardrails, cfg.strategy
@@ -192,7 +223,7 @@ def preflight(cfg: Config, broker: Broker, trade_date: dt.date, fetchers: dict,
 
     sig, sig_problems, all_sigs = signals_from_sources(trade_date, fetchers, cfg.signal.equity, cfg.signal.bond,
                                                        cfg.signal.require_agreement, cfg.signal.max_source_gap_diff,
-                                                       len(fetchers) if cfg.signal.require_all_sources else 1,
+                                                       len(fetchers) if (cfg.signal.require_all_sources or strict_sources) else 1,
                                                        provisional=provisional)
     if sig is None:
         blockers.extend(sig_problems)
@@ -203,7 +234,7 @@ def preflight(cfg: Config, broker: Broker, trade_date: dt.date, fetchers: dict,
         if abs(sig.gap) < cfg.strategy.min_abs_gap:
             blockers.append(f"|gap| {abs(sig.gap):.3%} below min_abs_gap {cfg.strategy.min_abs_gap:.3%}")
 
-    derisk, derisk_note = read_derisk(cfg)
+    derisk, derisk_note = read_derisk(cfg, None if provisional else trade_date)
     if derisk is None:
         blockers.append(f"decay monitor state unreadable ({derisk_note}); run `met report`")
         derisk = 0.0
@@ -231,7 +262,14 @@ def preflight(cfg: Config, broker: Broker, trade_date: dt.date, fetchers: dict,
 
     # sanity: futures price should be ~10x SPY (S&P 500 vs SPY ratio ~ 10, plus basis)
     try:
-        spy = fetchers[next(iter(fetchers))](cfg.signal.equity)
+        spy, errs = None, []
+        for name, fetch in fetchers.items():              # any source will do for a sanity check
+            try:
+                spy = fetch(cfg.signal.equity); break
+            except Exception as ex:
+                errs.append(f"{name}: {ex}")
+        if spy is None:
+            raise RuntimeError("; ".join(errs) or "no source")
         ratio = price / float(spy.iloc[-1])
         if not (9.0 <= ratio <= 11.5):
             blockers.append(f"futures price {price} vs {cfg.signal.equity} close {float(spy.iloc[-1]):.2f}: ratio {ratio:.2f} implausible")

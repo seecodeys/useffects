@@ -47,9 +47,20 @@ def setup_logging(log_dir: str, verbose=False):
 
 def make_fetchers(cfg, broker, now_fn):
     f = {}
+    cache = {}
+
+    def yahoo(sym):
+        """Cached 5 min per symbol: preflight retries and both legs must not hammer Yahoo into a 429."""
+        now = now_fn()
+        hit = cache.get(sym)
+        if hit and (now - hit[0]).total_seconds() < 300:
+            return hit[1]
+        s = drop_partial_today(yahoo_daily(sym, days=120), now)["adjclose"]
+        cache[sym] = (now, s)
+        return s
     for src in cfg.signal.sources:
         if src == "yahoo":
-            f["yahoo"] = lambda sym: drop_partial_today(yahoo_daily(sym, days=120), now_fn())["adjclose"]
+            f["yahoo"] = yahoo
         elif src == "ibkr" and broker is not None:
             f["ibkr"] = lambda sym: broker.daily_adjusted_closes(sym, days=120)
     return f

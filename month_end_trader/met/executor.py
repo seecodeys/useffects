@@ -253,6 +253,24 @@ class Executor:
                         body + ("\n" + "\n".join(problems) if problems else ""))
         st.update(self.ts(), note="announced", announced=True, announced_signal=sig.to_dict())
 
+    REPORT_RETRIES = 6          # failed post-trade reports: retried hourly (Yahoo rate limits), then given up
+
+    def _report_due(self, st, now) -> bool:
+        ra = st.get("report_retry_at")
+        return not ra or now >= dt.datetime.fromisoformat(ra)
+
+    def _report_failed(self, st, now, e, what):
+        n = int(st.get("report_failures", 0)) + 1
+        if n >= self.REPORT_RETRIES:
+            st.update(self.ts(), note=f"{what} failed {n}x, giving up: {e!r}", reported=True, report_failures=n)
+            self.alert.warn(f"{what} failed {n} times; the next preflight uses a reduced size until it is refreshed",
+                            repr(e))
+        else:
+            st.update(self.ts(), note=f"{what} failed {e!r}; retry in 1 h", report_failures=n,
+                      report_retry_at=(now + dt.timedelta(hours=1)).isoformat())
+            if n == 1:
+                self.alert.warn(f"{what} failed: {e!r}", "retrying hourly")
+
     def _refresh_monitor_if_stale(self):
         if not (self.reporter and self.cfg.guardrails.auto_derisk):
             return
@@ -261,7 +279,9 @@ class Executor:
         try:
             import json
             asof = dt.date.fromisoformat(json.loads(mp.read_text())["asof"])
-            stale = (self.broker.now().date() - asof).days > 40
+            today = self.broker.now().date()
+            from .guardrails import last_completed_month_end
+            stale = (today - asof).days > 40 or asof < last_completed_month_end(cal.next_trade_date(today))
         except Exception:
             pass
         if stale:
@@ -273,7 +293,13 @@ class Executor:
     def do_preflight(self, trade_date: dt.date, st: TradeState):
         older = [d for d in self.unfinished() if d < str(trade_date)]
         try:
-            plan, blockers, warnings = preflight(self.cfg, self.broker, trade_date, self.fetchers)
+            req = st.get("required_sources")
+            fx = {k: v for k, v in self.fetchers.items() if k in req} if req else self.fetchers
+            plan, blockers, warnings = preflight(self.cfg, self.broker, trade_date, fx, strict_sources=bool(req))
+            if not req and any("signal sources differ" in b or "signal sources disagree" in b for b in blockers):
+                # a data disagreement must not be 'resolved' by one source dropping out (e.g. Yahoo 429) on a retry
+                st.update(self.ts(), note="sources disagreed: all of them now required today",
+                          required_sources=sorted(self.fetchers))
         except Exception as e:
             plan, blockers, warnings = None, [f"preflight crashed: {e!r}"], []
             log.error(traceback.format_exc())
@@ -867,15 +893,14 @@ class Executor:
                 nxt.append(tm["reconcile"])
             if st.phase not in ("FLAT", "SKIPPED", None, "PLANNED") and now >= tm["reconcile"]:
                 nxt.append(now + dt.timedelta(seconds=15))
-            if now >= tm["report"] and not st.get("reported") and self.reporter:
+            if now >= tm["report"] and not st.get("reported") and self.reporter and self._report_due(st, now):
                 try:
                     res = self.reporter(T)
                     st.update(self.ts(), note="report done", reported=True)
                     if res:
                         self.alert.info(f"Decay monitor after {T}: {res.get('status')}", res.get("summary", ""))
                 except Exception as e:
-                    self.alert.warn(f"decay report failed: {e!r}")
-                    st.update(self.ts(), note=f"report failed {e!r}", reported=True)
+                    self._report_failed(st, now, e, "decay report")
             elif now < tm["report"]:
                 nxt.append(tm["report"])
 

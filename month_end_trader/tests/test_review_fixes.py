@@ -134,6 +134,11 @@ def test_source_gap_tolerance(data):
     f = {"ibkr": lambda s: spy["adjclose"] if s == "SPY" else tlt["adjclose"],
          "yahoo": lambda s: spy["adjclose"] if s == "SPY" else off}
     sig, problems, _ = signals_from_sources(d, f, "SPY", "TLT", True, 0.0015)
+    # review B6: same direction and the 30bp difference cannot flip a -4.3% gap -> trade, with the data warning
+    assert sig is not None and any("data error" in p and "cannot flip" in p for p in problems)
+    big = tlt["adjclose"].copy(); big.loc[dt.date(2026, 10, 29)] *= 1.02       # 2% apart: implausible -> blocked
+    f["yahoo"] = lambda s: spy["adjclose"] if s == "SPY" else big
+    sig, problems, _ = signals_from_sources(d, f, "SPY", "TLT", True, 0.0015)
     assert sig is None and any("data error" in p for p in problems)
 
 
