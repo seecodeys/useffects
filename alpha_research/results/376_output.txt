@@ -1,0 +1,32 @@
+/home/user/useffects/alpha_research/experiments/376_hybrid_monthend_resid.py:44: Pandas4Warning: Sorting by default when concatenating all DatetimeIndex is deprecated.  In the future, pandas will respect the default of `sort=False`. Specify `sort=True` or `sort=False` to silence this message. If you see this warnings when not directly calling concat, report a bug to pandas.
+  R = pd.concat({s: d.cc for s, d in px.items()}, axis=1)
+CWB betas at entries (<=2022): bs mean 0.72 [0.52,0.97], bb mean 0.17 [-0.25,0.98]
+PFF betas at entries (<=2022): bs mean 0.48 [0.14,1.55], bb mean 0.31 [-0.53,1.16]
+
+V1 CWB-bs*SPY-bb*IEF W3
+  registry: train_sharpe=+0.40  train_t=+0.87  valid_sharpe=-0.20  valid_t=-0.56  valid_bp_per_trade=-0.21  valid_traded_%=+100.00
+  train: 2010-04-27..  events 57  t +0.87  Sh +0.40  gross +13.9 / net +7.0 bp/event | timing value vs always-on t +1.06, +8.0 bp/event
+  valid: 2015-01-02..  events 95  t -0.56  Sh -0.20  gross +3.7 / net -4.5 bp/event | timing value vs always-on t -0.43, -3.3 bp/event
+
+V2 PFF-bs*SPY-bb*IEF W3
+  registry: train_sharpe=+0.62  train_t=+1.60  valid_sharpe=+0.20  valid_t=+0.56  valid_bp_per_trade=+0.21  valid_traded_%=+100.00
+  train: 2008-04-25..  events 81  t +1.60  Sh +0.62  gross +38.2 / net +30.4 bp/event | timing value vs always-on t +1.53, +28.7 bp/event
+  valid: 2015-01-02..  events 95  t +0.56  Sh +0.20  gross +11.6 / net +4.4 bp/event | timing value vs always-on t +1.26, +9.7 bp/event
+/home/user/useffects/alpha_research/experiments/376_hybrid_monthend_resid.py:125: Pandas4Warning: Sorting by default when concatenating all DatetimeIndex is deprecated.  In the future, pandas will respect the default of `sort=False`. Specify `sort=True` or `sort=False` to silence this message. If you see this warnings when not directly calling concat, report a bug to pandas.
+  W3c = pd.concat([0.5 * W1.add_suffix("_c"), 0.5 * W2.add_suffix("_p")], axis=1).fillna(0)
+/home/user/useffects/alpha_research/experiments/376_hybrid_monthend_resid.py:126: Pandas4Warning: Sorting by default when concatenating all DatetimeIndex is deprecated.  In the future, pandas will respect the default of `sort=False`. Specify `sort=True` or `sort=False` to silence this message. If you see this warnings when not directly calling concat, report a bug to pandas.
+  R3c = pd.concat([R1.add_suffix("_c"), R2.add_suffix("_p")], axis=1)
+
+V3 pooled 0.5 resid CWB + 0.5 resid PFF W3
+  registry: train_sharpe=+0.67  train_t=+1.73  valid_sharpe=-0.00  valid_t=-0.01  valid_bp_per_trade=-0.00  valid_traded_%=+100.00
+  train: 2008-04-25..  events 81  t +1.73  Sh +0.67  gross +24.0 / net +17.7 bp/event | timing value vs always-on t +1.79, +18.1 bp/event
+  valid: 2015-01-02..  events 95  t -0.01  Sh -0.00  gross +7.6 / net -0.1 bp/event | timing value vs always-on t +0.51, +3.2 bp/event
+
+V4 raw 0.5 CWB + 0.5 PFF W3
+  registry: train_sharpe=+0.97  train_t=+2.31  valid_sharpe=+0.40  valid_t=+1.12  valid_bp_per_trade=+0.57  valid_traded_%=+100.00
+  train: 2009-04-27..  events 69  t +2.31  Sh +0.97  gross +29.2 / net +25.2 bp/event | timing value vs always-on t +0.81, +8.4 bp/event
+  valid: 2015-01-02..  events 95  t +1.12  Sh +0.40  gross +16.1 / net +12.1 bp/event | timing value vs always-on t +0.46, +4.8 bp/event
+
+Permutation control (gross residual, random 3-session window in same month):
+  perm CWB train: W3 resid +13.9 bp/mo vs random-window mean -3.0 (sd 6.7), one-sided p 0.004, n months 57
+  perm CWB valid: W3 resid +3.9 bp/mo vs random-window mean -1.5 (sd 8.2), one-sided p 0.262, n months 95

@@ -1405,3 +1405,9 @@ as the ETFs → a cheap, leverageable implementation of finding 2 (gate not met 
 Mechanism refinements of finding 2: STRIPS share the bid per unit duration (371: it's a Treasury-curve move);
 outside the US/Canada it's weak (372); futures implement it equivalently (375). Fallen angels (373) and equal-weight
 resets (374) — weak/dead. Registry: 689.
+
+## 377 — TIPS-specific month-end extension (idea E4; agent-run, results/agent_377.md)  ·  2026-11-21
+TIPS flagged via fiscaldata inflation_index_security=Yes. Long breakeven (8×ΔT10YIE) last 3 sessions −0.2 / −0.3;
+TIPS-settle months only +0.4 / −0.3; TIP−0.726·IEF TIPS months +0.8 / +0.8; all months +1.4 / +0.8. No supply effect;
+since 2015 a TIPS issue settles every month (flag untestable in valid). TIP's month-end bid (280) is the nominal Treasury
+bid — ~0 left after an IEF hedge. Dead.
