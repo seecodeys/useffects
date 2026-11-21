@@ -1438,3 +1438,8 @@ weak. Fails gate.
 Clock-corrected SPX/NSX CFD + SPY daily 2000-22. Short every Friday 14:00→16:00 +1.0 / −2.7; fade a big week Friday
 afternoon −2.6 / −1.5 (the week's move continues into Friday's close, not reverses; Mon-Thu control ~0); follow last
 week's move Monday 09:30→11:00 +1.5 / +0.8 (2011); SPY Friday fade / weekend follow −1.2 / −0.2. Dead.
+
+## 382 — IRA/HSA contribution-deadline flows (agent-run; results/agent_382.md)  ·  2026-11-21
+One event/year (deadline incl. 2020-07-15, 2021-05-17), calendar-known. Long SPY 10 sessions into the deadline vs
+exposure-matched −0.5 / +0.6; 15-session window vs same window in other months +1.0 / +0.6; VTI −0.2 / +0.6. A positive in
+10/23 years. Dead.

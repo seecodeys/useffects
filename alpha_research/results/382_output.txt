@@ -1,0 +1,31 @@
+382A long SPY 10 sessions into IRA deadline (timing value)     train_sharpe=-0.14  train_t=-0.52  valid_sharpe=+0.22  valid_t=+0.62  valid_bp_per_trade=+0.23  valid_traded_%=+100.00 gate=False events={'train': 15, 'valid': 8} net_bp/event(train,valid)=-50.8,+57.4
+382B SPY deadline pre10+post5 vs same window other months      train_sharpe=+0.25  train_t=+0.98  valid_sharpe=+0.22  valid_t=+0.61  valid_bp_per_trade=+0.30  valid_traded_%=+100.00 gate=False events={'train': 15, 'valid': 8} net_bp/event(train,valid)=+128.4,+75.0
+382C long VTI 10 sessions into IRA deadline (timing value)     train_sharpe=-0.07  train_t=-0.24  valid_sharpe=+0.20  valid_t=+0.56  valid_bp_per_trade=+0.21  valid_traded_%=+100.00 gate=False events={'train': 13, 'valid': 8} net_bp/event(train,valid)=-21.3,+53.0
+
+per-year (bp, <=2022): raw SPY pre10 | raw SPY post5 | A timing value | B spread | C VTI timing value
+2000:   -691 |   +526 |  -662 |   -81 |    +0
+2001:    +98 |   +399 |  +138 |  +727 |   +13
+2002:   -350 |    +43 |  -268 |  -148 |  -202
+2003:   +432 |   +269 |  +327 |  +573 |  +272
+2004:    -11 |   +116 |   -54 |  +140 |   -55
+2005:   -280 |   +127 |  -302 |  -190 |  -313
+2006:    -89 |   +175 |  -151 |   +23 |  -161
+2007:   +342 |    +70 |  +316 |  +364 |  +295
+2008:   -247 |   +351 |  -100 |  +495 |   -77
+2009:   +716 |    -71 |  +608 |  +427 |  +641
+2010:   +362 |    -20 |  +299 |  +214 |  +334
+2011:   -204 |   +320 |  -223 |  +198 |  -235
+2012:   -191 |   -127 |  -254 |  -444 |  -264
+2013:    -55 |    +70 |  -170 |  -186 |  -206
+2014:   -212 |   +176 |  -266 |  -186 |  -320
+2015:   +193 |    +11 |  +182 |  +195 |  +192
+2016:   +147 |    -30 |   +98 |   +66 |  +114
+2017:    -61 |   +199 |  -141 |   +35 |  -135
+2018:   +361 |   -269 |  +373 |  +205 |  +378
+2019:   +144 |   +100 |   +32 |   +19 |   +37
+2020:   +433 |   +155 |  +343 |  +623 |  +328
+2021:    -58 |    +89 |  -163 |  -185 |  -200
+2022:   -331 |   -212 |  -264 |  -357 |  -291
+train: mean SPY cc pre10 -2.53bp/day, post5 +32.30bp/day, all +2.45bp/day
+valid: mean SPY cc pre10 +10.34bp/day, post5 +1.09bp/day, all +4.50bp/day
+registry size: 3  luck t ~ 1.48
