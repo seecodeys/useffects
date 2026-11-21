@@ -309,3 +309,4 @@ is an opening-print artifact (015). New tests use prior-close information only.
 - [x] 346 London gold PM fix (agent) — real pre-2015, sub-cost since; dead.
 - [x] 347 Norges Bank NOK flows (agent) — dead.
 - [x] 348 Japan MOF weekly flows (agent) — dead.
+- [x] 353 SPY ex-div vs IVV/VOO (agent) — dead.

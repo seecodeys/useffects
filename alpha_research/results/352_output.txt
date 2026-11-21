@@ -1,0 +1,23 @@
+COR3M first 2006-01-03 | realized corr first 2005-08-29
+month-end COR3M / CRP train mean: 52.9 -15.3
+352A SPY long next month if COR3M top train tercile (timing value)
+   thr=57.17  train_sharpe=+0.37  train_t=+1.11  valid_sharpe=+0.70  valid_t=+1.99  valid_bp_per_trade=+1.23  valid_traded_%=+100.00  gate=False
+   train: events 36/108 decisions, mean net excess bp/event +173.8, strat Sharpe 0.47 vs always-long 0.41, avg exposure 0.33
+   valid: events 3/94 decisions, mean net excess bp/event +908.5, strat Sharpe 0.76 vs always-long 0.56, avg exposure 0.03
+   timing value bp by year: {2006: -350, 2007: -65, 2008: 905, 2009: 973, 2010: 2120, 2011: 315, 2012: 1155, 2013: -951, 2014: -441, 2015: 482, 2016: -35, 2017: -56, 2018: 15, 2019: -77, 2020: 2170, 2021: -78, 2022: 57}
+352B SPY long next month if CRP=COR3M-RC63 top train tercile (timing value)
+   thr=-11.82  train_sharpe=+0.45  train_t=+1.35  valid_sharpe=+0.14  valid_t=+0.41  valid_bp_per_trade=+0.50  valid_traded_%=+100.00  gate=False
+   train: events 36/108 decisions, mean net excess bp/event +201.1, strat Sharpe 0.52 vs always-long 0.41, avg exposure 0.34
+   valid: events 41/94 decisions, mean net excess bp/event +110.8, strat Sharpe 0.58 vs always-long 0.56, avg exposure 0.42
+   timing value bp by year: {2006: 208, 2007: 103, 2008: -685, 2009: 2065, 2010: 2582, 2011: 1106, 2012: 217, 2013: -966, 2014: -34, 2015: 502, 2016: 26, 2017: 760, 2018: 213, 2019: -581, 2020: -447, 2021: 620, 2022: -78}
+352C PUT index long next month if CRP top train tercile (timing value)
+   thr=-11.82  train_sharpe=+0.35  train_t=+1.05  valid_sharpe=+0.17  valid_t=+0.47  valid_bp_per_trade=+0.43  valid_traded_%=+100.00  gate=False
+   train: events 36/108 decisions, mean net excess bp/event +119.2, strat Sharpe 0.41 vs always-long 0.37, avg exposure 0.34
+   valid: events 41/94 decisions, mean net excess bp/event +67.5, strat Sharpe 0.47 vs always-long 0.41, avg exposure 0.42
+   timing value bp by year: {2006: -2, 2007: -15, 2008: -533, 2009: 1006, 2010: 1629, 2011: 852, 2012: -91, 2013: -397, 2014: 151, 2015: 109, 2016: -98, 2017: 319, 2018: -129, 2019: -213, 2020: 15, 2021: 697, 2022: 158}
+352D SPY long next quarter if COR3M top train tercile, quarterly decisions (timing value)
+   thr=57.17  train_sharpe=+0.41  train_t=+1.24  valid_sharpe=+0.54  valid_t=+1.51  valid_bp_per_trade=+1.10  valid_traded_%=+100.00  gate=False
+   train: events 10/36 decisions, mean net excess bp/event +571.6, strat Sharpe 0.56 vs always-long 0.41, avg exposure 0.28
+   valid: events 1/31 decisions, mean net excess bp/event +2475.5, strat Sharpe 0.58 vs always-long 0.56, avg exposure 0.03
+   timing value bp by year: {2006: -290, 2007: -54, 2008: 1070, 2009: -412, 2010: 952, 2011: 1979, 2012: 1473, 2013: -790, 2014: -366, 2015: -7, 2016: -37, 2017: -59, 2018: 16, 2019: -81, 2020: 2406, 2021: -82, 2022: 60}
+registry size: 4 | luck t for best of N ~ 1.67

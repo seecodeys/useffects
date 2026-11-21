@@ -1231,3 +1231,8 @@ NORW−EFA −1.0 / +0.1. Dead.
 MOF week.csv (revised history, 2005+), entered at the first US close after release, ~5-day hold, |z|>1.5.
 USDJPY +0.5 / +0.3; TLT −/+ ~0 / −0.6; EWJ −0.7 / −0.7; DXJ −0.7 / −1.2. Flows persist week to week but prices don't
 follow. Dead.
+
+## 353 — SPY ex-dividend day vs IVV/VOO twins (agent-run; results/agent_353.md)  ·  2026-11-21
+Raw prices + Yahoo dividends, 0.5bp/side per leg. Long SPY/short IVV on SPY ex-dates −1.3 / +0.8; long IVV/short SPY
+on IVV ex-dates +0.4 / −2.3; long VOO/short SPY on VOO ex-dates −1.8 / −1.4; pooled overnight −0.0 / −2.8. Median
+ex-day drop = 0.96-1.02× the dividend — fully priced; spreads ±1-4bp gross with flipping sign. Dead.
