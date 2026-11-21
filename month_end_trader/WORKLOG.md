@@ -78,6 +78,14 @@ Treasury bid, long ZN over the last 3 sessions). Backtest with IBKR costs: backt
       (6x); staleness keyed on the last completed month-end, not 40 days; Yahoo calls capped at 30 s total and cached
       5 min per symbol; a source difference that cannot flip the sign (same direction, spread < min|gap|, <= 1%) trades
       with a warning instead of skipping (e.g. one source missing a TLT dividend); price sanity check uses any source
+- [x] Review round B7 (PAPER_TEST walked as the user against the FakeBroker; all commands/strings/timeline matched)
+      fixed: bond mismatch alert every 4 h with the resolve command (was hourly for days), `met flatten` says when the
+      market is closed (was silent no-op), manual-ref closes get an exit_reason, resolve hints --leg bond, report /
+      bond-report / kill print a reason instead of a traceback, CBOT named in bond alerts. Docs: test orders on Mon 23
+      09:30-14:30 (not Sat), paper balance ~live + market-data sharing, account id / MET_IB_ACCOUNT, Thanksgiving CBOT
+      hours, contract name may read "ZN   MAR 27", Client Portal trade history, weekly status at start, mismatch alert,
+      flatten-while-closed, systemd env command, alert-test env, heartbeat, sizing_rounding, config keys
+      (order_type, limit_ticks, max_total_leverage), 2.8x stop/size examples, rehearse uses a built-in config
 - [ ] Paper-verify MTN: IB symbol/exchange (MTN @ CBOT), localSymbol, lastTradeDateOrContractMonth = termination day,
       liquidity at 15:55 ET (thin: consider a marketable limit instead of a market order)
 - [ ] Optional: bond.instrument 10Y (yield-quoted, SELL = long bonds, monthly, 2nd month over month-end) if the user prefers it

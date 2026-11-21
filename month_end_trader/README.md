@@ -67,7 +67,7 @@ The daemon is a single loop of idempotent `tick()`s over the state saved in `sta
 - The decay monitor says stop (size ×0), or its state is unreadable.
 - Optional: SPY core below a minimum weight.
 
-**Size** is `leverage x net liquidation / (MES price x 5)`, rounded down by default (`strategy.sizing_rounding: floor`; ~$120k at 2x gives 6 MES = 1.78x). `sizing_rounding: nearest` rounds to the closest count instead (7 MES = 2.14x). It is capped, with a warning, at `max_leverage` (hard cap 4x) and `max_contracts` (hard cap 200). A non-USD base currency (e.g. SGD) is converted to USD at IBKR's exchange rate.
+**Size** is `leverage x net liquidation / (MES price x 5)`, rounded down by default (`strategy.sizing_rounding: floor`). With MES ≈ $35.8k (S&P ~7,160), ~$120k at 2.8x gives 9 MES = 2.69x in a high-vol month and 4 MES = 1.19x in a calm one (x0.5 vol tilt). `sizing_rounding: nearest` rounds to the closest count instead (calm month: 5 MES = 1.49x). It is capped, with a warning, at `max_leverage` (hard cap 4x) and `max_contracts` (hard cap 200). A non-USD base currency (e.g. SGD) is converted to USD at IBKR's exchange rate.
 
 **During and after the trade:**
 - No entry later than open + 90 s.
@@ -166,7 +166,10 @@ The daemon is a single loop of idempotent `tick()`s over the state saved in `sta
 | `resolve DATE [--leg bond] [--price P]` | Record a manual close the bot cannot see, e.g. one done in TWS without the MET-/MEB- ref (daemon stopped) |
 | `kill` / `unkill` | Create or remove the kill switch file (both legs) |
 | `report` / `bond-report` | Run the leg-A / leg-B decay monitor now |
-| `dry-run --months N` | Run the whole daemon against the simulated broker |
+| `alert-test` | Send a test alert on every configured channel |
+| `validate-data` | Compare IBKR and Yahoo adjusted prices (SPY, TLT, and IEF with the bond leg) |
+| `rehearse` | Alert timeline of the next month-end, both legs, on the simulator (built-in 2x / no vol tilt / ~$120k config: times and titles match yours, sizes won't) |
+| `dry-run --months N` | Run the whole daemon against the simulated broker (same built-in config as `rehearse`) |
 
 ## Tests
 

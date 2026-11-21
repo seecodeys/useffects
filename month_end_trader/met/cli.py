@@ -87,7 +87,12 @@ def main(argv=None):
         dry_run(months=a.months)
         return 0
     if a.cmd in ("kill", "unkill"):
-        cfg = load_config(a.config, require_account=False)
+        try:
+            cfg = load_config(a.config, require_account=False)
+        except PermissionError as e:
+            print(f"cannot use the state/log folders ({e}).\nRun this as the daemon's user, or inside the container:\n"
+                  f"  docker compose -f deploy/docker-compose.yml exec trader python -m met.cli {a.cmd} --config /app/config.yaml")
+            return 2
         p = (Path(cfg.monitoring.state_dir) / "KILL").resolve()
         try:
             return _kill(a.cmd, p)
@@ -114,12 +119,18 @@ def main(argv=None):
 
     if a.cmd == "report":
         from .monitor import run_report
-        res = run_report(cfg)
+        try:
+            res = run_report(cfg)
+        except Exception as e:
+            print(f"decay report failed: {e!r} (Yahoo rate limit? try again in a few minutes)"); return 2
         print(json.dumps(res, indent=2, default=str)); return 0
 
     if a.cmd == "bond-report":
         from .bond_monitor import run_bond_report
-        res = run_bond_report(cfg)
+        try:
+            res = run_bond_report(cfg)
+        except Exception as e:
+            print(f"bond decay report failed: {e!r} (Yahoo rate limit? try again in a few minutes)"); return 2
         print(json.dumps(res, indent=2, default=str)); return 0
 
     if a.cmd == "signal":
@@ -301,7 +312,10 @@ def main(argv=None):
             ex = bx                                   # same resolve logic, bond state / MEB- refs
         st = TradeState(cfg.monitoring.state_dir, a.date, prefix=ex.STATE_PREFIX)
         if not st.path.exists():
-            print(f"no {'bond' if a.leg == 'bond' else 'leg-A'} state for {a.date}"); return 2
+            other = TradeState(cfg.monitoring.state_dir, a.date, prefix="trade" if a.leg == "bond" else "bond")
+            hint = (f" (there is a {'leg-A' if a.leg == 'bond' else 'bond'} state: did you mean "
+                    f"{'no --leg' if a.leg == 'bond' else '--leg bond'}?)") if other.path.exists() else ""
+            print(f"no {'bond' if a.leg == 'bond' else 'leg-A'} state for {a.date}{hint}"); return 2
         if st.get("fills") is None:
             print("no fills recorded for", a.date); return 2
         c = ex.contract_for(st)
@@ -352,6 +366,9 @@ def main(argv=None):
                 print("  the bot does not own this position; close it yourself in TWS if intended"); continue
             if st.phase != "EXIT_SUBMITTED":
                 st.update(ex.ts(), "EXIT_SUBMITTED", note="manual flatten", exit_reason="manual flatten")
+            if not ex.market_open(broker.now()):
+                print(f"  {ex.exchange} is closed now: the exit is queued in the state; start the daemon and it sends it "
+                      f"at the reopen"); rc = 3; continue
             for _ in range(6):
                 st.data.pop("next_exit_try", None)
                 if ex.flatten(dt.date.fromisoformat(d), st, reason="manual flatten"):
@@ -382,6 +399,9 @@ def main(argv=None):
                     return 1
                 if st.phase != "EXIT_SUBMITTED":
                     st.update(bx.ts(), "EXIT_SUBMITTED", note="manual flatten", exit_reason="manual flatten")
+                if not bx.market_open(broker.now()):
+                    print(f"  {bx.exchange} is closed now (e.g. holiday afternoon / weekend): the exit is queued; start the "
+                          f"daemon and it sends it at the reopen (Sun-Thu 18:00 ET)"); rc = 3; continue
                 for _ in range(6):
                     st.data.pop("next_exit_try", None)
                     if bx.flatten(dt.date.fromisoformat(d), st, reason="manual flatten"):

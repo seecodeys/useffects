@@ -302,6 +302,7 @@ class _Prefixed:
 class BondExecutor(Executor):
     REF = BOND_REF
     CLI_LEG = " --leg bond"
+    MISMATCH_REPEAT_S = 4 * 3600
     STATE_PREFIX = "bond"
     LEG = "B"
 

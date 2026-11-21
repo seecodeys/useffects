@@ -6,7 +6,7 @@ ib:
   port: 4002                # IB Gateway 4002 paper / 4001 live; TWS 7497 paper / 7496 live
   client_id: 17
   account: DU0000000        # your PAPER account id (DU...). Or set env MET_IB_ACCOUNT
-  market_data_type: 1       # 1 = live (needs CME real-time data), 3 = delayed (sizing only)
+  market_data_type: 1       # 1 = live (needs CME + CBOT real-time data), 3 = delayed (sizing only)
 
 strategy:
   leverage: 2.8             # FULL-size MES notional / net liq (research: 2.85), on top of your SPY core
@@ -33,14 +33,17 @@ bond:                       # leg B: long 10y T-note futures over the last 3 ses
   roll_buffer_days: 5       # never hold a contract within 5 sessions of its first notice day
   disaster_stop_pct_equity: 0.04   # flatten if the bond overlay loses 4% of equity (checked whenever CBOT trades)
   max_contracts: 0          # 0 = per instrument (ZN 20, MTN 200)
+  order_type: auto          # auto = limit for MTN (thin), market for ZN
+  limit_ticks: 3            # marketable limit = last +/- 3/32; raise (max 20) if MTN limits don't fill
   auto_derisk: true         # bond SPRT monitor can halve or stop the leg
 
 guardrails:
   max_leverage: 3.0         # leg A MES notional / net liq ceiling
+  max_total_leverage: 7.0   # all futures notional (MES + ZN/MTN) / net liq, both legs together
   max_contracts: 40
   min_net_liq: 10000
   margin_buffer_pct: 0.10
-  disaster_stop_pct_equity: 0.06   # flatten early if the overlay loses 6% of equity (~3% SPY move at 2x); 0 = off
+  disaster_stop_pct_equity: 0.06   # flatten early if the overlay loses 6% of equity (~2.1% SPY move at 2.8x); 0 = off
   core_symbol: SPY
   core_min_weight: 0.5
   core_policy: warn                # warn | block | ignore

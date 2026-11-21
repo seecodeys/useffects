@@ -99,6 +99,7 @@ class Executor:
     """Leg A (013 month-end, MES/ES open->close). The bond leg (bond.py) subclasses this and overrides the
     leg-specific hooks below; ownership, exits, reconcile and late-fill handling are shared."""
     REF = BOT_REF                 # orderRef prefix of this leg's orders
+    MISMATCH_REPEAT_S = 3600      # repeat of the broker-vs-fills mismatch alert (bond leg: multi-day hold -> rarer)
     CLI_LEG = ""                  # appended to CLI hints in alerts (bond leg: " --leg bond")
     STATE_PREFIX = "trade"        # state files <prefix>_<date>.json
     LEG = "A"
@@ -455,6 +456,8 @@ class Executor:
         c = self.contract_for(st)
         owned = st.owned
         if owned == 0:
+            if not st.get("exit_reason"):
+                st.update(self.ts(), note="closed by a manual order", exit_reason=f"manual ({self.REF}{trade_date}-manual)")
             self._finalise(trade_date, st)               # closed by fills we can see (e.g. manual in TWS with our ref)
             return
         pos = self.broker_pos(c)
@@ -465,13 +468,15 @@ class Executor:
             st.update(self.ts(), note="broker agrees with fills again", mismatch_alerted=False, last_mismatch_pos=None)
         if pos != owned:
             now = self.broker.now()
-            gap = 3600 if st.get("mismatch_alerted") else 0
+            gap = self.MISMATCH_REPEAT_S if st.get("mismatch_alerted") else 0
             if not self._last_mismatch_alert or (now - self._last_mismatch_alert).total_seconds() > max(gap, 600):
                 st.update(self.ts(), note=f"mismatch broker {pos:+g} vs fills {owned:+d}", mismatch_alerted=True,
                           last_mismatch_pos=pos)
                 self._last_mismatch_alert = now
                 self.alert.critical(f"{trade_date}: broker position differs from the bot's fills",
-                                    f"broker {pos:+g}, bot's executions {owned:+d}; the exit closes only the bot's quantity")
+                                    f"broker {pos:+g}, bot's executions {owned:+d}; the exit closes only the bot's quantity. "
+                                    f"If you closed it yourself without Order Ref {self.REF}{trade_date}-manual: stop the "
+                                    f"daemon and run `met resolve {trade_date}{self.CLI_LEG} --price <your fill>`.")
         lim = self.disaster_pct
         if lim > 0:
             px = self._try_price(c)
@@ -528,7 +533,7 @@ class Executor:
         if not self.market_open(now):
             if not st.get("closed_market_alerted"):
                 what = "an unresolved trade (fills and broker disagree)" if st.get("disagree_rounds") else "an open position"
-                self.alert.critical(f"{trade_date}: futures market closed with {what}", "will retry when CME reopens")
+                self.alert.critical(f"{trade_date}: futures market closed with {what}", f"will retry when {self.exchange} reopens")
                 st.update(self.ts(), note="market closed", closed_market_alerted=True)
             return False
         if not self.settle(10):
