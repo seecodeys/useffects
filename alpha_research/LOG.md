@@ -1241,3 +1241,9 @@ ex-day drop = 0.96-1.02× the dividend — fully priced; spreads ±1-4bp gross w
 Fade |z|>2 of the 3-day beta-residual between twins, beta-neutral, 3 sessions, 1bp/side per leg (lag-1; lag-0 best case
 also registered, 8 rows). Lag-1: HYG/JNK +1.2 / −0.1; stress-only +1.4 / +0.1; MUB/VTEB valid +0.9 (2020); EMB/PCY
 +1.7 / −0.9. Lag-0: HYG/JNK +2.8 / +0.3, EMB/PCY +2.0 / +2.0 — closing-print noise, faded after 2011. Dead.
+
+## 352 — Implied-correlation premium (COR3M; agent-run, results/agent_352.md)  ·  2026-11-21
+COR3M from cdn.cboe.com (2006+, back-filled before its 2022 launch; KCJ/ICJ files 403). Month-end decisions, lag-1,
+timing value vs exposure-matched long. High COR3M → SPY +1.1 / +2.0 (only 3 valid events, April 2020); high premium
+(COR3M − realized sector corr) → SPY +1.4 / +0.4; → PUT index +1.1 / +0.5; 3-month hold +1.2 / +1.5 (1 valid event).
+Thresholds rarely fire after 2014. Dead/weak.

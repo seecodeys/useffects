@@ -311,3 +311,4 @@ is an opening-print artifact (015). New tests use prior-close information only.
 - [x] 348 Japan MOF weekly flows (agent) — dead.
 - [x] 353 SPY ex-div vs IVV/VOO (agent) — dead.
 - [x] 350 Twin bond-ETF reversion (agent) — dead.
+- [x] 352 Implied-correlation premium (agent) — dead/weak.
