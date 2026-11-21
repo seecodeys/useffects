@@ -1394,3 +1394,14 @@ half the mechanism; mostly ANGL credit beta. Weak; fails gate (short train).
 Rebalance after the close of the 3rd Friday of Mar/Jun/Sep/Dec (Invesco 485APOS; NDXE moves to Feb/May/Aug/Nov from
 5/2026). Fade QTD RSP−SPY drift open→close −1.3 / +0.2; close→close lag-1 −1.6 / −0.3; QQQE−QQQ −0.2 / +0.8; next-day
 reversal −1.5 / −1.5. Wrong sign in train throughout. Dead.
+
+## 375 — Month-end bond bid via Treasury futures (idea E8; agent-run, results/agent_375.md)  ·  2026-11-21
+Yahoo continuous ZN/ZB/ZT (roll months excluded), 0.25bp/side. ZN train t 1.72, valid +19.3bp/event (t 3.0) — +21.9bp
+per unit of rate risk vs IEF's +25.7; ZB 1.79 / valid +28.9bp (t 2.4) — +20.6bp vs TLT's +19.7; ZT ~+2bp ns; IEF−0.98·ZN
+basis +4.6bp in valid but matches non-window drift in train. Futures carry essentially the same bid per unit of rate risk
+as the ETFs → a cheap, leverageable implementation of finding 2 (gate not met on the shorter futures-only subset).
+
+## Extension round (371-375)  ·  2026-11-21
+Mechanism refinements of finding 2: STRIPS share the bid per unit duration (371: it's a Treasury-curve move);
+outside the US/Canada it's weak (372); futures implement it equivalently (375). Fallen angels (373) and equal-weight
+resets (374) — weak/dead. Registry: 689.

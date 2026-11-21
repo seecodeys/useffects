@@ -334,3 +334,4 @@ is an opening-print artifact (015). New tests use prior-close information only.
 - [x] 372 Hedged/local bond bid (agent) — weak; Australia right-signed, others no.
 - [x] 373 Fallen-angel index exit (agent) — weak; month-start rebound only.
 - [x] 374 Equal-weight quarterly reset (agent) — dead.
+- [x] 375 Bond bid via futures (agent) — equivalent per unit of rate risk; implementation note.

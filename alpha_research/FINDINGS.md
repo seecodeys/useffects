@@ -30,3 +30,6 @@
   while 2y notes do (p=0.006); the effect follows index eligibility.
 - 2026-11-21 (363): data audit — Yahoo adjusted closes handle the bond ETFs' dividends correctly inside the month-end
   window (≤0.01bp difference vs raw price + dividend); the bond-bid estimates stand.
+- 2026-11-21 (371/375): the month-end bond bid is a move in the Treasury curve itself — zero-coupon STRIPS (not in the
+  Aggregate) get the same bid per unit of duration, and ZN/ZB futures carry ~the same bid per unit of rate risk as IEF/TLT
+  (ZN valid +19bp/event, t 3.0) → futures are a cheap, leverageable implementation.
