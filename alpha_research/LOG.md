@@ -1159,3 +1159,8 @@ size-scaled HYG +/− ~0. 2008-09 shocks were followed by further losses. Dead.
 Trigger: 21d SPY-TLT correlation crosses above +0.2 after being <0 within 63 days (12 train / 11 valid events); hold
 10d, lag-1. Short 50/50 SPY+TLT −0.9 / −0.1; short TLT −0.7 / −0.9; high-vol only −0.8 / −0.1; placebo −0.3 / +0.4.
 Wrong-signed and underpowered. Dead.
+
+## 336 — Volatility day/night pricing in VIXY (Muravyev-Ni; agent-run, results/agent_336.md)  ·  2026-11-21
+VIXY 2011-22, 2bp/side per leg, 8 rows (raw + timing value). Short overnight only +1.0 / −0.1 raw (timing −1.4 / −1.9);
+long intraday −1.4 / −1.9; both legs −0.6 / −1.5; overnight short in contango only +0.0 / +0.2. VIXY decays as much
+intraday as overnight, so the day/night split doesn't translate to the ETP. Dead.

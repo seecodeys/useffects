@@ -296,3 +296,4 @@ is an opening-print artifact (015). New tests use prior-close information only.
 - [x] 334 Intraday momentum (clock-fixed) — dead (290's t was cost drag).
 - [x] 339 Broker-dealer capital shocks (agent) — dead.
 - [x] 338 Risk-parity correlation flip (agent) — dead.
+- [x] 336 VIXY day/night split (agent) — dead.
