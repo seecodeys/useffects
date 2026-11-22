@@ -344,3 +344,23 @@ def test_b9_flatten_does_not_touch_position_bot_does_not_own(env, monkeypatch):
     cli.main(["flatten", "--yes"])
     assert len(b.orders) == n and b.fut_pos == 2
     assert TradeState(cfg.monitoring.state_dir, str(T)).phase == ph
+
+
+def test_cli_unknown_command_fails_before_connecting(monkeypatch):
+    from met import cli
+    called = []
+    monkeypatch.setattr(cli, "_broker", lambda *a, **k: called.append(1))
+    with pytest.raises(SystemExit) as e:
+        cli.main(["bond_check", "--config", "nonexistent.yaml"])
+    assert e.value.code == 2 and not called
+
+
+def test_cli_gateway_down_is_one_line_not_traceback(monkeypatch, capsys, tmp_path):
+    from met import cli
+    from met.broker import BrokerError
+    monkeypatch.setattr(cli, "_main", lambda a, ap: (_ for _ in ()).throw(BrokerError("IB connect 127.0.0.1:4002 failed")))
+    assert cli.main(["check"]) == 2
+    assert "cannot reach IB Gateway" in capsys.readouterr().err
+    monkeypatch.setattr(cli, "_main", lambda a, ap: (_ for _ in ()).throw(BrokerError("no price for MES")))
+    with pytest.raises(BrokerError):
+        cli.main(["check"])

@@ -124,6 +124,8 @@ The daemon is a single loop of idempotent `tick()`s over the state saved in `sta
    python -m venv .venv && . .venv/bin/activate && pip install -r requirements.txt
    cp config.example.yaml config.yaml      # set ib.account to your DU... paper id
    ```
+   `met <cmd>` in this README and in the bot's alerts is short for `python -m met.cli <cmd> --config config.yaml`
+   (there is no installed `met` command). `python -m met.cli --help` lists every command.
 3. **Check everything without trading:**
    ```bash
    python -m met.cli signal  --config config.yaml   # current signal from IBKR + Yahoo

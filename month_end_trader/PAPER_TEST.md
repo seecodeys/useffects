@@ -1,6 +1,6 @@
 # Paper-test checklist: first window 24 → 30 Nov 2026 (both legs)
 
-Run everything on the always-on machine against your **paper** account (DU…). Tick each box. Commands assume you are in `month_end_trader/` with the venv active, and `config.yaml` has `mode: paper`.
+Run everything on the always-on machine against your **paper** account (DU…). Tick each box. Commands assume you are in `month_end_trader/` with the venv active, and `config.yaml` has `mode: paper`. `met <cmd>` below (and in the bot's alerts) is short for `python -m met.cli <cmd> --config config.yaml`; there is no installed `met` command.
 
 **This month's schedule (ET)**
 
@@ -33,7 +33,7 @@ The bond contract is **March 2027** (ZNH7 / MTNH7). December's last safe day (fi
 **Paper account**
 - [ ] Reset the paper account's balance to roughly your live equity (Client Portal → Settings → Paper Trading Account). A default $1M paper account hits the contract caps (40 MES / 20 ZN) and makes the ZN/MTN choice meaningless.
 - [ ] Share your real-time market data subscriptions with the paper account (Client Portal → Settings → Paper Trading Account). Confirm this works for the dedicated API username too.
-- [ ] `ib.account` is your paper id (DU…) and `ib.port` is 4002 (Gateway) or 7497 (TWS). The placeholder DU0000000 passes validation, so `status` alone won't catch it. **Docker:** set `MET_IB_ACCOUNT` in `deploy/trader.env`; it overrides config.yaml.
+- [ ] `ib.account` is your paper id (DU…) and `ib.port` is 4002 (Gateway) or 7497 (TWS). The placeholder DU0000000 passes validation, so `status` alone won't catch it. **Docker:** edit `ib.account` in config.yaml, or uncomment `MET_IB_ACCOUNT` in `deploy/trader.env` (when set it overrides config.yaml).
 
 **Config:** leg B is in `bond:`.
 - [ ] `enabled: true`.
@@ -99,7 +99,7 @@ docker compose -f deploy/docker-compose.yml up -d
 python -m met.cli status --config config.yaml
 ```
 - **Docker users:** run read-only CLI commands inside the container (`docker compose -f deploy/docker-compose.yml exec trader python -m met.cli status …`). `test-order`, `flatten` and `resolve` need the daemon stopped: `docker compose … stop trader`, then `docker compose … run --rm trader python -m met.cli <cmd> … --config /app/config.yaml`, then `start trader`.
-- **systemd users:** `deploy/met.service` assumes user `met` and `/opt/month_end_trader`: install there or edit both. To run a CLI command with the daemon's environment: `sudo systemd-run --uid=met -p EnvironmentFile=/etc/met.env -p WorkingDirectory=/opt/month_end_trader --pty --wait .venv/bin/python -m met.cli status --config config.yaml`.
+- **systemd users:** `deploy/met.service` assumes user `met` and `/opt/month_end_trader`: install there or edit both. To run a CLI command with the daemon's environment: `sudo systemd-run --uid=met -p EnvironmentFile=-/etc/met.env -p WorkingDirectory=/opt/month_end_trader --pty --wait .venv/bin/python -m met.cli status --config config.yaml`.
 - **Run every `met` command as the daemon's user and from its folder**, so it sees the same `state/` (especially `kill`).
 - [ ] The daemon is running, and its start alert lists both legs.
 - [ ] `status` shows no unfinished trades.

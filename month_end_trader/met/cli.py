@@ -29,9 +29,14 @@ from pathlib import Path
 
 from . import calendar as cal
 from .alerts import Alerter
+from .broker import BrokerError
 from .config import load_config
 from .signal import yahoo_daily, drop_partial_today, signals_from_sources
 from .state import TradeState
+
+
+COMMANDS = {"run", "status", "signal", "check", "test-order", "flatten", "resolve", "alert-test", "kill", "unkill",
+            "report", "dry-run", "rehearse", "validate-data", "bond-check", "bond-report"}
 
 
 def setup_logging(log_dir: str, verbose=False):
@@ -67,7 +72,7 @@ def make_fetchers(cfg, broker, now_fn):
 
 
 def main(argv=None):
-    ap = argparse.ArgumentParser(prog="met")
+    ap = argparse.ArgumentParser(prog="met", description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("cmd")
     ap.add_argument("--config", default="config.yaml")
     ap.add_argument("--months", type=int, default=3)
@@ -77,6 +82,19 @@ def main(argv=None):
     ap.add_argument("--leg", choices=["a", "bond"], default="a", help="`resolve` / `test-order`: which leg (default a)")
     ap.add_argument("-v", action="store_true")
     a = ap.parse_args(argv)
+    if a.cmd not in COMMANDS:                       # before any IB connect: a typo must not try the Gateway first
+        ap.error(f"unknown command {a.cmd!r}; commands: {', '.join(sorted(COMMANDS))}")
+    try:
+        return _main(a, ap)
+    except BrokerError as e:
+        if "connect" not in str(e).lower():
+            raise
+        print(f"cannot reach IB Gateway/TWS: {e}\n  Is the Gateway running and logged in, is ib.host/ib.port right "
+              "(paper 4002 Gateway / 7497 TWS), and is the API enabled (Configure -> API -> Settings)?", file=sys.stderr)
+        return 2
+
+
+def _main(a, ap):
 
     if a.cmd == "rehearse":
         from .rehearsal import rehearse
@@ -153,7 +171,7 @@ def main(argv=None):
             print("  !", p)
         if T != cal.next_session(now().date()) and now().date() != T:
             print("  (signal is provisional: it is fixed by the close of", cal.previous_session(T), ")")
-        return 0
+        return 0 if sigs else 1
 
     if a.cmd == "status":
         from .state import unfinished

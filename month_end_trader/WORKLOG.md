@@ -155,3 +155,7 @@ Treasury bid, long ZN over the last 3 sessions). Backtest with IBKR costs: backt
       explicit edge_dead flag + half-size recovery, kill/unkill permission errors explained (docker exec), intraday shares
       only for positive totals, PAPER_TEST updated. 192 tests
 - [ ] Waiting on user: set sizing_rounding (floor vs nearest); whether to pause the 15-min check-ins until after the 30 Nov paper run
+- [x] Review round B10 (fresh-install path, 5 findings) fixed: Gateway-down CLI commands print one hint line + exit 2
+      (no traceback), unknown commands rejected before any IB connect, `signal` exits 1 when no source has a signal,
+      `--help` lists the commands, trader.env.example no longer overrides ib.account with the placeholder (+ SMTP
+      vars), `met <cmd>` documented as `python -m met.cli <cmd>`, systemd-run EnvironmentFile optional. 336 tests
